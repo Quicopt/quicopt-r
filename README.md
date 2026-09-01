@@ -52,7 +52,8 @@ minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
 add(m, prob(demand - x <= 0) >= 0.9)
 
 res <- solve(m)
-res$solution[["x"]]                              # 107.9…
+res$solution[["x"]]                              # 118.7: the 90% service
+                                                 # level binds at the sample q90
 ```
 
 `max(demand - x, 0)` is the shortfall — and it is plain R: arithmetic, `max`,
