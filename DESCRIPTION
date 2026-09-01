@@ -1,0 +1,19 @@
+Package: quicopt
+Title: Client for the 'Quicopt' Optimization Service
+Version: 0.1.0
+Authors@R: person("Tim", "Bode", email = "9047234+timbode@users.noreply.github.com",
+                  role = c("aut", "cre", "cph"))
+Description: Author an optimization model — including a model under
+    uncertainty, with random variables, expectations, conditional value at
+    risk and chance constraints — in a native R interface, and solve it with
+    the 'Quicopt' service <https://quicopt.com>. Models are encoded to the
+    service's wire format and solved remotely; no solver is installed
+    locally. Random variables carry distributions or empirical scenario
+    columns taken directly from a data frame, so observed history becomes a
+    stochastic program in one call.
+License: Apache License (== 2.0)
+Encoding: UTF-8
+Imports: curl, jsonlite, utils
+Depends: R (>= 4.1)
+URL: https://github.com/timbode/quicopt-r
+BugReports: https://github.com/timbode/quicopt-r/issues

@@ -1,0 +1,8 @@
+^LICENSE$
+^\.gitignore$
+^\.Rbuildignore$
+^SPEC\.md$
+^CLAUDE\.md$
+^\.claude$
+^proto$
+^\.github$

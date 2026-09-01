@@ -1,0 +1,11 @@
+# Maintainer-local context — never tracked (family convention)
+/CLAUDE.md
+/.claude/
+/SPEC.md
+
+.Rproj.user/
+.Rhistory
+.RData
+.DS_Store
+*.tar.gz
+quicopt.Rcheck/
