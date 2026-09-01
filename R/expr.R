@@ -96,7 +96,7 @@ Math.quicopt <- function(x, ...) {
   if (!(op %in% .CATALOG_MATH))
     stop("'", op, "' is not in the operator catalog")
   if (op == "log" && length(list(...)) > 0L)
-    stop("log() in a model takes no base; the catalog's log is natural — ",
+    stop("log() in a model takes no base; the catalog's log is natural: ",
          "write log(x) / log(b) for another base")
   .qexpr(lapply(.nodes_of(x), function(n) ir_apply(op, list(n))))
 }

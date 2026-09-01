@@ -77,7 +77,7 @@ normal <- function(mean, sd) distribution("normal", mean, sd)
     if (length(p$nodes) != 1L)
       stop("a distribution parameter is a single value, got length ", length(p$nodes))
     if (.has_source(p$nodes[[1L]]))
-      stop("a distribution's parameters are data, not draws — ",
+      stop("a distribution's parameters are data, not draws: ",
            "a random variable cannot appear inside one")
     return(invisible(p))
   }
