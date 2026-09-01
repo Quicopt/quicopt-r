@@ -1,0 +1,23 @@
+url: https://timbode.github.io/quicopt-r/
+template:
+  bootstrap: 5
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [github]
+articles:
+- title: Articles
+  contents: [stochastic]
+reference:
+- title: Authoring a model
+  contents: [model, num_var, minimize, add, expressions]
+- title: Uncertainty
+  contents: [stochastic, rand_var, set_distribution, set_scenarios, set_empirical,
+             distribution, empirical, expectation, cvar, prob]
+- title: Solving
+  contents: [solve_model, submit, job_status, DEFAULT_BASE_URL]
+- title: The program and its bytes
+  contents: [program, var_decl, index_set, constraint, consets, parametric,
+             ir, encode, encode_params, as_program]
+- title: internal
+  contents: [quicopt-package]
