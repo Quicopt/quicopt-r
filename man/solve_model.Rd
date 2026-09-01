@@ -58,5 +58,7 @@ never remembered).
 \details{
 \code{solve(m)} and \code{solve_model(m)} are the same function — the former extends
 the \code{base::solve} generic (as \code{solve.qr} does), the latter is the
-unambiguous name for pipes and for reading.
+unambiguous name for pipes and for reading. For a long-running model, or a
+first call against a cold worker, \code{\link[=submit]{submit()}} queues the same request
+asynchronously instead of blocking.
 }

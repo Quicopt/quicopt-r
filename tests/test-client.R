@@ -160,5 +160,73 @@ res <- solve_model(mv, transport = rec$fn)
 check("family values come back keyed by flat names",
       identical(res$solution, c("xs[1]" = 1.0, "xs[2]" = 2.0, "xs[3]" = 3.0)))
 
+# ── asynchronous jobs ───────────────────────────────────────────────────────
+
+# submit: body, path, and the key echoed in the accepted-response JSON
+forget_session_key()
+rec <- recorder(list(
+  list(status = 202L, headers = list(),
+       body = charToRaw('{"job_id":"j-7","api_key":"minted-body"}')),
+  ok_response('{"state":"running","log_tail":"..."}')))
+job <- submit(m, transport = rec$fn)
+st <- job_status(job)
+check("submit POSTs the wire bytes to /v1/jobs",
+      identical(rec$requests[[1]]$url, paste0(DEFAULT_BASE_URL, "/v1/jobs?source_language=quicopt-r")) &&
+      identical(rec$requests[[1]]$body, encode(m)))
+check("the handle carries the job id", inherits(job, "quicopt_job") && job$job_id == "j-7")
+check("a key echoed in the job body is adopted",
+      identical(rec$requests[[2]]$headers[["Authorization"]], "Bearer minted-body"))
+check("job_status GETs the job, bodyless",
+      identical(rec$requests[[2]]$url, paste0(DEFAULT_BASE_URL, "/v1/jobs/j-7")) &&
+      is.null(rec$requests[[2]]$body) &&
+      is.null(rec$requests[[2]]$headers[["Content-Type"]]))
+check("job_status parses the state", st$state == "running")
+
+# job_result polls past not_done, then parses the finished solve
+not_done <- list(status = 409L, headers = list(),
+                 body = charToRaw('{"reason":"not_done"}'))
+forget_session_key()
+rec <- recorder(list(
+  list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-8"}')),
+  not_done, not_done,
+  ok_response('{"status":"optimal","objective":6.0,"solution":{"x":2.0}}')))
+job <- submit(m, transport = rec$fn)
+res <- job_result(job, poll = 0.01)
+check("job_result polls past not_done",
+      length(rec$requests) == 4 && res$status == "optimal" && res$objective == 6.0)
+check("the polls hit the result endpoint",
+      identical(rec$requests[[3]]$url, paste0(DEFAULT_BASE_URL, "/v1/jobs/j-8/result")))
+
+# wait = FALSE surfaces not_done instead of polling
+forget_session_key()
+rec <- recorder(list(list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-9"}')),
+                     not_done))
+job <- submit(m, transport = rec$fn)
+cond <- tryCatch(job_result(job, wait = FALSE), quicopt_error = function(e) e)
+check("wait = FALSE raises not_done once", identical(cond$reason, "not_done") &&
+      length(rec$requests) == 2)
+
+# a real failure is never polled past
+forget_session_key()
+rec <- recorder(list(list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-10"}')),
+                     list(status = 500L, headers = list(),
+                          body = charToRaw('{"reason":"worker_crashed","display":"the job failed"}'))))
+job <- submit(m, transport = rec$fn)
+cond <- tryCatch(job_result(job, poll = 0.01), quicopt_error = function(e) e)
+check("a non-not_done error propagates immediately",
+      identical(cond$reason, "worker_crashed") && length(rec$requests) == 2)
+
+# log and delete address their endpoints with the right methods
+forget_session_key()
+rec <- recorder(list(list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-11"}')),
+                     list(status = 200L, headers = list(), body = charToRaw("the log text")),
+                     list(status = 200L, headers = list(), body = raw(0))))
+job <- submit(m, transport = rec$fn)
+check("job_log returns the text", identical(job_log(job), "the log text"))
+job_delete(job)
+check("job_delete DELETEs the job",
+      rec$requests[[3]]$method == "DELETE" &&
+      identical(rec$requests[[3]]$url, paste0(DEFAULT_BASE_URL, "/v1/jobs/j-11")))
+
 forget_session_key()
 cat("client: all green\n")
