@@ -31,7 +31,7 @@ There is no solver on your machine; the service does the solving.
 pak::pak("Quicopt/quicopt-r")   # from GitHub; pure R, no toolchain needed
 ```
 
-## Use
+## Toy Model
 
 ``` r
 
@@ -48,7 +48,7 @@ res$status; res$objective   # "optimal" 14
 res$solution
 ```
 
-## Under uncertainty
+## Optimization under Uncertainty
 
 Order `x` units at 3 apiece against a demand you will only learn later,
 pay for the mismatch, and meet demand in at least 90% of scenarios:
