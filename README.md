@@ -1,5 +1,10 @@
 # quicopt
 
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://quicopt.github.io/quicopt-r/)
+[![check](https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml)
+[![R 4.1+](https://img.shields.io/badge/r-4.1%2B-276DC3.svg)](https://www.r-project.org)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/Quicopt/quicopt-r/blob/main/LICENSE)
+
 The R client for the [Quicopt](https://quicopt.com) optimization service.
 
 You describe a decision: what you get to choose, what has to hold, and what you
