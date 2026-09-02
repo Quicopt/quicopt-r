@@ -41,8 +41,9 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #'   `function(req)` taking `list(method, url, headers, body, timeout)` and
 #'   returning `list(status, headers, body)`.
 #' @return The service's answer as a `quicopt_result`: a list with `status`,
-#'   `objective`, `feasible`, `solution` (a named numeric vector), and the
-#'   ready-to-print `display`. Printing the result prints `display`.
+#'   `objective`, `feasible`, `solution` (a named numeric vector),
+#'   `model_class` (the class the service read the model as, e.g. `"milp"`),
+#'   and the ready-to-print `display`. Printing the result prints `display`.
 #' @export
 solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
                         project = NULL, config = NULL, gzip = FALSE,
@@ -255,6 +256,10 @@ print.quicopt_job <- function(x, ...) {
                  objective = parsed$objective,
                  feasible = parsed$feasible,
                  solution = solution,
+                 # The class the service read the model as. It travels inside
+                 # solver_data; the sibling clients surface it at the top level,
+                 # and so does this one.
+                 model_class = parsed$solver_data$model_class,
                  solve_time_seconds = parsed$solve_time_seconds,
                  solver_data = parsed$solver_data,
                  display = parsed$display,

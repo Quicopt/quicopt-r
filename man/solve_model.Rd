@@ -46,8 +46,9 @@ returning \code{list(status, headers, body)}.}
 }
 \value{
 The service's answer as a \code{quicopt_result}: a list with \code{status},
-\code{objective}, \code{feasible}, \code{solution} (a named numeric vector), and the
-ready-to-print \code{display}. Printing the result prints \code{display}.
+\code{objective}, \code{feasible}, \code{solution} (a named numeric vector),
+\code{model_class} (the class the service read the model as, e.g. \code{"milp"}),
+and the ready-to-print \code{display}. Printing the result prints \code{display}.
 }
 \description{
 Encodes the model, sends it, and returns the parsed result. The first

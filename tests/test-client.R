@@ -45,7 +45,9 @@ small_model <- function() {
 
 forget_session_key()
 m <- small_model()
-rec <- recorder(list(ok_response('{"status":"optimal","objective":6.0,"solution":{"x":2.0}}')))
+rec <- recorder(list(ok_response(paste0('{"status":"optimal","objective":6.0,',
+                                        '"solution":{"x":2.0},',
+                                        '"solver_data":{"model_class":"milp"}}'))))
 res <- solve_model(m, transport = rec$fn)
 req <- rec$requests[[1]]
 
@@ -57,6 +59,11 @@ check("the body is declared octet-stream",
 check("no Authorization before any key exists", is.null(req$headers[["Authorization"]]))
 check("the result parses", res$status == "optimal" && res$objective == 6.0 &&
       identical(res$solution, c(x = 2.0)))
+check("the model class is surfaced from solver_data",
+      identical(res$model_class, "milp"))
+rec2 <- recorder(list(ok_response('{"status":"optimal"}')))
+check("an answer without solver_data has no model class",
+      is.null(solve_model(m, transport = rec2$fn)$model_class))
 
 # project and config metadata ride the query string, %20-escaped, never +
 forget_session_key()
