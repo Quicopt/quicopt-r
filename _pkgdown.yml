@@ -18,6 +18,6 @@ reference:
   contents: [solve_model, submit, job_status, DEFAULT_BASE_URL]
 - title: The program and its bytes
   contents: [program, var_decl, index_set, constraint, consets, parametric,
-             ir, encode, encode_params, as_program]
+             ir, wire, encode, encode_params, as_program]
 - title: internal
   contents: [quicopt-package]

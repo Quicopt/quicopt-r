@@ -9,3 +9,6 @@
 .DS_Store
 *.tar.gz
 quicopt.Rcheck/
+
+# pkgdown builds the site here; CI publishes it to gh-pages
+/docs/
