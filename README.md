@@ -72,4 +72,4 @@ set_empirical(m, history)                 # columns -> sources, nrow -> scenario
 
 ## License
 
-Apache-2.0.
+Apache License 2.0 — see [`LICENSE`](https://github.com/Quicopt/quicopt-r/blob/main/LICENSE). (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich.
