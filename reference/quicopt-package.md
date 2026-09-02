@@ -13,7 +13,7 @@ program in one call.
 
 Useful links:
 
-- <https://quicopt.github.io/quicopt-r>
+- <https://quicopt.github.io/quicopt-r/>
 
 - <https://github.com/Quicopt/quicopt-r>
 
@@ -21,10 +21,8 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Tim Bode <9047234+timbode@users.noreply.github.com>
-\[copyright holder\]
+**Maintainer**: Tim Bode <t.bode@fz-juelich.de> \[copyright holder\]
 
 Authors:
 
-- Tim Bode <9047234+timbode@users.noreply.github.com> \[copyright
-  holder\]
+- Tim Bode <t.bode@fz-juelich.de> \[copyright holder\]
