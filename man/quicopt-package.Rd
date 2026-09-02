@@ -11,18 +11,18 @@ Author an optimization model — including a model under uncertainty, with rando
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://quicopt.github.io/quicopt-r}
+  \item \url{https://quicopt.github.io/quicopt-r/}
   \item \url{https://github.com/Quicopt/quicopt-r}
   \item Report bugs at \url{https://github.com/Quicopt/quicopt-r/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Tim Bode \email{9047234+timbode@users.noreply.github.com} [copyright holder]
+\strong{Maintainer}: Tim Bode \email{t.bode@fz-juelich.de} [copyright holder]
 
 Authors:
 \itemize{
-  \item Tim Bode \email{9047234+timbode@users.noreply.github.com} [copyright holder]
+  \item Tim Bode \email{t.bode@fz-juelich.de} [copyright holder]
 }
 
 }

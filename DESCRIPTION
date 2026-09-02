@@ -1,7 +1,7 @@
 Package: quicopt
 Title: Client for the 'Quicopt' Optimization Service
 Version: 0.1.0
-Authors@R: person("Tim", "Bode", email = "9047234+timbode@users.noreply.github.com",
+Authors@R: person("Tim", "Bode", email = "t.bode@fz-juelich.de",
                   role = c("aut", "cre", "cph"))
 Description: Author an optimization model — including a model under
     uncertainty, with random variables, expectations, conditional value at
@@ -17,7 +17,7 @@ Imports: curl, jsonlite, utils
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Depends: R (>= 4.1)
-URL: https://quicopt.github.io/quicopt-r, https://github.com/Quicopt/quicopt-r
+URL: https://quicopt.github.io/quicopt-r/, https://github.com/Quicopt/quicopt-r
 BugReports: https://github.com/Quicopt/quicopt-r/issues
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.0
