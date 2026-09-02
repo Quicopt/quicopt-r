@@ -1,0 +1,197 @@
+# quicopt
+
+The R client for the [Quicopt](https://quicopt.com) optimization
+service.
+
+You describe a decision: what you get to choose, what has to hold, and
+what you want as much (or as little) of as possible. Quicopt finds the
+best choice there is.
+
+Part of that decision is often taken before the data is known — demand,
+prices, yields. Declare that data as random variables, and the model is
+solved over scenarios drawn from their distributions: minimize an
+expectation or a conditional value at risk, and require constraints to
+hold with a given probability. Observed history in a `data.frame`
+becomes a stochastic program in one call.
+
+There is no solver on your machine; the service does the solving.
+
+## Install
+
+``` r
+
+# install.packages("quicopt")   # once released
+pak::pak("Quicopt/quicopt-r")   # from GitHub; pure R, no toolchain needed
+```
+
+## Use
+
+``` r
+
+library(quicopt)
+
+m <- model()
+x <- num_var(m, "x", 0, 4)
+y <- bin_var(m, "y")
+maximize(m, 3 * x + 5 * y)
+add(m, x + 2 * y <= 5)
+
+res <- solve(m)
+res$status; res$objective   # "optimal" 14
+res$solution
+```
+
+## Under uncertainty
+
+Order `x` units at 3 apiece against a demand you will only learn later,
+pay for the mismatch, and meet demand in at least 90% of scenarios:
+
+``` r
+
+m <- model()
+x <- num_var(m, "x", 0, 200)                     # decide now
+demand <- rand_var(m, "demand", normal(100, 15)) # learn later
+set_scenarios(m, 512, seed = 42)
+
+minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
+add(m, prob(demand - x <= 0) >= 0.9)
+
+res <- solve(m)
+res$solution[["x"]]                              # 118.7: the 90% service
+                                                 # level binds at the sample q90
+```
+
+`max(demand - x, 0)` is the shortfall — and it is plain R: arithmetic,
+`max`, `sum` and friends build the model’s expressions directly. Note
+that scenarios are drawn by the service from the model’s own seed
+(`set_scenarios`), so [`set.seed()`](https://rdrr.io/r/base/Random.html)
+plays no role here.
+
+Have the uncertainty as data instead of a distribution? Every column of
+a data frame becomes a random variable, jointly, with correlation
+preserved:
+
+``` r
+
+history <- read.csv("demand_price.csv")   # observed rows
+m <- model()
+set_empirical(m, history)                 # columns -> sources, nrow -> scenarios
+```
+
+## License
+
+Apache License 2.0 — see
+[`LICENSE`](https://github.com/Quicopt/quicopt-r/blob/main/LICENSE). (c)
+2026 Tim Bode, PGI-12, Forschungszentrum Jülich.
+
+# Package index
+
+## Authoring a model
+
+- [`model()`](https://quicopt.github.io/quicopt-r/reference/model.md) :
+  Create an empty optimization model
+- [`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+  [`int_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+  [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+  [`add_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+  : Declare decision variables
+- [`minimize()`](https://quicopt.github.io/quicopt-r/reference/minimize.md)
+  [`maximize()`](https://quicopt.github.io/quicopt-r/reference/minimize.md)
+  : State what the model optimizes
+- [`add()`](https://quicopt.github.io/quicopt-r/reference/add.md) : Add
+  constraints to a model
+- [`expressions`](https://quicopt.github.io/quicopt-r/reference/expressions.md)
+  : quicopt expressions — model arithmetic in plain R
+
+## Uncertainty
+
+- [`stochastic`](https://quicopt.github.io/quicopt-r/reference/stochastic.md)
+  : Optimization under uncertainty
+
+- [`rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md)
+  [`add_rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md)
+  : Declare a random variable
+
+- [`set_distribution()`](https://quicopt.github.io/quicopt-r/reference/set_distribution.md)
+  : Give a random variable its distribution
+
+- [`set_scenarios()`](https://quicopt.github.io/quicopt-r/reference/set_scenarios.md)
+  : Set how many scenarios are drawn, and from which seed
+
+- [`set_empirical()`](https://quicopt.github.io/quicopt-r/reference/set_empirical.md)
+  : Turn observed history into a model's uncertainty
+
+- [`distribution()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
+  [`normal()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
+  : Distributions for random variables
+
+- [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
+  : A random variable given as a fixed scenario column
+
+- [`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md)
+  : The expected value over the scenarios
+
+- [`cvar()`](https://quicopt.github.io/quicopt-r/reference/cvar.md) :
+
+  The conditional value at risk at level `alpha`
+
+- [`prob()`](https://quicopt.github.io/quicopt-r/reference/prob.md) :
+  The probability that a comparison holds
+
+## Solving
+
+- [`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md)
+  [`solve(`*`<quicopt_model>`*`)`](https://quicopt.github.io/quicopt-r/reference/solve_model.md)
+  : Solve a model with the Quicopt service
+- [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+  : Submit a model for asynchronous solving
+- [`job_status()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+  [`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+  [`job_log()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+  [`job_delete()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+  : Poll a submitted job
+- [`DEFAULT_BASE_URL`](https://quicopt.github.io/quicopt-r/reference/DEFAULT_BASE_URL.md)
+  : The public Quicopt endpoint
+
+## The program and its bytes
+
+- [`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
+  : A complete optimization model as plain data
+- [`CONTINUOUS`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
+  [`INTEGER`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
+  [`BINARY`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
+  [`var_decl()`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
+  : A variable declaration
+- [`index_set()`](https://quicopt.github.io/quicopt-r/reference/index_set.md)
+  : A named index set with concrete elements
+- [`constraint()`](https://quicopt.github.io/quicopt-r/reference/constraint.md)
+  : A constraint row
+- [`zero()`](https://quicopt.github.io/quicopt-r/reference/consets.md)
+  [`nonneg()`](https://quicopt.github.io/quicopt-r/reference/consets.md)
+  [`indicator()`](https://quicopt.github.io/quicopt-r/reference/consets.md)
+  : Constraint sets
+- [`parametric()`](https://quicopt.github.io/quicopt-r/reference/parametric.md)
+  : A random variable drawn from a distribution
+- [`ir_const()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_param()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_var()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_apply()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_reduce()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_source_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_set_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  : quicopt IR — a model as plain data
+- [`wire`](https://quicopt.github.io/quicopt-r/reference/wire.md) :
+  quicopt wire — a program's bytes
+- [`encode()`](https://quicopt.github.io/quicopt-r/reference/encode.md)
+  : Encode a program to the bytes the service reads
+- [`encode_params()`](https://quicopt.github.io/quicopt-r/reference/encode_params.md)
+  : Encode parameter tables alone, for rebinding data
+- [`as_program()`](https://quicopt.github.io/quicopt-r/reference/as_program.md)
+  : Lower a model to a program
+
+# Articles
+
+### Articles
+
+- [Deciding before the data
+  arrives](https://quicopt.github.io/quicopt-r/articles/stochastic.md):
