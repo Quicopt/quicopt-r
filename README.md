@@ -18,7 +18,7 @@ There is no solver on your machine; the service does the solving.
 
 ```r
 # install.packages("quicopt")   # once released
-pak::pak("timbode/quicopt-r")   # from GitHub; pure R, no toolchain needed
+pak::pak("Quicopt/quicopt-r")   # from GitHub; pure R, no toolchain needed
 ```
 
 ## Use

@@ -11,8 +11,8 @@ Author an optimization model — including a model under uncertainty, with rando
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/timbode/quicopt-r}
-  \item Report bugs at \url{https://github.com/timbode/quicopt-r/issues}
+  \item \url{https://github.com/Quicopt/quicopt-r}
+  \item Report bugs at \url{https://github.com/Quicopt/quicopt-r/issues}
 }
 
 }

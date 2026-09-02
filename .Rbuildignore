@@ -7,3 +7,5 @@
 ^proto$
 ^\.github$
 ^vignettes/.*\.orig$
+^_pkgdown\.yml$
+^docs$

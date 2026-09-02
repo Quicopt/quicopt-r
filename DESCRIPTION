@@ -17,7 +17,7 @@ Imports: curl, jsonlite, utils
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Depends: R (>= 4.1)
-URL: https://github.com/timbode/quicopt-r
-BugReports: https://github.com/timbode/quicopt-r/issues
+URL: https://github.com/Quicopt/quicopt-r
+BugReports: https://github.com/Quicopt/quicopt-r/issues
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.0
