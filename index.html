@@ -46,7 +46,7 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="quicopt">quicopt<a class="anchor" aria-label="anchor" href="#quicopt"></a>
 </h1></div>
-<p><a href="https://quicopt.github.io/quicopt-r/"><img src="https://img.shields.io/badge/docs-latest-blue.svg" alt="Docs"></a> <a href="https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml" class="external-link"><img src="https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml/badge.svg?branch=main" alt="check"></a> <a href="https://www.r-project.org" class="external-link"><img src="https://img.shields.io/badge/r-4.1%2B-276DC3.svg" alt="R 4.1+"></a> <a href="https://github.com/Quicopt/quicopt-r/blob/main/LICENSE" class="external-link"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a></p>
+<p><a href="https://quicopt.r-universe.dev/quicopt" class="external-link"><img src="https://quicopt.r-universe.dev/quicopt/badges/version" alt="r-universe"></a> <a href="https://quicopt.r-universe.dev/quicopt" class="external-link"><img src="https://quicopt.r-universe.dev/quicopt/badges/checks" alt="r-universe checks"></a> <a href="https://quicopt.github.io/quicopt-r/"><img src="https://img.shields.io/badge/docs-latest-blue.svg" alt="Docs"></a> <a href="https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml" class="external-link"><img src="https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml/badge.svg?branch=main" alt="check"></a> <a href="https://www.r-project.org" class="external-link"><img src="https://img.shields.io/badge/r-4.1%2B-276DC3.svg" alt="R 4.1+"></a> <a href="https://github.com/Quicopt/quicopt-r/blob/main/LICENSE" class="external-link"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a></p>
 <p>The R client for the <a href="https://quicopt.com" class="external-link">Quicopt</a> optimization service.</p>
 <p>You describe a decision: what you get to choose, what has to hold, and what you want as much (or as little) of as possible. Quicopt finds the best choice there is.</p>
 <p>Part of that decision is often taken before the data is known — demand, prices, yields. Declare that data as random variables, and the model is solved over scenarios drawn from their distributions: minimize an expectation or a conditional value at risk, and require constraints to hold with a given probability. Observed history in a <code>data.frame</code> becomes a stochastic program in one call.</p>
@@ -55,13 +55,16 @@
 <h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("quicopt")   # once released</span></span>
-<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"Quicopt/quicopt-r"</span><span class="op">)</span>   <span class="co"># from GitHub; pure R, no toolchain needed</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"quicopt"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://quicopt.r-universe.dev"</span>,</span>
+<span>                                      <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Or straight from the source repository — the package is pure R, so this needs no compiler either:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"Quicopt/quicopt-r"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="toy-model">Toy Model<a class="anchor" aria-label="anchor" href="#toy-model"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://quicopt.github.io/quicopt-r">quicopt</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -78,7 +81,7 @@
 <h2 id="optimization-under-uncertainty">Optimization under Uncertainty<a class="anchor" aria-label="anchor" href="#optimization-under-uncertainty"></a>
 </h2>
 <p>Order <code>x</code> units at 3 apiece against a demand you will only learn later, pay for the mismatch, and meet demand in at least 90% of scenarios:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span>                     <span class="co"># decide now</span></span>
 <span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span> <span class="co"># learn later</span></span>
@@ -92,7 +95,7 @@
 <span>                                                 <span class="co"># level binds at the sample q90</span></span></code></pre></div>
 <p><code>max(demand - x, 0)</code> is the shortfall — and it is plain R: arithmetic, <code>max</code>, <code>sum</code> and friends build the model’s expressions directly. Note that scenarios are drawn by the service from the model’s own seed (<code>set_scenarios</code>), so <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> plays no role here.</p>
 <p>Have the uncertainty as data instead of a distribution? Every column of a data frame becomes a random variable, jointly, with correlation preserved:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">history</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"demand_price.csv"</span><span class="op">)</span>   <span class="co"># observed rows</span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/set_empirical.html">set_empirical</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">history</span><span class="op">)</span>                 <span class="co"># columns -&gt; sources, nrow -&gt; scenarios</span></span></code></pre></div>

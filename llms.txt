@@ -1,5 +1,8 @@
 # quicopt
 
+[![r-universe](https://quicopt.r-universe.dev/quicopt/badges/version)](https://quicopt.r-universe.dev/quicopt)
+[![r-universe
+checks](https://quicopt.r-universe.dev/quicopt/badges/checks)](https://quicopt.r-universe.dev/quicopt)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://quicopt.github.io/quicopt-r/)
 [![check](https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/Quicopt/quicopt-r/actions/workflows/check.yml)
 [![R
@@ -27,8 +30,16 @@ There is no solver on your machine; the service does the solving.
 
 ``` r
 
-# install.packages("quicopt")   # once released
-pak::pak("Quicopt/quicopt-r")   # from GitHub; pure R, no toolchain needed
+install.packages("quicopt", repos = c("https://quicopt.r-universe.dev",
+                                      "https://cloud.r-project.org"))
+```
+
+Or straight from the source repository — the package is pure R, so this
+needs no compiler either:
+
+``` r
+
+pak::pak("Quicopt/quicopt-r")
 ```
 
 ## Toy Model
