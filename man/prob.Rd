@@ -26,5 +26,10 @@ measured, the outer one is the service level demanded of it.
 
 \code{rel} is a comparison, \code{a <= b} or \code{a >= b}, with at least one side
 containing a random variable. An equality is refused: for a continuous
-quantity its probability is zero. Elementwise over vector comparisons.
+quantity its probability is zero. So are \code{<} and \code{>}, which for a
+continuous quantity mean the same as \code{<=} and \code{>=}. Elementwise over vector
+comparisons.
+
+The same event as a 0/1 expression, scenario by scenario, is
+\code{\link[=holds]{holds()}}: \code{expectation(holds(rel))} is \code{prob(rel)}.
 }

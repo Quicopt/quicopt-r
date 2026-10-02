@@ -7,13 +7,13 @@
 cvar(x, alpha)
 }
 \arguments{
-\item{x}{A model expression.}
+\item{x}{A random model expression (see \code{\link[=is_random]{is_random()}}).}
 
 \item{alpha}{The tail level, a plain number strictly between 0 and 1; it
 cannot depend on a decision.}
 }
 \value{
-An expression of the same length.
+An expression of the same length, no longer random.
 }
 \description{
 The mean of \code{x} over its worst \code{1 - alpha} fraction of scenarios — at

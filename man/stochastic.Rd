@@ -14,16 +14,23 @@ Two rules describe the whole surface:
 \itemize{
 \item A variable declared with \code{\link[=rand_var]{rand_var()}} is a random variable, not a decision
 variable. Every use of it references the same sample.
-\item An expression containing a random variable is itself random, and cannot
-serve as an objective or a constraint until an aggregator reduces it over
-the scenarios: \code{\link[=expectation]{expectation()}} for the mean, \code{\link[=cvar]{cvar()}} for the tail,
-\code{\link[=prob]{prob()}} for a chance constraint.
+\item An expression containing a random variable is itself random (see
+\code{\link[=is_random]{is_random()}}), and cannot serve as an objective or a constraint until an
+aggregator reduces it over the scenarios: \code{\link[=expectation]{expectation()}} for the mean,
+\code{\link[=cvar]{cvar()}} for the tail, \code{\link[=prob]{prob()}} for a chance constraint. \code{\link[=holds]{holds()}} turns
+an event into a 0/1 value inside a scenario, for arithmetic before the
+aggregation.
 }
 
 \code{\link[=set_scenarios]{set_scenarios()}} sets how many scenarios are drawn and from which seed.
 Both belong to the model, so repeated solves see the same sample. The
-drawing happens in the service, from the model's own seed — R's
+drawing happens in the service, from the model's own seed; R's
 \code{set.seed()} plays no role here.
+
+A solution is shaped by the scenarios it was found on, so its objective and
+its chance levels are in-sample figures. \code{\link[=resample]{resample()}} and \code{\link[=evaluate]{evaluate()}}
+check a solution on fresh scenarios, and \code{margin} in \code{\link[=add]{add()}} builds the
+expected shortfall of a chance constraint into the model.
 }
 \examples{
 \dontrun{
@@ -35,6 +42,10 @@ demand <- rand_var(m, "demand", normal(100, 15))
 set_scenarios(m, 512, seed = 42)
 minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
 add(m, prob(demand - x <= 0) >= 0.9)
-solve(m)$solution
+res <- solve(m)
+res$solution
+
+# The same order on scenarios it was not optimized for:
+resample(m, res, seed = 7)$feasible
 }
 }

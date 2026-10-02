@@ -12,7 +12,8 @@ normal(mean, sd)
 \arguments{
 \item{head}{The distribution's name in the service's catalog.}
 
-\item{...}{Its parameters, each a number or a deterministic expression.}
+\item{...}{Its parameters, each a number, a numeric vector, or a non-random
+expression.}
 
 \item{mean, sd}{The mean and standard deviation, as in \code{rnorm()}.}
 }
@@ -21,13 +22,22 @@ A distribution, ready for \code{\link[=rand_var]{rand_var()}} or \code{\link[=se
 }
 \description{
 \code{normal(mean, sd)} follows \code{rnorm()}'s parameterization: the mean and the
-standard deviation. \code{distribution(head, ...)} is the escape hatch for any
-distribution the service supports that has no named constructor here yet.
+standard deviation. \code{distribution(head, ...)} names a distribution by its
+catalog name, for when the service's catalog grows beyond the named
+constructors here; today that catalog holds \code{"normal"} only, and any other
+head is refused when the model is sent. Every other distribution is
+available through \code{\link[=empirical]{empirical()}}: draw a column in R and declare it (see
+the vignette).
 }
 \details{
-A parameter may be a number or a deterministic model expression. An
-expression gives an \emph{endogenous} distribution — one whose parameters depend
-on the decision, such as a demand whose mean rises with the price you set. A
-parameter may never contain a random variable: a distribution's parameters
-are data, not draws.
+A parameter may be a number or a non-random model expression. An
+expression gives an \emph{endogenous} distribution, one whose parameters depend
+on the decision, such as a demand whose mean falls with the price you set.
+A parameter may never contain a random variable: a distribution's
+parameters are data, not draws.
+
+A parameter may also be a vector, and the distribution then declares a
+vector random variable: \code{normal(c(6, 5, 4), 1)} is three independent
+normals with their own means and a shared standard deviation. Every
+parameter has length 1 or the vector's length.
 }

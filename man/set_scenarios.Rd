@@ -25,5 +25,8 @@ column sets the count by its own length.
 }
 \details{
 The scenarios are drawn by the service from this seed; R's \code{set.seed()}
-plays no role. \code{n} and \code{seed} are both at least 1.
+plays no role. \code{n} and \code{seed} are both at least 1. The service caps the
+count: a model over its limit is refused when sent, with the limit named
+in the refusal (the client does not know it in advance, since it is the
+service's to set).
 }

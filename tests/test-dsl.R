@@ -55,8 +55,10 @@ expect_error_like("round is outside the catalog", round(v), "not in the operator
 expect_error_like("range is outside the catalog", range(v), "not in the operator catalog")
 expect_error_like("%% is outside the catalog", v %% 2, "not in the operator catalog")
 expect_error_like("log with a base is refused", log(v, 10), "no base")
-expect_error_like("strict < is refused", v < 3, "<=")
-expect_error_like("!= is refused", v != 3, "big-M")
+expect_error_like("strict < is refused as a constraint", add(m, v < 3), "<=")
+expect_error_like("!= is refused as a constraint", add(m, v != 3), "big-M")
+check("but both build a comparison, for holds()",
+      inherits(v < 3, "quicopt_relation") && inherits(v != 3, "quicopt_relation"))
 
 # == builds a relation and if() on it fails loudly rather than deciding
 rel <- v == 3
@@ -133,3 +135,51 @@ m <- model(); f <- num_var(m, "f", 0, 1); add(m, f >= 0.5)
 check("no objective is a feasibility problem", as_program(m)$objective$kind == "const")
 
 cat("dsl: all green\n")
+
+# ── mean folds the elements ─────────────────────────────────────────────────
+
+m <- model(); xs <- num_var(m, "xs", 0, 10, n = 4)
+e <- mean(xs)
+check("mean(x) is sum(x) / length(x)",
+      length(e) == 1 && e$nodes[[1]]$op == "/" && e$nodes[[1]]$args[[1]]$op == "+" &&
+      length(e$nodes[[1]]$args[[1]]$args) == 4 && e$nodes[[1]]$args[[2]]$value == 4)
+check("mean of one element is the element", mean(xs[2])$nodes[[1]]$name == "xs[2]")
+
+# ── a constraint switched on by a binary ────────────────────────────────────
+
+m <- model()
+x <- num_var(m, "x", -5, 5)
+u <- bin_var(m, "u")
+minimize(m, x)
+add(m, x >= 0, when = u)
+check("DSL reproduces the indicator golden (x >= 0 when u)",
+      identical(encode(m), read_golden("indicator")),
+      sprintf("   got  %s\n   want %s\n", as_hex(encode(m)), as_hex(read_golden("indicator"))))
+us <- bin_var(m, "us", n = 2)
+add(m, c(x, x) <= 3, when = us)
+p <- as_program(m)
+check("a vector switch applies elementwise",
+      p$constraints[[2]]$set$bin$name == "us[1]" && p$constraints[[3]]$set$bin$name == "us[2]")
+expect_error_like("when= needs a binary", add(m, x <= 1, when = x), "binary")
+expect_error_like("when= must match the rows", add(m, c(x, x, x) <= 1, when = us), "3 rows")
+m2 <- model(); u2 <- bin_var(m2, "u")
+expect_error_like("a switch from another model is refused", add(m, x <= 1, when = u2), "different model")
+
+# ── start values ────────────────────────────────────────────────────────────
+
+m <- model()
+x <- num_var(m, "x", 0, 10, n = 2)
+b <- bin_var(m, "b", start = 1)
+check("bin_var takes a start", as_program(m)$vars[[3]]$start == 1)
+set_start(m, c("x[2]" = 7, b = 0))
+p <- as_program(m)
+check("set_start sets the named elements and keeps the rest",
+      p$vars[[1]]$start == 0 && p$vars[[2]]$start == 7 && p$vars[[3]]$start == 0)
+res <- structure(list(status = "optimal", objective = 1, feasible = TRUE,
+                      solution = c("x[1]" = 2.5, "x[2]" = 3.5, b = 1)), class = "quicopt_result")
+set_start(m, res)
+check("set_start takes a result", as_program(m)$vars[[1]]$start == 2.5)
+expect_error_like("set_start refuses unknown names", set_start(m, c(zz = 1)), "'zz'")
+expect_error_like("set_start needs names", set_start(m, c(1, 2)), "named")
+
+cat("dsl (continued): all green\n")
