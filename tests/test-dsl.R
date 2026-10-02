@@ -81,10 +81,15 @@ expect_error_like("partial recycling is refused", c(1, 2) * xs, "length mismatch
 minimize(m, sum(cost * xs))
 add(m, xs <= c(5, 6, 7))            # one row per element
 add(m, sum(xs) >= 4)
+add(m, xs >= 1)                     # a scalar broadcasts: three rows again
+add(m, 1 <= xs)                     # on either side
 p <- as_program(m)
 check("a family lowers to flat scalar declarations",
       length(p$vars) == 3 && p$vars[[2]]$name == "xs[2]")
-check("an elementwise relation lands as n rows", length(p$constraints) == 4)
+check("an elementwise relation lands as n rows, a scalar side broadcasting",
+      length(p$constraints) == 10)
+check("the broadcast rows name each element",
+      p$constraints[[7]]$f$args[[1]]$name == "xs[3]" && p$constraints[[10]]$f$args[[1]]$name == "xs[3]")
 
 # per-element bounds
 m <- model()

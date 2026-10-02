@@ -60,7 +60,7 @@ NULL
   na <- length(a); nb <- length(b)
   if (na == nb) return(list(a, b, na))
   if (na == 1L) return(list(rep(a, nb), b, nb))
-  if (nb == 1L) return(list(a, rep(b, na), nb))
+  if (nb == 1L) return(list(a, rep(b, na), na))
   stop("length mismatch in '", op, "': ", na, " against ", nb,
        " (lengths must be equal, or one of them 1)")
 }
