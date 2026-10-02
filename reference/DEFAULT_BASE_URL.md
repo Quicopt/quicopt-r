@@ -8,3 +8,8 @@
 ``` r
 DEFAULT_BASE_URL
 ```
+
+## Value
+
+Not a function but a constant: a character string of length one, the URL
+of the public service that a request is sent to by default.

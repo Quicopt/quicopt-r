@@ -11,7 +11,7 @@ convention rather than two."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,6 +62,16 @@ convention rather than two.</p>
 <dd><p>The constraint set that holds when <code>bin</code> is active.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>A plain list, with no class attribute, naming the set a constrained
+expression must lie in; it is what <code><a href="constraint.html">constraint()</a></code> takes as <code>set</code>. <code>zero()</code>
+returns <code>list(kind = "zero")</code>, meaning the expression equals 0. <code>nonneg()</code>
+returns <code>list(kind = "nonneg")</code>, meaning the expression is at least 0.
+<code>indicator()</code> returns a list with <code>kind = "indicator"</code> and the fields
+<code>bin</code> and <code>inner</code> as given, meaning <code>inner</code> is imposed only where <code>bin</code>
+is active.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

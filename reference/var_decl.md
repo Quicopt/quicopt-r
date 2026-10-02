@@ -44,3 +44,16 @@ var_decl(
 - start:
 
   The initial point handed to the solver.
+
+## Value
+
+`var_decl()` returns a plain list, with no class attribute, with the
+fields `name`, `axes`, `domain` (the integer domain code), `lower`,
+`upper` and `start` (numeric). It declares one variable of the model,
+and is an entry of the list a
+[`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
+takes as `vars`.
+
+`CONTINUOUS`, `INTEGER` and `BINARY` are not functions but integer
+constants (`1L`, `2L` and `3L`): the codes the service uses for a
+variable's domain, to be passed as `domain`.

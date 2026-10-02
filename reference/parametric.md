@@ -19,3 +19,13 @@ parametric(head, params)
 - params:
 
   A list of parameter nodes.
+
+## Value
+
+A plain list, with no class attribute, with the fields
+`kind = "parametric"`, `head` and `params` as given. It declares one
+random variable by its distribution, and is an entry of the named list a
+[`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
+takes as `sources`; the entry's name is the name
+[`ir_source_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+refers to.

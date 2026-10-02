@@ -78,6 +78,19 @@ program(
   [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
   declarations.
 
+## Value
+
+An object of class `quicopt_program`: a list with one field per
+argument, under the argument's name (`scenarios` and `scenario_seed`
+coerced to numeric). It is the complete model in the form the service
+reads, with nothing left to resolve:
+[`encode()`](https://quicopt.github.io/quicopt-r/reference/encode.md)
+turns it into bytes, and
+[`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md)
+and
+[`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+accept it directly.
+
 ## Details
 
 A model under uncertainty adds three more: the random variables it draws

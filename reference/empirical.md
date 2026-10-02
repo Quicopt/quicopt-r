@@ -15,3 +15,12 @@ empirical(data)
 - data:
 
   A numeric vector, one value per scenario.
+
+## Value
+
+An object of class `quicopt_empirical`: a list with the fields
+`kind = "empirical"` and `data`, the column as a numeric vector. It
+declares one random variable by its observed values, and is an entry of
+the named list a
+[`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
+takes as `sources`.

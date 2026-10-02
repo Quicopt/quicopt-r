@@ -17,3 +17,11 @@ index_set(name, elements)
 - elements:
 
   A list of integers and strings.
+
+## Value
+
+A plain list, with no class attribute, with the fields `name` and
+`elements` as given. It defines one index set of the model, and is an
+entry of the list a
+[`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
+takes as `sets`.

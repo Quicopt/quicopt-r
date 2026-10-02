@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +78,16 @@ name of a parameter table when the bound varies by index.</p></dd>
 <dd><p>The initial point handed to the solver.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p><code>var_decl()</code> returns a plain list, with no class attribute, with the
+fields <code>name</code>, <code>axes</code>, <code>domain</code> (the integer domain code), <code>lower</code>,
+<code>upper</code> and <code>start</code> (numeric). It declares one variable of the model, and
+is an entry of the list a <code><a href="program.html">program()</a></code> takes as <code>vars</code>.</p>
+<p><code>CONTINUOUS</code>, <code>INTEGER</code> and <code>BINARY</code> are not functions but integer
+constants (<code>1L</code>, <code>2L</code> and <code>3L</code>): the codes the service uses for a
+variable's domain, to be passed as <code>domain</code>.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -17,7 +17,7 @@ Entry order does not matter; encoding sorts them canonically."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,6 +115,14 @@ Entry order does not matter; encoding sorts them canonically.</p>
 <dd><p>Named <code><a href="parametric.html">parametric()</a></code> / <code><a href="empirical.html">empirical()</a></code> declarations.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>An object of class <code>quicopt_program</code>: a list with one field per
+argument, under the argument's name (<code>scenarios</code> and <code>scenario_seed</code>
+coerced to numeric). It is the complete model in the form the service
+reads, with nothing left to resolve: <code><a href="encode.html">encode()</a></code> turns it into bytes, and
+<code><a href="solve_model.html">solve_model()</a></code> and <code><a href="submit.html">submit()</a></code> accept it directly.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A model under uncertainty adds three more: the random variables it draws

@@ -15,7 +15,7 @@ service's published contract — these constructors track it, they never fork it
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -104,6 +104,20 @@ service's published contract — these constructors track it, they never fork it
 <dd><p>Keep a term only where <code>cond</code> is non-zero; <code>NULL</code> keeps every term.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>A plain list, with no class attribute, holding one node of a model's
+expression tree. <code>ir_const()</code>, <code>ir_param()</code>, <code>ir_var()</code>, <code>ir_apply()</code>,
+<code>ir_reduce()</code> and <code>ir_source_ref()</code> each return an expression node: its
+<code>kind</code> field (<code>"const"</code>, <code>"param"</code>, <code>"var"</code>, <code>"apply"</code>, <code>"reduce"</code> or
+<code>"source"</code>) says which node it is, and the remaining fields are the
+arguments under their own names (<code>value</code> coerced to numeric). Such a node
+stands wherever an expression is expected: as an entry of another node's
+<code>args</code>, as the objective of a <code><a href="program.html">program()</a></code>, or as the <code>f</code> of a
+<code><a href="constraint.html">constraint()</a></code>. <code>ir_set_ref()</code> returns a list with the fields <code>name</code> and
+<code>args</code>: a reference to an index set rather than an expression, so it
+carries no <code>kind</code>, and it is what <code>ir_reduce()</code> takes as <code>over</code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Nodes are plain lists tagged by a <code>kind</code> field. An index tuple is a plain
