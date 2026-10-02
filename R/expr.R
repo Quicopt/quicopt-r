@@ -73,7 +73,9 @@ Ops.quicopt <- function(e1, e2) {
   if (missing(e2)) {                                       # unary + / -
     nodes <- .nodes_of(e1)
     if (op == "+") return(.qexpr(nodes))
-    if (op == "-") return(.qexpr(lapply(nodes, function(n) ir_apply("-", list(n)))))
+    # The catalog's minus is binary, and the service checks arity exactly, so
+    # -x is spelled 0 - x on the wire, as the sibling clients spell it.
+    if (op == "-") return(.qexpr(lapply(nodes, function(n) ir_apply("-", list(ir_const(0), n)))))
     stop("unary '", op, "' is not part of a model expression")
   }
   if (op %in% c("<=", ">=", "==")) return(.relation(e1, e2, op))
@@ -107,13 +109,13 @@ Summary.quicopt <- function(..., na.rm = FALSE) {
   nodes <- unlist(lapply(list(...), .nodes_of), recursive = FALSE)
   switch(op,
     # sum/prod fold ALL elements of all arguments into one scalar, exactly R's
-    # semantics on numeric vectors; the catalog's + is n-ary, so this is one node.
+    # semantics on numeric vectors. The catalog's + is n-ary, so a sum is one
+    # node; its * is binary, so a product nests left, like max and min.
     "sum" = .qexpr(list(if (length(nodes) == 0L) ir_const(0)
                         else if (length(nodes) == 1L) nodes[[1L]]
                         else ir_apply("+", nodes))),
     "prod" = .qexpr(list(if (length(nodes) == 0L) ir_const(1)
-                         else if (length(nodes) == 1L) nodes[[1L]]
-                         else ir_apply("*", nodes))),
+                         else Reduce(function(a, b) ir_apply("*", list(a, b)), nodes))),
     # max/min also fold everything, again R's own semantics (max(c(1, 5), 3) is
     # 5); the catalog's max is binary, so an n-ary call nests left.
     "max" = ,
@@ -164,9 +166,12 @@ length.quicopt_expr <- function(x) length(x$nodes)
     source = paste0("~", n$name),
     apply = {
       args <- vapply(n$args, .render, "")
-      if (n$op %in% c("+", "-", "*", "/", "^") && length(args) >= 2L)
+      # 0 - x is how the wire spells -x; print it the way it was written.
+      if (n$op == "-" && length(args) == 2L && n$args[[1L]]$kind == "const" &&
+          n$args[[1L]]$value == 0)
+        paste0("-", args[[2L]])
+      else if (n$op %in% c("+", "-", "*", "/", "^") && length(args) >= 2L)
         paste0("(", paste(args, collapse = paste0(" ", n$op, " ")), ")")
-      else if (n$op == "-" && length(args) == 1L) paste0("-", args)
       else paste0(n$op, "(", paste(args, collapse = ", "), ")")
     },
     reduce = paste0(n$op, "_{", n$idx, " in ", n$over$name, "} ", .render(n$body)),

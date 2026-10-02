@@ -37,7 +37,14 @@ w <- num_var(m, "w")
 
 e <- 3 * v            ; check("numeric on the left", e$nodes[[1]]$op == "*")
 e <- v / 2            ; check("division", e$nodes[[1]]$op == "/")
-e <- -v               ; check("unary minus", e$nodes[[1]]$op == "-" && length(e$nodes[[1]]$args) == 1)
+e <- -v               ; check("unary minus is spelled 0 - x (the catalog's - is binary)",
+                              e$nodes[[1]]$op == "-" && length(e$nodes[[1]]$args) == 2 &&
+                              e$nodes[[1]]$args[[1]]$kind == "const" && e$nodes[[1]]$args[[1]]$value == 0)
+check("and prints as -v", identical(capture.output(print(-v)), "-v"))
+e <- prod(v, w, 2)    ; check("n-ary prod nests binary (the catalog's * is binary)",
+                              e$nodes[[1]]$op == "*" && length(e$nodes[[1]]$args) == 2 &&
+                              e$nodes[[1]]$args[[1]]$op == "*")
+e <- prod(v)          ; check("prod of one element is the element", e$nodes[[1]]$kind == "var")
 e <- sqrt(exp(v))     ; check("Math composes", e$nodes[[1]]$op == "sqrt")
 e <- max(v - w, 0)    ; check("max is the catalog head", e$nodes[[1]]$op == "max")
 e <- max(v, w, 0)     ; check("n-ary max nests binary",
