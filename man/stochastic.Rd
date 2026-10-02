@@ -17,8 +17,10 @@ variable. Every use of it references the same sample.
 \item An expression containing a random variable is itself random (see
 \code{\link[=is_random]{is_random()}}), and cannot serve as an objective or a constraint until an
 aggregator reduces it over the scenarios: \code{\link[=expectation]{expectation()}} for the mean,
-\code{\link[=cvar]{cvar()}} for the tail, \code{\link[=prob]{prob()}} for a chance constraint. \code{\link[=holds]{holds()}} turns
-an event into a 0/1 value inside a scenario, for arithmetic before the
+\code{\link[=cvar]{cvar()}} for the tail, \code{\link[=prob]{prob()}} for a chance constraint, \code{\link[=variance]{variance()}} and
+\code{\link[=std_dev]{std_dev()}} for the spread, \code{\link[=scenario_max]{scenario_max()}}, \code{\link[=scenario_min]{scenario_min()}} and
+\code{\link[=scenario_quantile]{scenario_quantile()}} for single scenario values. \code{\link[=holds]{holds()}} turns an
+event into a 0/1 value inside a scenario, for arithmetic before the
 aggregation.
 }
 

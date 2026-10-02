@@ -41,10 +41,11 @@ NULL
 # The operator catalog this client emits — mirrors the service's published
 # catalog; the server's decoded catalog is the final arbiter. A head outside it
 # is a coverage gap to register service-side, never papered over here. The
-# stochastic aggregator heads (smean, scvar, sfreq_*) are emitted only by
-# expectation()/cvar()/prob(), and the 0/1 heads (step, indicator) only by
-# holds(), which is the deliberate naming split: the public surface speaks
-# probability and events, the wire speaks the catalog.
+# stochastic aggregator heads (smean, scvar, sfreq_*, svar, svar_sample, sstd,
+# smin, smax, squantile) are emitted only by the aggregator functions of
+# stochastic.R, and the 0/1 heads (step, indicator) only by holds(), which is
+# the deliberate naming split: the public surface speaks probability and
+# events, the wire speaks the catalog.
 .CATALOG_MATH <- c("sqrt", "exp", "log", "sin", "cos", "abs")
 
 # A quicopt expression: a vector of IR nodes. Variable handles and random

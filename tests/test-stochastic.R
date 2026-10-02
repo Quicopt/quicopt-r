@@ -106,6 +106,48 @@ expect_error_like("prob of a strict comparison is refused", prob(d < x), "<=")
 expect_error_like("cvar's level must sit strictly inside (0,1)", cvar(d, 1), "strictly between")
 expect_error_like("cvar's level is a plain number", cvar(d, x), "plain number")
 
+# ── the spread and the single-scenario statistics ───────────────────────────
+
+head_of <- function(e) e$nodes[[1]]$op
+check("variance emits svar", head_of(variance(d - x)) == "svar" &&
+      length(variance(d - x)$nodes[[1]]$args) == 1L)
+check("variance(sample = TRUE) emits svar_sample",
+      head_of(variance(d - x, sample = TRUE)) == "svar_sample")
+check("std_dev emits sstd", head_of(std_dev(d - x)) == "sstd")
+e <- std_dev(d - x, sample = TRUE)
+check("std_dev(sample = TRUE) is the root of the sample variance",
+      head_of(e) == "sqrt" && e$nodes[[1]]$args[[1]]$op == "svar_sample")
+check("scenario_max emits smax", head_of(scenario_max(d - x)) == "smax")
+check("scenario_min emits smin", head_of(scenario_min(d - x)) == "smin")
+e <- scenario_quantile(d - x, 0.95)
+check("scenario_quantile emits squantile with its level",
+      head_of(e) == "squantile" && e$nodes[[1]]$args[[2]]$value == 0.95)
+check("the level 1 is allowed", head_of(scenario_quantile(d, 1)) == "squantile")
+
+# each of them closes the expression: the typing rules must see a number
+closed <- list(variance(d - x), variance(d - x, sample = TRUE), std_dev(d - x),
+               std_dev(d - x, sample = TRUE), scenario_max(d - x), scenario_min(d - x),
+               scenario_quantile(d - x, 0.5))
+check("every new aggregator closes its expression", !any(vapply(closed, is_random, NA)))
+ms <- model(); xs <- num_var(ms, "x", 0, 200); ds <- rand_var(ms, "demand", normal(100, 15))
+set_scenarios(ms, 16, seed = 1)
+cost <- 3 * xs + 10 * max(ds - xs, 0)
+minimize(ms, expectation(cost) + 2 * std_dev(cost))
+add(ms, scenario_quantile(cost, 0.95) <= 500)
+add(ms, scenario_max(cost) - scenario_min(cost) <= 400)
+add(ms, variance(cost, sample = TRUE) <= 1e4)
+check("they serve as objective and constraints, and the model encodes",
+      length(as_program(ms)$constraints) == 3L && is.raw(encode(ms)))
+check("a vector expression aggregates per element",
+      length(variance(c(d - x, d + x))$nodes) == 2L)
+
+expect_error_like("variance of a non-random expression is refused", variance(3 * x), "no random variable")
+expect_error_like("scenario_max of a non-random expression is refused", scenario_max(x), "no random variable")
+expect_error_like("a quantile level of 0 is refused", scenario_quantile(d, 0), "above 0")
+expect_error_like("a quantile level above 1 is refused", scenario_quantile(d, 1.5), "at most 1")
+expect_error_like("a quantile level is a plain number", scenario_quantile(d, x), "plain number")
+expect_error_like("sample is a flag", variance(d, sample = NA), "TRUE or FALSE")
+
 # ── the data.frame idiom ────────────────────────────────────────────────────
 
 history <- data.frame(demand = c(90, 100, 110, 120), price = c(9, 10, 11, 14))

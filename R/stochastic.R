@@ -15,8 +15,10 @@
 #' * An expression containing a random variable is itself random (see
 #'   [is_random()]), and cannot serve as an objective or a constraint until an
 #'   aggregator reduces it over the scenarios: [expectation()] for the mean,
-#'   [cvar()] for the tail, [prob()] for a chance constraint. [holds()] turns
-#'   an event into a 0/1 value inside a scenario, for arithmetic before the
+#'   [cvar()] for the tail, [prob()] for a chance constraint, [variance()] and
+#'   [std_dev()] for the spread, [scenario_max()], [scenario_min()] and
+#'   [scenario_quantile()] for single scenario values. [holds()] turns an
+#'   event into a 0/1 value inside a scenario, for arithmetic before the
 #'   aggregation.
 #'
 #' [set_scenarios()] sets how many scenarios are drawn and from which seed.
@@ -188,8 +190,12 @@ bernoulli <- function(prob) {
 }
 
 # The catalog heads that close an expression over the scenarios. Below one of
-# them the expression is random; the head itself is a number.
-.AGGREGATORS <- c("smean", "scvar", "sfreq_leq", "sfreq_geq")
+# them the expression is random; the head itself is a number. Every aggregator
+# this client emits must be listed here: a head missing from the list would
+# leave a closed expression looking random, and the typing checks would refuse
+# a valid model.
+.AGGREGATORS <- c("smean", "scvar", "sfreq_leq", "sfreq_geq",
+                  "svar", "svar_sample", "sstd", "smin", "smax", "squantile")
 
 # Whether a node still varies across scenarios: it references a random
 # variable that no aggregator above it has closed.
@@ -237,8 +243,8 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 .need_closed <- function(n, what) {
   if (.is_random_node(n))
     stop("the ", what, " '", .render(n), "' is still random: it contains a ",
-         "random variable that no expectation(), cvar() or prob() has closed ",
-         "over the scenarios")
+         "random variable that no aggregator (expectation(), cvar(), prob(), ...) ",
+         "has closed over the scenarios")
   n
 }
 
@@ -461,6 +467,117 @@ cvar <- function(x, alpha) {
     stop("the tail level must lie strictly between 0 and 1, got ", alpha)
   .qexpr(lapply(.need_random(x, "cvar()"),
                 function(n) ir_apply("scvar", list(n, ir_const(alpha)))))
+}
+
+#' The variance and the standard deviation over the scenarios
+#'
+#' How much a quantity varies from scenario to scenario, as opposed to what it
+#' averages to. `expectation(cost) + k * std_dev(cost)` is the mean-risk
+#' objective that penalizes spread, and `add(m, variance(ret) <= v)` caps it.
+#'
+#' By default the scenarios are taken as the whole distribution, each with
+#' weight `1/n`, so `variance(x)` is `expectation(x^2) - expectation(x)^2`.
+#' That is not what `var()` and `sd()` compute: they divide by `n - 1`, to
+#' estimate the variance of a population from a sample of it. `sample = TRUE`
+#' gives that estimate. The two differ by the factor `n / (n - 1)`, which
+#' matters to a reported number and not to which decision minimizes it.
+#'
+#' Unlike [cvar()], these measure deviation in both directions: a scenario
+#' that turns out far better than average raises them as much as one that
+#' turns out far worse.
+#'
+#' @param x A random model expression (see [is_random()]).
+#' @param sample `FALSE` (the default) divides by the number of scenarios;
+#'   `TRUE` divides by one less, as `var()` and `sd()` do.
+#' @return An expression of the same length, no longer random.
+#' @examples
+#' m <- model()
+#' x <- num_var(m, "x", 0, 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' cost <- 3 * x + 10 * max(demand - x, 0)
+#' minimize(m, expectation(cost) + 2 * std_dev(cost))
+#' @export
+variance <- function(x, sample = FALSE) {
+  head <- if (.flag(sample, "sample")) "svar_sample" else "svar"
+  .qexpr(lapply(.need_random(x, "variance()"), function(n) ir_apply(head, list(n))))
+}
+
+#' @rdname variance
+#' @export
+std_dev <- function(x, sample = FALSE) {
+  node <- if (.flag(sample, "sample"))
+    function(n) ir_apply("sqrt", list(ir_apply("svar_sample", list(n))))
+  else
+    function(n) ir_apply("sstd", list(n))
+  .qexpr(lapply(.need_random(x, "std_dev()"), node))
+}
+
+# A TRUE/FALSE argument, checked where a wrong value can still be named.
+.flag <- function(value, name) {
+  if (!is.logical(value) || length(value) != 1L || is.na(value))
+    stop("'", name, "' is TRUE or FALSE")
+  value
+}
+
+#' The largest, the smallest and a quantile over the scenarios
+#'
+#' The value a quantity takes in one particular scenario: the one where it is
+#' largest, the one where it is smallest, or the one that a given share of the
+#' scenarios does not exceed.
+#'
+#' * `scenario_max(x)` is the largest value of `x` over the scenarios.
+#'   Minimizing it is the robust reading of a cost: do as well as possible in
+#'   the worst scenario of the sample.
+#' * `scenario_min(x)` is the smallest. Maximizing it is the same for a
+#'   profit.
+#' * `scenario_quantile(x, prob)` is the smallest scenario value that at least
+#'   the share `prob` of the scenarios is at or below; with `n` scenarios, the
+#'   `ceiling(prob * n)`-th smallest, which is what `quantile(x, prob, type =
+#'   1)` returns for a sample. For a cost this is the value at risk at level
+#'   `prob`; [cvar()] at the same level is the mean of what lies beyond it.
+#'   `scenario_quantile(x, 1)` is `scenario_max(x)`.
+#'
+#' These are not `max()`, `min()` and `quantile()`. `max(a, b)` is the larger
+#' of two expressions *within* each scenario and stays random;
+#' `scenario_max(x)` compares one expression *across* the scenarios and is a
+#' number.
+#'
+#' An extreme is set by a single scenario, so it moves more from one sample to
+#' the next than a mean or a tail mean does, and a larger sample will usually
+#' hold a more extreme scenario. Check a solution built on one with
+#' [resample()].
+#'
+#' @param x A random model expression (see [is_random()]).
+#' @param prob The level, a plain number above 0 and at most 1; it cannot
+#'   depend on a decision.
+#' @return An expression of the same length, no longer random.
+#' @examples
+#' m <- model()
+#' x <- num_var(m, "x", 0, 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' cost <- 3 * x + 10 * max(demand - x, 0)
+#' minimize(m, scenario_max(cost))                   # the worst scenario
+#' add(m, scenario_quantile(cost, 0.95) <= 500)      # 95% of scenarios cost at most 500
+#' @export
+scenario_max <- function(x)
+  .qexpr(lapply(.need_random(x, "scenario_max()"), function(n) ir_apply("smax", list(n))))
+
+#' @rdname scenario_max
+#' @export
+scenario_min <- function(x)
+  .qexpr(lapply(.need_random(x, "scenario_min()"), function(n) ir_apply("smin", list(n))))
+
+#' @rdname scenario_max
+#' @export
+scenario_quantile <- function(x, prob) {
+  if (!is.numeric(prob) || length(prob) != 1L || is.na(prob))
+    stop("the quantile's level must be a plain number")
+  if (prob <= 0 || prob > 1)
+    stop("the quantile's level must lie above 0 and at most 1, got ", prob)
+  .qexpr(lapply(.need_random(x, "scenario_quantile()"),
+                function(n) ir_apply("squantile", list(n, ir_const(prob)))))
 }
 
 #' The probability that a comparison holds

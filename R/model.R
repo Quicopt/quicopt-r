@@ -243,7 +243,8 @@ set_start <- function(m, values) {
 #' The objective is a single expression; fold a vector with `sum()` first. A
 #' model given no objective is a feasibility problem. In a model under
 #' uncertainty the objective cannot be random: close it over the scenarios
-#' with [expectation()] or [cvar()] first.
+#' first, with [expectation()], [cvar()] or another aggregator (the
+#' [stochastic] topic lists them).
 #'
 #' @param m A [model()].
 #' @param e The objective expression.
@@ -266,8 +267,9 @@ maximize <- function(m, e) .set_objective(m, e, "max", "maximize")
 #' expression it does make).
 #'
 #' A constraint cannot be random. In a model under uncertainty, close the
-#' expression with [expectation()], [cvar()] or [prob()] first; a chance
-#' constraint is `add(m, prob(demand - x <= 0) >= 0.9)`.
+#' expression with an aggregator first ([expectation()], [cvar()], [prob()]
+#' and the others the [stochastic] topic lists); a chance constraint is
+#' `add(m, prob(demand - x <= 0) >= 0.9)`.
 #'
 #' @section A safety margin on a chance constraint:
 #' The probability in `prob(...) >= 0.9` is estimated from the scenarios, and
@@ -330,7 +332,7 @@ add <- function(m, rel, margin = 0, when = NULL) {
     if (.is_random_node(lhs) || .is_random_node(rhs))
       stop("the constraint '", .render(lhs), " ", rel$op, " ", .render(rhs),
            "' is still random: it contains a random variable that no ",
-           "expectation(), cvar() or prob() has closed over the scenarios")
+           "aggregator (expectation(), cvar(), prob(), ...) has closed over the scenarios")
     row <- if (margin > 0) .chance_row(lhs, rhs, rel$op, margin) else {
       # One sign convention: a <= b lands as b - a in Nonneg, a >= b as a - b,
       # and a == b as a - b in Zero. Against a literal 0 the difference is the

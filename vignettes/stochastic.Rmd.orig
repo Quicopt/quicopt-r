@@ -190,6 +190,26 @@ The tail-averse order is larger than the expectation-optimal one, as it should
 be: the worst scenarios are the high-demand ones, and stocking more is what
 protects against them.
 
+The limit of that idea is the single worst scenario. `scenario_max(cost)` is
+the largest cost over the scenarios, and minimizing it orders up to the
+largest demand the sample holds:
+
+```{r}
+m3w <- model()
+x3w <- num_var(m3w, "x", 0, 200)
+d3w <- rand_var(m3w, "demand", normal(100, 15))
+set_scenarios(m3w, 512, seed = 42)
+minimize(m3w, scenario_max(3 * x3w + 10 * max(d3w - x3w, 0)))
+solve(m3w)$solution[["x"]]
+```
+
+An extreme is set by one scenario, so it depends on the sample far more than
+a tail mean does: a larger sample will hold a larger demand, and the order
+grows with it. The other statistics over the scenarios sit between the two.
+`scenario_quantile(cost, 0.95)` is the cost that 95% of scenarios stay at or
+below, `variance()` and `std_dev()` measure the spread in both directions, and
+each can be an objective term or the left side of a constraint.
+
 ## Events as numbers
 
 `prob()` measures an event. `holds()` is the event itself, as a 0/1 value in

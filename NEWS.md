@@ -1,6 +1,8 @@
 # quicopt 0.3.0
 
 * `uniform(min, max)`, `exponential(rate)` and `bernoulli(prob)` join `normal()` as named distributions, parameterized like `runif()`, `rexp()` and `rbinom(n, 1, prob)`. As with `normal()`, a parameter may be an expression, so a rate or a failure probability can depend on a decision. A numeric parameter outside its range is refused where the distribution is built.
+* `variance(x)` and `std_dev(x)` measure how much a quantity varies over the scenarios. By default the scenarios are the whole distribution, so `variance(x)` is `expectation(x^2) - expectation(x)^2`; `sample = TRUE` divides by `n - 1` as `var()` and `sd()` do.
+* `scenario_max(x)` and `scenario_min(x)` are the largest and the smallest value over the scenarios, and `scenario_quantile(x, prob)` is the value that the share `prob` of scenarios stays at or below (`quantile(type = 1)` of the scenario values). Minimizing `scenario_max(cost)` optimizes the worst scenario of the sample.
 
 # quicopt 0.2.0
 

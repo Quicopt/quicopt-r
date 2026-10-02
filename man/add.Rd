@@ -30,8 +30,9 @@ expression it does make).
 }
 \details{
 A constraint cannot be random. In a model under uncertainty, close the
-expression with \code{\link[=expectation]{expectation()}}, \code{\link[=cvar]{cvar()}} or \code{\link[=prob]{prob()}} first; a chance
-constraint is \code{add(m, prob(demand - x <= 0) >= 0.9)}.
+expression with an aggregator first (\code{\link[=expectation]{expectation()}}, \code{\link[=cvar]{cvar()}}, \code{\link[=prob]{prob()}}
+and the others the \link{stochastic} topic lists); a chance constraint is
+\code{add(m, prob(demand - x <= 0) >= 0.9)}.
 }
 \section{A safety margin on a chance constraint}{
 
