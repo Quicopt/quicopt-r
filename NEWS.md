@@ -29,6 +29,9 @@ Fixed:
 * `-x` and `prod()` over three or more elements encoded shapes the service
   rejected.
 * `x <= 3` with a vector `x` added one row instead of one per element.
+* The `solution` of a result is ordered as the variables were declared. It
+  used to keep the order the answer arrived in, which is the service's own,
+  so `which(res$solution == 1)` did not count items the way the model did.
 
 # quicopt 0.1.1
 
