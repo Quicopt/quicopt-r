@@ -17,6 +17,18 @@
 #' client's bare names: `Reduce` is a base R function, and this package extends
 #' base names, it does not mask them.
 #'
+#' @return A plain list, with no class attribute, holding one node of a model's
+#'   expression tree. `ir_const()`, `ir_param()`, `ir_var()`, `ir_apply()`,
+#'   `ir_reduce()` and `ir_source_ref()` each return an expression node: its
+#'   `kind` field (`"const"`, `"param"`, `"var"`, `"apply"`, `"reduce"` or
+#'   `"source"`) says which node it is, and the remaining fields are the
+#'   arguments under their own names (`value` coerced to numeric). Such a node
+#'   stands wherever an expression is expected: as an entry of another node's
+#'   `args`, as the objective of a [program()], or as the `f` of a
+#'   [constraint()]. `ir_set_ref()` returns a list with the fields `name` and
+#'   `args`: a reference to an index set rather than an expression, so it
+#'   carries no `kind`, and it is what [ir_reduce()] takes as `over`.
+#'
 #' @name ir
 NULL
 
@@ -69,6 +81,14 @@ ir_set_ref <- function(name, args = list()) list(name = name, args = args)
 #' so `x + 2*y <= 5` is written as `5 - (x + 2*y)` in [nonneg()] — one sign
 #' convention rather than two.
 #'
+#' @return A plain list, with no class attribute, naming the set a constrained
+#'   expression must lie in; it is what [constraint()] takes as `set`. `zero()`
+#'   returns `list(kind = "zero")`, meaning the expression equals 0. `nonneg()`
+#'   returns `list(kind = "nonneg")`, meaning the expression is at least 0.
+#'   `indicator()` returns a list with `kind = "indicator"` and the fields
+#'   `bin` and `inner` as given, meaning `inner` is imposed only where `bin`
+#'   is active.
+#'
 #' @name consets
 NULL
 
@@ -96,6 +116,11 @@ indicator <- function(bin, inner) list(kind = "indicator", bin = bin, inner = in
 #'
 #' @param head The distribution's catalog name.
 #' @param params A list of parameter nodes.
+#' @return A plain list, with no class attribute, with the fields
+#'   `kind = "parametric"`, `head` and `params` as given. It declares one
+#'   random variable by its distribution, and is an entry of the named list a
+#'   [program()] takes as `sources`; the entry's name is the name
+#'   [ir_source_ref()] refers to.
 #' @export
 parametric <- function(head, params) list(kind = "parametric", head = head, params = params)
 
@@ -106,6 +131,10 @@ parametric <- function(head, params) list(kind = "parametric", head = head, para
 #' which is how a joint distribution is expressed.
 #'
 #' @param data A numeric vector, one value per scenario.
+#' @return An object of class `quicopt_empirical`: a list with the fields
+#'   `kind = "empirical"` and `data`, the column as a numeric vector. It
+#'   declares one random variable by its observed values, and is an entry of
+#'   the named list a [program()] takes as `sources`.
 #' @export
 empirical <- function(data) {
   data <- as.numeric(data)
@@ -137,6 +166,14 @@ BINARY <- 3L
 #' @param lower,upper A number (`-Inf`/`Inf` for an open direction), or the
 #'   name of a parameter table when the bound varies by index.
 #' @param start The initial point handed to the solver.
+#' @return `var_decl()` returns a plain list, with no class attribute, with the
+#'   fields `name`, `axes`, `domain` (the integer domain code), `lower`,
+#'   `upper` and `start` (numeric). It declares one variable of the model, and
+#'   is an entry of the list a [program()] takes as `vars`.
+#'
+#'   `CONTINUOUS`, `INTEGER` and `BINARY` are not functions but integer
+#'   constants (`1L`, `2L` and `3L`): the codes the service uses for a
+#'   variable's domain, to be passed as `domain`.
 #' @export
 var_decl <- function(name, axes = character(), domain = CONTINUOUS,
                      lower = -Inf, upper = Inf, start = 0)
@@ -147,6 +184,9 @@ var_decl <- function(name, axes = character(), domain = CONTINUOUS,
 #'
 #' @param name The set's name.
 #' @param elements A list of integers and strings.
+#' @return A plain list, with no class attribute, with the fields `name` and
+#'   `elements` as given. It defines one index set of the model, and is an
+#'   entry of the list a [program()] takes as `sets`.
 #' @export
 index_set <- function(name, elements) list(name = name, elements = elements)
 
@@ -156,6 +196,10 @@ index_set <- function(name, elements) list(name = name, elements = elements)
 #' @param set The constraint set `f` must lie in ([zero()], [nonneg()], [indicator()]).
 #' @param over Quantifier bindings, a list of `list(idx, set_ref)` pairs
 #'   (`list()` for a single scalar row).
+#' @return A plain list, with no class attribute, with the fields `f`, `set`
+#'   and `over` as given. It states that `f` lies in `set`, once for every
+#'   binding of the indices in `over`, and is an entry of the list a
+#'   [program()] takes as `constraints`.
 #' @export
 constraint <- function(f, set, over = list()) list(f = f, set = set, over = over)
 
@@ -186,6 +230,11 @@ constraint <- function(f, set, over = list()) list(f = f, set = set, over = over
 #' @param scenarios How many scenarios are drawn (at least 1).
 #' @param scenario_seed The seed they are drawn from (at least 1).
 #' @param sources Named [parametric()] / [empirical()] declarations.
+#' @return An object of class `quicopt_program`: a list with one field per
+#'   argument, under the argument's name (`scenarios` and `scenario_seed`
+#'   coerced to numeric). It is the complete model in the form the service
+#'   reads, with nothing left to resolve: [encode()] turns it into bytes, and
+#'   [solve_model()] and [submit()] accept it directly.
 #' @export
 program <- function(sets = list(), indexed_sets = list(), params = list(),
                     vars = list(), objective = NULL, sense = "min",

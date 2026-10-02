@@ -18,6 +18,15 @@ indicator(bin, inner)
 
 \item{inner}{The constraint set that holds when \code{bin} is active.}
 }
+\value{
+A plain list, with no class attribute, naming the set a constrained
+expression must lie in; it is what \code{\link[=constraint]{constraint()}} takes as \code{set}. \code{zero()}
+returns \code{list(kind = "zero")}, meaning the expression equals 0. \code{nonneg()}
+returns \code{list(kind = "nonneg")}, meaning the expression is at least 0.
+\code{indicator()} returns a list with \code{kind = "indicator"} and the fields
+\code{bin} and \code{inner} as given, meaning \code{inner} is imposed only where \code{bin}
+is active.
+}
 \description{
 A constraint is a set membership: the expression \code{f} must land in the set,
 so \code{x + 2*y <= 5} is written as \code{5 - (x + 2*y)} in \code{\link[=nonneg]{nonneg()}} — one sign

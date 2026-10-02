@@ -11,6 +11,11 @@ index_set(name, elements)
 
 \item{elements}{A list of integers and strings.}
 }
+\value{
+A plain list, with no class attribute, with the fields \code{name} and
+\code{elements} as given. It defines one index set of the model, and is an
+entry of the list a \code{\link[=program]{program()}} takes as \code{sets}.
+}
 \description{
 A named index set with concrete elements
 }

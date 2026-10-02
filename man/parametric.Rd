@@ -11,6 +11,13 @@ parametric(head, params)
 
 \item{params}{A list of parameter nodes.}
 }
+\value{
+A plain list, with no class attribute, with the fields
+\code{kind = "parametric"}, \code{head} and \code{params} as given. It declares one
+random variable by its distribution, and is an entry of the named list a
+\code{\link[=program]{program()}} takes as \code{sources}; the entry's name is the name
+\code{\link[=ir_source_ref]{ir_source_ref()}} refers to.
+}
 \description{
 \code{head} is a catalog operator (\code{"normal"}, ...) and each parameter is an
 ordinary deterministic expression node — so a distribution whose mean is

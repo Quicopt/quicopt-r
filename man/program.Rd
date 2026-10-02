@@ -41,6 +41,13 @@ program(
 
 \item{sources}{Named \code{\link[=parametric]{parametric()}} / \code{\link[=empirical]{empirical()}} declarations.}
 }
+\value{
+An object of class \code{quicopt_program}: a list with one field per
+argument, under the argument's name (\code{scenarios} and \code{scenario_seed}
+coerced to numeric). It is the complete model in the form the service
+reads, with nothing left to resolve: \code{\link[=encode]{encode()}} turns it into bytes, and
+\code{\link[=solve_model]{solve_model()}} and \code{\link[=submit]{submit()}} accept it directly.
+}
 \description{
 The tables keyed by index tuples are lists of entries rather than named
 lists, because an index tuple is not a string: \code{params} maps a table name to

@@ -4,6 +4,9 @@
 #' The public Quicopt endpoint
 #'
 #' [solve()] targets it unless another `base_url` is given.
+#'
+#' @return Not a function but a constant: a character string of length one,
+#'   the URL of the public service that a request is sent to by default.
 #' @export
 DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 

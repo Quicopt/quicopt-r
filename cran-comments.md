@@ -1,5 +1,22 @@
 # CRAN comments
 
+## Resubmission
+
+This is a resubmission. The previous review asked for `\value` in the `.Rd`
+files that lacked it, and all nine now have one:
+
+* `ir.Rd`, `consets.Rd`, `parametric.Rd`, `empirical.Rd`, `var_decl.Rd`,
+  `index_set.Rd`, `constraint.Rd`, `program.Rd` — each states the class of the
+  returned object (a plain list, or a list of class `quicopt_empirical` /
+  `quicopt_program`), its fields, and where that object is used.
+* `DEFAULT_BASE_URL.Rd` — documents a constant rather than a function; its
+  `\value` says so and gives its type and meaning. The same holds for the three
+  integer constants documented in `var_decl.Rd`.
+
+Every `.Rd` file with a `\usage` section now has a `\value` section. Nothing
+other than documentation has changed. The version is raised from 0.1.0 to
+0.1.1 to keep the two submissions apart.
+
 ## Submission
 
 New submission. `quicopt` is a client for a hosted optimization service: it

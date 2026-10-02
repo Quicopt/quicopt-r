@@ -34,6 +34,16 @@ name of a parameter table when the bound varies by index.}
 
 \item{start}{The initial point handed to the solver.}
 }
+\value{
+\code{var_decl()} returns a plain list, with no class attribute, with the
+fields \code{name}, \code{axes}, \code{domain} (the integer domain code), \code{lower},
+\code{upper} and \code{start} (numeric). It declares one variable of the model, and
+is an entry of the list a \code{\link[=program]{program()}} takes as \code{vars}.
+
+\code{CONTINUOUS}, \code{INTEGER} and \code{BINARY} are not functions but integer
+constants (\code{1L}, \code{2L} and \code{3L}): the codes the service uses for a
+variable's domain, to be passed as \code{domain}.
+}
 \description{
 A variable declaration
 }

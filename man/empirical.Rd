@@ -9,6 +9,12 @@ empirical(data)
 \arguments{
 \item{data}{A numeric vector, one value per scenario.}
 }
+\value{
+An object of class \code{quicopt_empirical}: a list with the fields
+\code{kind = "empirical"} and \code{data}, the column as a numeric vector. It
+declares one random variable by its observed values, and is an entry of
+the named list a \code{\link[=program]{program()}} takes as \code{sources}.
+}
 \description{
 Exactly \code{scenarios} values, one per scenario. Several empirical columns are
 read at the same scenario index, so columns observed jointly stay correlated —

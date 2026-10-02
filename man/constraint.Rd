@@ -14,6 +14,12 @@ constraint(f, set, over = list())
 \item{over}{Quantifier bindings, a list of \code{list(idx, set_ref)} pairs
 (\code{list()} for a single scalar row).}
 }
+\value{
+A plain list, with no class attribute, with the fields \code{f}, \code{set}
+and \code{over} as given. It states that \code{f} lies in \code{set}, once for every
+binding of the indices in \code{over}, and is an entry of the list a
+\code{\link[=program]{program()}} takes as \code{constraints}.
+}
 \description{
 A constraint row
 }

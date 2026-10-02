@@ -6,6 +6,10 @@
 \usage{
 DEFAULT_BASE_URL
 }
+\value{
+Not a function but a constant: a character string of length one,
+the URL of the public service that a request is sent to by default.
+}
 \description{
 \code{\link[=solve]{solve()}} targets it unless another \code{base_url} is given.
 }

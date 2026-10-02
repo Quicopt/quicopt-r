@@ -44,6 +44,19 @@ ir_set_ref(name, args = list())
 
 \item{cond}{Keep a term only where \code{cond} is non-zero; \code{NULL} keeps every term.}
 }
+\value{
+A plain list, with no class attribute, holding one node of a model's
+expression tree. \code{ir_const()}, \code{ir_param()}, \code{ir_var()}, \code{ir_apply()},
+\code{ir_reduce()} and \code{ir_source_ref()} each return an expression node: its
+\code{kind} field (\code{"const"}, \code{"param"}, \code{"var"}, \code{"apply"}, \code{"reduce"} or
+\code{"source"}) says which node it is, and the remaining fields are the
+arguments under their own names (\code{value} coerced to numeric). Such a node
+stands wherever an expression is expected: as an entry of another node's
+\code{args}, as the objective of a \code{\link[=program]{program()}}, or as the \code{f} of a
+\code{\link[=constraint]{constraint()}}. \code{ir_set_ref()} returns a list with the fields \code{name} and
+\code{args}: a reference to an index set rather than an expression, so it
+carries no \code{kind}, and it is what \code{\link[=ir_reduce]{ir_reduce()}} takes as \code{over}.
+}
 \description{
 The form a model takes between the interface that wrote it and the service
 that solves it: variables, expressions and constraints, with no trace of how
