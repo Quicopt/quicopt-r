@@ -249,28 +249,48 @@ res5$solution[["stock"]]
 No distribution was fitted and none had to be: the 200 rows *are* the
 scenarios. That is the shortest path from data to decision this package has.
 
-## Any distribution, through your own sample
+## Other distributions
 
-The service draws from the distributions it knows, and today that is the
-normal. Every other distribution is one line away, because a column you draw
-in R is a random variable too. A demand that is lognormal rather than normal:
+The service draws from four distributions, each parameterized like R's own
+sampler: `normal(mean, sd)`, `uniform(min, max)`, `exponential(rate)` and
+`bernoulli(prob)`. The newsvendor against a demand that is exponential with
+mean 100 rather than normal:
+
+```{r}
+m6 <- model()
+x6 <- num_var(m6, "x", 0, 600)
+d6 <- rand_var(m6, "demand", exponential(1 / 100))
+set_scenarios(m6, 512, seed = 42)
+minimize(m6, 3 * x6 + 10 * expectation(max(d6 - x6, 0)))
+solve(m6)$solution[["x"]]
+```
+
+With no chance constraint the best order for the true distribution is its
+70% quantile (ordering one unit more costs 3 and saves 10 whenever demand
+exceeds the order), which is `qexp(0.7, 1 / 100)`, about 120.4. The answer on
+512 scenarios lands near it.
+
+As with `normal()`, a parameter may be an expression, which is how a decision
+changes the odds it is judged by: `bernoulli(0.2 - 0.015 * spend)` is a
+breakdown that money spent on maintenance makes less likely.
+
+Every other distribution is one line away, because a column you draw in R is
+a random variable too. A demand that is lognormal:
 
 ```{r}
 set.seed(2)
-m6 <- model()
-x6 <- num_var(m6, "x", 0, 400)
-d6 <- rand_var(m6, "demand", empirical(rlnorm(512, log(100), 0.3)))
-minimize(m6, 3 * x6 + 10 * expectation(max(d6 - x6, 0)))
-solve(m6)$solution[["x"]]
+m7 <- model()
+x7 <- num_var(m7, "x", 0, 400)
+d7 <- rand_var(m7, "demand", empirical(rlnorm(512, log(100), 0.3)))
+minimize(m7, 3 * x7 + 10 * expectation(max(d7 - x7, 0)))
+solve(m7)$solution[["x"]]
 ```
 
 Three things change with a sampled column. R's seed governs it, not the
 model's. It is data, so `resample()` has nothing to redraw for it: an
 out-of-sample check of such a model is a second column, drawn with another
 seed. And its parameters are fixed when it is drawn, so a distribution whose
-mean depends on a decision (a demand that falls with the price you set) needs
-a named distribution with an expression as parameter: `normal(100 - 5 *
-price, 10)`.
+parameters depend on a decision needs one of the four named ones.
 
 ## Starting from a previous solution
 
@@ -280,11 +300,11 @@ to the next search as its starting point, so it begins where the last one
 ended rather than from scratch:
 
 ```{r}
-m7 <- newsvendor()
-res7 <- solve(m7)                       # 512 scenarios
-set_scenarios(m7, 1000, seed = 42)      # the same model on a larger sample
-set_start(m7, res7)                     # start from where the first solve ended
-solve(m7)$solution[["x"]]
+m8 <- newsvendor()
+res8 <- solve(m8)                       # 512 scenarios
+set_scenarios(m8, 1000, seed = 42)      # the same model on a larger sample
+set_start(m8, res8)                     # start from where the first solve ended
+solve(m8)$solution[["x"]]
 ```
 
 ## What comes back

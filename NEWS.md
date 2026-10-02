@@ -1,3 +1,7 @@
+# quicopt 0.3.0
+
+* `uniform(min, max)`, `exponential(rate)` and `bernoulli(prob)` join `normal()` as named distributions, parameterized like `runif()`, `rexp()` and `rbinom(n, 1, prob)`. As with `normal()`, a parameter may be an expression, so a rate or a failure probability can depend on a decision. A numeric parameter outside its range is refused where the distribution is built.
+
 # quicopt 0.2.0
 
 The release for checking a solution, not only finding one.

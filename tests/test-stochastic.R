@@ -47,6 +47,46 @@ p4 <- as_program(m4)
 check("an endogenous mean lowers to an expression parameter",
       p4$sources$dem$params[[1]]$kind == "apply")
 
+# ── the named distributions: heads, parameter order, ranges ─────────────────
+
+m5 <- model(); spend <- num_var(m5, "spend", 0, 10)
+lead  <- rand_var(m5, "lead", uniform(2, 5))
+gap   <- rand_var(m5, "gap", exponential(1 / 30))
+fails <- rand_var(m5, "fails", bernoulli(0.02))
+wear  <- rand_var(m5, "wear", bernoulli(0.2 - 0.015 * spend))
+set_scenarios(m5, 16, seed = 1)
+minimize(m5, spend + expectation(lead + gap + 100 * fails + 100 * wear))
+p5 <- as_program(m5)
+values_of <- function(src) vapply(src$params, function(n) n$value, 0)
+check("uniform emits its head with the limits in runif()'s order",
+      p5$sources$lead$head == "uniform" && identical(values_of(p5$sources$lead), c(2, 5)))
+check("exponential emits its head with the rate",
+      p5$sources$gap$head == "exponential" && identical(values_of(p5$sources$gap), 1 / 30))
+check("bernoulli emits its head with the probability",
+      p5$sources$fails$head == "bernoulli" && identical(values_of(p5$sources$fails), 0.02))
+check("a probability may depend on a decision",
+      p5$sources$wear$params[[1]]$kind == "apply")
+check("a model with every named distribution encodes", is.raw(encode(m5)) && length(encode(m5)) > 0)
+
+# vector parameters declare a vector random variable, one source per element
+m6 <- model(); u3 <- rand_var(m6, "u", uniform(c(0, 1, 2), 10))
+set_scenarios(m6, 4); minimize(m6, sum(expectation(u3)))
+p6 <- as_program(m6)
+check("a vector uniform lowers to one source per element",
+      all(c("u[1]", "u[2]", "u[3]") %in% names(p6$sources)) &&
+      identical(values_of(p6$sources[["u[2]"]]), c(1, 10)))
+
+expect_error_like("a lower limit above the upper one is refused", uniform(3, 2), "lower limit")
+expect_error_like("...elementwise too", uniform(c(0, 6), 5), "lower limit")
+expect_error_like("a rate of zero is refused", exponential(0), "positive")
+expect_error_like("a negative rate is refused", exponential(c(1, -1)), "positive")
+expect_error_like("a probability above 1 is refused", bernoulli(1.2), "between 0 and 1")
+expect_error_like("a negative probability is refused", bernoulli(-0.1), "between 0 and 1")
+check("the limits of the range are allowed",
+      inherits(bernoulli(c(0, 1)), "quicopt_distribution") &&
+      inherits(uniform(2, 2), "quicopt_distribution"))
+expect_error_like("a random variable cannot be a rate", exponential(r), "data, not draws")
+
 # ── aggregator heads (the public/wire naming split) ─────────────────────────
 
 e <- expectation(d);        check("expectation emits smean", e$nodes[[1]]$op == "smean")
