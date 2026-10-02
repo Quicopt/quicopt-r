@@ -18,31 +18,95 @@ library(quicopt)
 ```
 
 Part of most decisions is data you will only learn afterwards: how much is
-demanded, at what price, with what yield. This vignette orders stock against a
-demand that is not known yet — first from an assumed distribution, then
-straight from observed history.
+demanded, at what price, with what yield. A model under uncertainty is
+ordinary R arithmetic over decision variables and random quantities. The
+service solves it over a sample of scenarios, and this vignette shows the
+whole loop: build, solve, and then check the answer on scenarios the search
+never saw, which is the step that separates a solution from a lucky one.
+
+## A session, end to end
+
+Six items with known profits and uncertain weights, to be packed into a
+capacity of 12. Each weight is roughly normal around its mean, and the packing
+must fit in at least 90% of scenarios:
+
+```{r}
+profit      <- c(9, 7, 6, 5, 4, 3)                 # of each item
+mean_weight <- c(6, 5, 4, 3, 3, 2)
+capacity    <- 12
+
+m <- model()
+packed <- bin_var(m, "packed", n = 6)                      # packed[item]: 1 if the item goes in
+weight <- rand_var(m, "weight", normal(mean_weight, 1))    # the uncertain weights, one per item
+set_scenarios(m, 500, seed = 1)
+
+load   <- sum(packed * weight)                             # one value per scenario
+p_fits <- prob(load <= capacity)                           # P(load <= capacity), one number
+add(m, p_fits >= 0.9)
+maximize(m, sum(profit * packed))
+
+res <- solve(m)
+which(res$solution == 1)                                   # the items packed
+res$objective                                              # their profit
+```
+
+Everything here is plain R. `packed * weight` is elementwise, `sum()` folds
+the six products into one load, and that load is a different number in every
+scenario: it is *random*, in the package's vocabulary. `prob()` closes it over
+the scenarios into one number, the share of scenarios in which the load fits,
+and that number is what the constraint is placed on.
+
+The packing was chosen on 500 scenarios and is judged on the same 500. A
+solution found that way leans on the sample that shaped it, so the first
+thing to do with it is to look at it on fresh scenarios. `evaluate()` gives
+the value of any closed expression at a solution, on the model's own
+scenarios or, with a seed, on new ones:
+
+```{r}
+evaluate(m, res, p_fits)                 # in sample: at least 0.9, by construction
+evaluate(m, res, p_fits, seed = 2)       # out of sample: fresh draws, same packing
+```
+
+`resample()` does the same for the model as a whole, holding the solution
+fixed and reporting whether every constraint still holds:
+
+```{r}
+chk <- resample(m, res, seed = 2)
+chk$feasible
+chk$solver_data$max_violation            # if not: by how much, in units of probability
+```
+
+With six binary decisions the feasible packings are few and far apart, so
+the chosen one has slack: it fits more often than the constraint demanded, in
+sample and out. A continuous decision has no such luck. It lands exactly on
+the level, and then misses it on fresh draws about half the time, which the
+newsvendor below shows, together with the remedy.
 
 ## The newsvendor
 
 Order `x` units at 3 apiece. Demand turns out to be roughly normal around 100.
 Every unit short costs 10 in expectation, and the service level requires demand
-to be met in at least 90% of scenarios:
+to be met in at least 90% of scenarios. The model is wrapped in a function
+here, because the next section builds it twice:
 
 ```{r}
-m <- model()
-x <- num_var(m, "x", 0, 200)                     # decide now
-demand <- rand_var(m, "demand", normal(100, 15)) # learn later
-set_scenarios(m, 512, seed = 42)
-
-minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
-add(m, prob(demand - x <= 0) >= 0.9)
+newsvendor <- function(margin = 0) {
+  m <- model()
+  x <- num_var(m, "x", 0, 200)                     # decide now
+  demand <- rand_var(m, "demand", normal(100, 15)) # learn later
+  set_scenarios(m, 512, seed = 42)
+  minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
+  add(m, prob(demand - x <= 0) >= 0.9, margin = margin)
+  m
+}
+m <- newsvendor()
 m
 ```
 
-Everything here is ordinary R. `max(demand - x, 0)` is the shortfall — the
-kinked expression that prices recourse — and `expectation()` closes it over the
-scenarios; `prob()` measures the event `demand - x <= 0` across scenarios, and
-the outer `>= 0.9` is the service level demanded of that probability.
+`max(demand - x, 0)` is the shortfall, the kinked expression that prices
+recourse, and `expectation()` closes it over the scenarios. `prob()` measures
+the event `demand - x <= 0` across scenarios, and the outer `>= 0.9` is the
+service level demanded of that probability.
 
 Two things are worth saying out loud. A variable declared with `rand_var()` is
 a random variable, not a decision variable: the solver is handed its value
@@ -56,24 +120,46 @@ res$solution[["x"]]
 ```
 
 The answer is the 90% service level binding: `x` lands on the sample's 90th
-percentile of demand (the population value is `qnorm(0.9, 100, 15)` ≈ 119.2).
-Without the chance constraint the order quantity would fall to the critical
-fractile `(10 - 3) / 10 = 0.7`, about `qnorm(0.7, 100, 15)` ≈ 107.9 — the
-constraint is what pushes the order up:
+percentile of demand (the population value is `qnorm(0.9, 100, 15)`, about
+119.2). Without the chance constraint the order quantity would fall to the
+critical fractile `(10 - 3) / 10 = 0.7`, about `qnorm(0.7, 100, 15)` or 107.9.
+The constraint is what pushes the order up.
+
+## A safety margin
+
+The probability in `prob(demand - x <= 0) >= 0.9` is an estimate from 512
+scenarios, and an estimate has a standard error: `sqrt(0.9 * 0.1 / 512)`,
+about 0.013. The search stops as soon as the estimate reaches 0.9, so on
+fresh scenarios the order quantity above misses the level about half the
+time:
 
 ```{r}
-m2 <- model()
-x2 <- num_var(m2, "x", 0, 200)
-d2 <- rand_var(m2, "demand", normal(100, 15))
-set_scenarios(m2, 512, seed = 42)
-minimize(m2, 3 * x2 + 10 * expectation(max(d2 - x2, 0)))
-solve(m2)$solution[["x"]]
+evaluate(m, res, prob(m$demand - m$x <= 0), seed = 7)
+```
+
+`margin = k` asks for the level tightened by `k` standard errors instead, here
+`0.9 + 2 * 0.013`, so that the true probability clears 0.9 with about 98%
+confidence. The price is a larger order:
+
+```{r}
+m2 <- newsvendor(margin = 2)
+res2 <- solve(m2)
+c(as_stated = res$solution[["x"]], with_margin = res2$solution[["x"]])
+```
+
+The check is the same as before, against the level as originally stated. The
+margin solution is evaluated on the plain model, since the question is
+whether it meets 0.9, not 0.927:
+
+```{r}
+evaluate(m, res2, prob(m$demand - m$x <= 0), seed = 7)
+resample(m, res2, seed = 7)$feasible
 ```
 
 ## Optimizing the tail instead of the average
 
 An expectation optimizes the average case and says nothing about the bad ones.
-`cvar(cost, 0.95)` is the mean of the worst 5% of scenarios — minimizing it
+`cvar(cost, 0.95)` is the mean of the worst 5% of scenarios, and minimizing it
 asks for a decision that holds up when things go badly:
 
 ```{r}
@@ -89,12 +175,34 @@ The tail-averse order is larger than the expectation-optimal one, as it should
 be: the worst scenarios are the high-demand ones, and stocking more is what
 protects against them.
 
+## Events as numbers
+
+`prob()` measures an event. `holds()` is the event itself, as a 0/1 value in
+each scenario, for arithmetic *before* the aggregation. Suppose a stockout
+costs 200 whenever it happens, on top of the 10 per unit short: a lost
+customer, an emergency order. That is `200 * holds(demand > x)` in each
+scenario, and its expected value joins the objective:
+
+```{r}
+m4 <- model()
+x4 <- num_var(m4, "x", 0, 200)
+d4 <- rand_var(m4, "demand", normal(100, 15))
+set_scenarios(m4, 512, seed = 42)
+minimize(m4, 3 * x4 + 10 * expectation(max(d4 - x4, 0)) + 200 * expectation(holds(d4 > x4)))
+solve(m4)$solution[["x"]]
+```
+
+The fixed cost does what the chance constraint did, but by price rather than
+by decree: the order rises until a stockout is rare enough to be worth its
+cost. `expectation(holds(rel))` and `prob(rel)` are the same number; the
+difference is what `holds()` lets you multiply it by first.
+
 ## From observed history
 
 Usually the uncertainty is not an assumed distribution but rows you have
 already observed. `set_empirical()` turns a data frame into the model's
 uncertainty in one call: every column becomes a random variable named after
-it, the number of rows becomes the scenario count — and because all columns
+it, the number of rows becomes the scenario count, and because all columns
 are read at the same scenario index, the correlation in your data survives
 into the model.
 
@@ -114,27 +222,68 @@ what a stochastic program should see. Sell `min(demand, stock)` at the
 scenario's price, pay 3 per unit stocked:
 
 ```{r}
-m4 <- model()
-stock <- num_var(m4, "stock", 0, 200)
-set_empirical(m4, history)
-maximize(m4, expectation(m4$price * min(m4$demand, stock)) - 3 * stock)
+m5 <- model()
+stock <- num_var(m5, "stock", 0, 200)
+set_empirical(m5, history)
+maximize(m5, expectation(m5$price * min(m5$demand, stock)) - 3 * stock)
 
-res4 <- solve(m4)
-res4$solution[["stock"]]
+res5 <- solve(m5)
+res5$solution[["stock"]]
 ```
 
 No distribution was fitted and none had to be: the 200 rows *are* the
 scenarios. That is the shortest path from data to decision this package has.
 
-## What comes back
+## Any distribution, through your own sample
 
-`solve()` returns the parsed answer — `status`, `objective`, a named
-`solution` vector — and the service's own ready-to-print summary:
+The service draws from the distributions it knows, and today that is the
+normal. Every other distribution is one line away, because a column you draw
+in R is a random variable too. A demand that is lognormal rather than normal:
 
 ```{r}
-res4$status
-res4$objective
+set.seed(2)
+m6 <- model()
+x6 <- num_var(m6, "x", 0, 400)
+d6 <- rand_var(m6, "demand", empirical(rlnorm(512, log(100), 0.3)))
+minimize(m6, 3 * x6 + 10 * expectation(max(d6 - x6, 0)))
+solve(m6)$solution[["x"]]
 ```
 
-For a long-running model, `submit()` queues the same request and returns a
-handle immediately; `job_result()` collects the answer when it is ready.
+Three things change with a sampled column. R's seed governs it, not the
+model's. It is data, so `resample()` has nothing to redraw for it: an
+out-of-sample check of such a model is a second column, drawn with another
+seed. And its parameters are fixed when it is drawn, so a distribution whose
+mean depends on a decision (a demand that falls with the price you set) needs
+a named distribution with an expression as parameter: `normal(100 - 5 *
+price, 10)`.
+
+## Starting from a previous solution
+
+A model is often solved more than once: a constraint tightened, a cost
+updated, a scenario count raised. `set_start()` hands the previous solution
+to the next search as its starting point, so it begins where the last one
+ended rather than from scratch:
+
+```{r}
+m7 <- newsvendor()
+res7 <- solve(m7)                       # 512 scenarios
+set_scenarios(m7, 2000, seed = 42)      # the same model on a larger sample
+set_start(m7, res7)                     # start from where the first solve ended
+solve(m7)$solution[["x"]]
+```
+
+## What comes back
+
+`solve()` returns the parsed answer: `status`, `objective`, a named `solution`
+vector, and the service's own ready-to-print summary:
+
+```{r}
+res5$status
+res5$objective
+```
+
+The objective of a model under uncertainty is an in-sample figure, measured on
+the scenarios the solution was found on. `resample()` is how to read it on
+others. For a long-running model, `submit()` queues the same request and
+returns a handle immediately; `job_result()` collects the answer when it is
+ready.

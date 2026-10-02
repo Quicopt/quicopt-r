@@ -1,21 +1,15 @@
 # CRAN comments
 
-## Resubmission
+## Version 0.2.0
 
-This is a resubmission. The previous review asked for `\value` in the `.Rd`
-files that lacked it, and all nine now have one:
-
-* `ir.Rd`, `consets.Rd`, `parametric.Rd`, `empirical.Rd`, `var_decl.Rd`,
-  `index_set.Rd`, `constraint.Rd`, `program.Rd` — each states the class of the
-  returned object (a plain list, or a list of class `quicopt_empirical` /
-  `quicopt_program`), its fields, and where that object is used.
-* `DEFAULT_BASE_URL.Rd` — documents a constant rather than a function; its
-  `\value` says so and gives its type and meaning. The same holds for the three
-  integer constants documented in `var_decl.Rd`.
-
-Every `.Rd` file with a `\usage` section now has a `\value` section. Nothing
-other than documentation has changed. The version is raised from 0.1.0 to
-0.1.1 to keep the two submissions apart.
+A feature release. The package gains the means to check a solution on
+scenarios it was not optimized for (`resample()`, `evaluate()`), a safety
+margin on chance constraints, comparisons as 0/1 expressions (`holds()`),
+switched constraints, warm starts and vector random variables, and fixes three
+defects: `-x` and `prod()` over three or more elements encoded shapes the
+service refused, and a vector compared with a scalar added one row instead
+of one per element. `NEWS.md` lists everything. The arrangements below for
+examples, the vignette and the tests are unchanged.
 
 ## Submission
 
