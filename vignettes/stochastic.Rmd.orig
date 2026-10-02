@@ -129,15 +129,29 @@ The constraint is what pushes the order up.
 
 The probability in `prob(demand - x <= 0) >= 0.9` is an estimate from 512
 scenarios, and an estimate has a standard error: `sqrt(0.9 * 0.1 / 512)`,
-about 0.013. The search stops as soon as the estimate reaches 0.9, so on
-fresh scenarios the order quantity above misses the level about half the
-time:
+about 0.013. The search stops as soon as the estimate reaches 0.9, so the
+true probability is as likely to lie below 0.9 as above it. A check on fresh
+scenarios says which. The check is an estimate too, so it gets a larger sample
+than the search had:
 
 ```{r}
-evaluate(m, res, prob(m$demand - m$x <= 0), seed = 7)
+p_met <- prob(m$demand - m$x <= 0)
+evaluate(m, res, p_met)                                # in sample: on the level
+evaluate(m, res, p_met, seed = 7, scenarios = 1000)    # out of sample
 ```
 
-`margin = k` asks for the level tightened by `k` standard errors instead, here
+This model is simple enough that the truth is known as well. Demand is normal,
+so the probability of meeting it with an order of `x` is `pnorm(x, 100, 15)`:
+
+```{r}
+pnorm(res$solution[["x"]], 100, 15)
+```
+
+The order quantity falls short of the level it was optimized to meet. Nothing
+went wrong in the search: it met the constraint it was given, on the sample it
+was given.
+
+`margin = k` asks for the level tightened by `k` standard errors, here
 `0.9 + 2 * 0.013`, so that the true probability clears 0.9 with about 98%
 confidence. The price is a larger order:
 
@@ -152,8 +166,9 @@ margin solution is evaluated on the plain model, since the question is
 whether it meets 0.9, not 0.927:
 
 ```{r}
-evaluate(m, res2, prob(m$demand - m$x <= 0), seed = 7)
-resample(m, res2, seed = 7)$feasible
+evaluate(m, res2, p_met, seed = 7, scenarios = 1000)
+resample(m, res2, seed = 7, scenarios = 1000)$feasible
+pnorm(res2$solution[["x"]], 100, 15)
 ```
 
 ## Optimizing the tail instead of the average
