@@ -267,7 +267,7 @@ ended rather than from scratch:
 ```{r}
 m7 <- newsvendor()
 res7 <- solve(m7)                       # 512 scenarios
-set_scenarios(m7, 2000, seed = 42)      # the same model on a larger sample
+set_scenarios(m7, 1000, seed = 42)      # the same model on a larger sample
 set_start(m7, res7)                     # start from where the first solve ended
 solve(m7)$solution[["x"]]
 ```
