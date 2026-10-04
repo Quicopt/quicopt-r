@@ -79,9 +79,13 @@ solve(a, b, ...)
 ## Value
 
 The service's answer as a `quicopt_result`: a list with `status`,
-`objective`, `feasible`, `solution` (a named numeric vector),
-`model_class` (the class the service read the model as, e.g. `"milp"`),
-and the ready-to-print `display`. Printing the result prints `display`.
+`objective`, `feasible`, `solution` (a named numeric vector, in the
+order the variables were declared), `model_class` (the class the service
+read the model as, e.g. `"milp"`), `structures` (for a model with
+permutations: per name, the integer vectors `item_at` and `slot_of`, see
+[`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md);
+otherwise `NULL`), and the ready-to-print `display`. Printing the result
+prints `display`.
 
 ## Details
 

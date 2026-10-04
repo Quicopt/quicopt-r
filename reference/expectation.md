@@ -15,11 +15,12 @@ expectation(x)
 
 - x:
 
-  A model expression.
+  A random model expression (see
+  [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)).
 
 ## Value
 
-An expression of the same length.
+An expression of the same length, no longer random.
 
 ## Details
 

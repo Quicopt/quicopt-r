@@ -1,9 +1,9 @@
 # Encode a program to the bytes the service reads
 
 Two equal programs always encode to equal bytes, whichever order their
-tables happened to be built in. A model that declares no uncertainty
-encodes to exactly the bytes it would have before the stochastic layer
-existed, so declaring none costs an ordinary model nothing.
+tables happened to be built in. A model that declares no uncertainty and
+no permutation encodes to exactly the bytes it would have before those
+layers existed, so declaring none costs an ordinary model nothing.
 
 ## Usage
 

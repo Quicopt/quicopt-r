@@ -25,7 +25,7 @@ set_distribution(m, v, dist)
   [`distribution()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
   or an
   [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
-  column.
+  column, of the handle's length.
 
 ## Value
 

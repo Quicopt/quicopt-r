@@ -13,7 +13,7 @@ drawn from them."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,14 +49,22 @@ drawn from them.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Two rules describe the whole surface:</p><ul><li><p>A variable declared with <code><a href="rand_var.html">rand_var()</a></code> is a random variable, not a decision
 variable. Every use of it references the same sample.</p></li>
-<li><p>An expression containing a random variable is itself random, and cannot
-serve as an objective or a constraint until an aggregator reduces it over
-the scenarios: <code><a href="expectation.html">expectation()</a></code> for the mean, <code><a href="cvar.html">cvar()</a></code> for the tail,
-<code><a href="prob.html">prob()</a></code> for a chance constraint.</p></li>
+<li><p>An expression containing a random variable is itself random (see
+<code><a href="is_random.html">is_random()</a></code>), and cannot serve as an objective or a constraint until an
+aggregator reduces it over the scenarios: <code><a href="expectation.html">expectation()</a></code> for the mean,
+<code><a href="cvar.html">cvar()</a></code> for the tail, <code><a href="prob.html">prob()</a></code> for a chance constraint, <code><a href="variance.html">variance()</a></code> and
+<code><a href="variance.html">std_dev()</a></code> for the spread, <code><a href="scenario_max.html">scenario_max()</a></code>, <code><a href="scenario_max.html">scenario_min()</a></code> and
+<code><a href="scenario_max.html">scenario_quantile()</a></code> for single scenario values. <code><a href="holds.html">holds()</a></code> turns an
+event into a 0/1 value inside a scenario, for arithmetic before the
+aggregation.</p></li>
 </ul><p><code><a href="set_scenarios.html">set_scenarios()</a></code> sets how many scenarios are drawn and from which seed.
 Both belong to the model, so repeated solves see the same sample. The
-drawing happens in the service, from the model's own seed — R's
+drawing happens in the service, from the model's own seed; R's
 <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> plays no role here.</p>
+<p>A solution is shaped by the scenarios it was found on, so its objective and
+its chance levels are in-sample figures. <code><a href="resample.html">resample()</a></code> and <code><a href="evaluate.html">evaluate()</a></code>
+check a solution on fresh scenarios, and <code>margin</code> in <code><a href="add.html">add()</a></code> builds the
+expected shortfall of a chance constraint into the model.</p>
     </div>
 
     <div class="section level2">
@@ -70,7 +78,11 @@ drawing happens in the service, from the model's own seed — R's
 <span class="r-in"><span><span class="fu"><a href="set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">x</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">x</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="prob.html">prob</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">x</span> <span class="op">&lt;=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">0.9</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span></span></span>
+<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">solution</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># The same order on scenarios it was not optimized for:</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">7</span><span class="op">)</span><span class="op">$</span><span class="va">feasible</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

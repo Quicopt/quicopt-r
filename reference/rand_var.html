@@ -11,7 +11,7 @@ Two independent random variables are two declarations under two names."></head><
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,9 +43,9 @@ Two independent random variables are two declarations under two names.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span>, n <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">add_rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">add_rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span>, n <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -65,16 +65,27 @@ Two independent random variables are two declarations under two names.</p>
 <code><a href="empirical.html">empirical()</a></code> column holding one observed value per scenario. May be left
 <code>NULL</code> and supplied later with <code><a href="set_distribution.html">set_distribution()</a></code>.</p></dd>
 
+
+<dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
+<dd><p>How many elements the random variable has; left <code>NULL</code>, as many as
+the distribution's parameters say (1 for an empirical column).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The random variable's handle (an expression of length 1).</p>
+    <p>The random variable's handle (an expression of length <code>n</code>).</p>
 <p><code>add_rand_var</code> returns the model, invisibly.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>A random variable takes no bounds and no domain — its distribution already
+    <p>A random variable takes no bounds and no domain; its distribution already
 says what values it takes.</p>
+<p>A distribution with vector parameters declares a vector random variable,
+<code>weight[1]</code>, ..., <code>weight[n]</code>, one independent draw per element:
+<code>rand_var(m, "weight", normal(c(6, 5, 4), 1))</code>. With <code>n</code> given and scalar
+parameters, the elements are <code>n</code> independent copies of one distribution.
+Elements of a vector random variable are independent of each other;
+correlated uncertainty is declared from data with <code><a href="set_empirical.html">set_empirical()</a></code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -15,7 +15,7 @@ service's published contract — these constructors track it, they never fork it
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,6 +61,10 @@ service's published contract — these constructors track it, they never fork it
 <span></span>
 <span><span class="fu">ir_source_ref</span><span class="op">(</span><span class="va">name</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">ir_struct_ref</span><span class="op">(</span><span class="va">name</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">ir_table_ref</span><span class="op">(</span><span class="va">param</span>, <span class="va">index</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">ir_set_ref</span><span class="op">(</span><span class="va">name</span>, args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -103,20 +107,30 @@ service's published contract — these constructors track it, they never fork it
 <dt id="arg-cond">cond<a class="anchor" aria-label="anchor" href="#arg-cond"></a></dt>
 <dd><p>Keep a term only where <code>cond</code> is non-zero; <code>NULL</code> keeps every term.</p></dd>
 
+
+<dt id="arg-param">param<a class="anchor" aria-label="anchor" href="#arg-param"></a></dt>
+<dd><p>The name of the parameter table read.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A plain list, with no class attribute, holding one node of a model's
 expression tree. <code>ir_const()</code>, <code>ir_param()</code>, <code>ir_var()</code>, <code>ir_apply()</code>,
-<code>ir_reduce()</code> and <code>ir_source_ref()</code> each return an expression node: its
-<code>kind</code> field (<code>"const"</code>, <code>"param"</code>, <code>"var"</code>, <code>"apply"</code>, <code>"reduce"</code> or
-<code>"source"</code>) says which node it is, and the remaining fields are the
+<code>ir_reduce()</code>, <code>ir_source_ref()</code>, <code>ir_struct_ref()</code> and <code>ir_table_ref()</code>
+each return an expression node: its <code>kind</code> field (<code>"const"</code>, <code>"param"</code>,
+<code>"var"</code>, <code>"apply"</code>, <code>"reduce"</code>, <code>"source"</code>, <code>"structure"</code> or <code>"table"</code>)
+says which node it is, and the remaining fields are the
 arguments under their own names (<code>value</code> coerced to numeric). Such a node
 stands wherever an expression is expected: as an entry of another node's
 <code>args</code>, as the objective of a <code><a href="program.html">program()</a></code>, or as the <code>f</code> of a
 <code><a href="constraint.html">constraint()</a></code>. <code>ir_set_ref()</code> returns a list with the fields <code>name</code> and
 <code>args</code>: a reference to an index set rather than an expression, so it
 carries no <code>kind</code>, and it is what <code>ir_reduce()</code> takes as <code>over</code>.</p>
+<p><code>ir_struct_ref()</code> refers to a declared permutation by name, and is legal
+only as the second argument of the catalog operators <code>item_at</code> and
+<code>slot_of</code> (what <code><a href="item_at.html">item_at()</a></code> and <code><a href="item_at.html">slot_of()</a></code> build). <code>ir_table_ref()</code> reads
+the parameter table <code>param</code> at one or two positions given as expression
+nodes (what indexing a <code><a href="lookup_table.html">lookup_table()</a></code> builds).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

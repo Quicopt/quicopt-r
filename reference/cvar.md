@@ -15,7 +15,8 @@ cvar(x, alpha)
 
 - x:
 
-  A model expression.
+  A random model expression (see
+  [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)).
 
 - alpha:
 
@@ -24,4 +25,4 @@ cvar(x, alpha)
 
 ## Value
 
-An expression of the same length.
+An expression of the same length, no longer random.

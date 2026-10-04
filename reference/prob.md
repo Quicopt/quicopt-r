@@ -29,4 +29,10 @@ event being measured, the outer one is the service level demanded of it.
 
 `rel` is a comparison, `a <= b` or `a >= b`, with at least one side
 containing a random variable. An equality is refused: for a continuous
-quantity its probability is zero. Elementwise over vector comparisons.
+quantity its probability is zero. So are `<` and `>`, which for a
+continuous quantity mean the same as `<=` and `>=`. Elementwise over
+vector comparisons.
+
+The same event as a 0/1 expression, scenario by scenario, is
+[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md):
+`expectation(holds(rel))` is `prob(rel)`.

@@ -85,6 +85,15 @@ that scenarios are drawn by the service from the model’s own seed
 (`set_scenarios`), so [`set.seed()`](https://rdrr.io/r/base/Random.html)
 plays no role here.
 
+The solution was found on those scenarios, so check it on others before
+trusting it:
+
+``` r
+
+resample(m, res, seed = 7)$feasible      # does the 90% level still hold on fresh draws?
+add(m, prob(demand - x <= 0) >= 0.9, margin = 2)   # if not: the level plus 2 standard errors
+```
+
 Have the uncertainty as data instead of a distribution? Every column of
 a data frame becomes a random variable, jointly, with correlation
 preserved:

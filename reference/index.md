@@ -9,6 +9,8 @@
   [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
   [`add_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
   : Declare decision variables
+- [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md)
+  : Start the search from a known solution
 - [`minimize()`](https://quicopt.github.io/quicopt-r/reference/minimize.md)
   [`maximize()`](https://quicopt.github.io/quicopt-r/reference/minimize.md)
   : State what the model optimizes
@@ -16,6 +18,8 @@
   constraints to a model
 - [`expressions`](https://quicopt.github.io/quicopt-r/reference/expressions.md)
   : quicopt expressions — model arithmetic in plain R
+- [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) :
+  A comparison as a 0/1 expression
 
 ## Uncertainty
 
@@ -37,6 +41,9 @@
 
 - [`distribution()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
   [`normal()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
+  [`uniform()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
+  [`exponential()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
+  [`bernoulli()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
   : Distributions for random variables
 
 - [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
@@ -52,7 +59,33 @@
 - [`prob()`](https://quicopt.github.io/quicopt-r/reference/prob.md) :
   The probability that a comparison holds
 
-## Solving
+- [`variance()`](https://quicopt.github.io/quicopt-r/reference/variance.md)
+  [`std_dev()`](https://quicopt.github.io/quicopt-r/reference/variance.md)
+  : The variance and the standard deviation over the scenarios
+
+- [`scenario_max()`](https://quicopt.github.io/quicopt-r/reference/scenario_max.md)
+  [`scenario_min()`](https://quicopt.github.io/quicopt-r/reference/scenario_max.md)
+  [`scenario_quantile()`](https://quicopt.github.io/quicopt-r/reference/scenario_max.md)
+  : The largest, the smallest and a quantile over the scenarios
+
+- [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)
+  : Does an expression vary across scenarios?
+
+## Sequencing and assignment
+
+- [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
+  [`add_perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
+  : Sequencing and assignment: a permutation as a decision variable
+- [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+  [`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+  : Read a permutation: the item in a slot, the slot of an item
+- [`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)
+  : Require one item before another
+- [`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
+  [`` `[`( ``*`<quicopt_table>`*`)`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
+  : A table of numbers read at positions the solver decides
+
+## Solving, and checking a solution
 
 - [`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md)
   [`solve(`*`<quicopt_model>`*`)`](https://quicopt.github.io/quicopt-r/reference/solve_model.md)
@@ -64,6 +97,10 @@
   [`job_log()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
   [`job_delete()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
   : Poll a submitted job
+- [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  : The value of an expression at a solution
+- [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  : Check a solution on scenarios it was not optimized for
 - [`DEFAULT_BASE_URL`](https://quicopt.github.io/quicopt-r/reference/DEFAULT_BASE_URL.md)
   : The public Quicopt endpoint
 
@@ -86,12 +123,16 @@
   : Constraint sets
 - [`parametric()`](https://quicopt.github.io/quicopt-r/reference/parametric.md)
   : A random variable drawn from a distribution
+- [`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
+  : A permutation declaration
 - [`ir_const()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_param()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_var()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_apply()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_reduce()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_source_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_struct_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  [`ir_table_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_set_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   : quicopt IR — a model as plain data
 - [`wire`](https://quicopt.github.io/quicopt-r/reference/wire.md) :

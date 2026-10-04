@@ -35,4 +35,6 @@ The model, invisibly.
 
 The scenarios are drawn by the service from this seed; R's
 [`set.seed()`](https://rdrr.io/r/base/Random.html) plays no role. `n`
-and `seed` are both at least 1.
+and `seed` are both at least 1. The service caps the count: a model over
+its limit is refused when sent, with the limit named in the refusal (the
+client does not know it in advance, since it is the service's to set).

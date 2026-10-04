@@ -21,7 +21,8 @@ program(
   fix = list(),
   scenarios = 1,
   scenario_seed = 1,
-  sources = list()
+  sources = list(),
+  structures = list()
 )
 ```
 
@@ -78,6 +79,12 @@ program(
   [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
   declarations.
 
+- structures:
+
+  Named
+  [`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
+  declarations.
+
 ## Value
 
 An object of class `quicopt_program`: a list with one field per
@@ -102,3 +109,9 @@ declarations), how many scenarios are drawn and the seed they are drawn
 from. The last two are model data — they pin the sampled instance, so
 the same program always sees the same draws. Left at their defaults they
 say nothing, and the encoded bytes are those of a deterministic model.
+
+A model with a permutation adds `structures`, a named list of
+[`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
+declarations that
+[`ir_struct_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+nodes refer to. Left empty it says nothing, as `sources` does.

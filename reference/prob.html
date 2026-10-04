@@ -9,7 +9,7 @@ constraint is built from:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,11 @@ two comparisons, both meaningful: the one inside <code>prob</code> is the event 
 measured, the outer one is the service level demanded of it.</p>
 <p><code>rel</code> is a comparison, <code>a &lt;= b</code> or <code>a &gt;= b</code>, with at least one side
 containing a random variable. An equality is refused: for a continuous
-quantity its probability is zero. Elementwise over vector comparisons.</p>
+quantity its probability is zero. So are <code>&lt;</code> and <code>&gt;</code>, which for a
+continuous quantity mean the same as <code>&lt;=</code> and <code>&gt;=</code>. Elementwise over vector
+comparisons.</p>
+<p>The same event as a 0/1 expression, scenario by scenario, is
+<code><a href="holds.html">holds()</a></code>: <code>expectation(holds(rel))</code> is <code>prob(rel)</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

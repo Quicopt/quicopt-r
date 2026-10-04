@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,13 @@
 
         <dt>
 
+          <code><a href="set_start.html">set_start()</a></code>
+
+        </dt>
+        <dd>Start the search from a known solution</dd>
+
+        <dt>
+
           <code><a href="minimize.html">minimize()</a></code> <code><a href="minimize.html">maximize()</a></code>
 
         </dt>
@@ -73,6 +80,13 @@
 
         </dt>
         <dd>quicopt expressions — model arithmetic in plain R</dd>
+
+        <dt>
+
+          <code><a href="holds.html">holds()</a></code>
+
+        </dt>
+        <dd>A comparison as a 0/1 expression</dd>
       </dl></div><div class="section level2">
       <h2 id="uncertainty">Uncertainty<a class="anchor" aria-label="anchor" href="#uncertainty"></a></h2>
 
@@ -120,7 +134,7 @@
 
         <dt>
 
-          <code><a href="distribution.html">distribution()</a></code> <code><a href="distribution.html">normal()</a></code>
+          <code><a href="distribution.html">distribution()</a></code> <code><a href="distribution.html">normal()</a></code> <code><a href="distribution.html">uniform()</a></code> <code><a href="distribution.html">exponential()</a></code> <code><a href="distribution.html">bernoulli()</a></code>
 
         </dt>
         <dd>Distributions for random variables</dd>
@@ -152,8 +166,66 @@
 
         </dt>
         <dd>The probability that a comparison holds</dd>
+
+        <dt>
+
+          <code><a href="variance.html">variance()</a></code> <code><a href="variance.html">std_dev()</a></code>
+
+        </dt>
+        <dd>The variance and the standard deviation over the scenarios</dd>
+
+        <dt>
+
+          <code><a href="scenario_max.html">scenario_max()</a></code> <code><a href="scenario_max.html">scenario_min()</a></code> <code><a href="scenario_max.html">scenario_quantile()</a></code>
+
+        </dt>
+        <dd>The largest, the smallest and a quantile over the scenarios</dd>
+
+        <dt>
+
+          <code><a href="is_random.html">is_random()</a></code>
+
+        </dt>
+        <dd>Does an expression vary across scenarios?</dd>
       </dl></div><div class="section level2">
-      <h2 id="solving">Solving<a class="anchor" aria-label="anchor" href="#solving"></a></h2>
+      <h2 id="sequencing-and-assignment">Sequencing and assignment<a class="anchor" aria-label="anchor" href="#sequencing-and-assignment"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="perm_var.html">perm_var()</a></code> <code><a href="perm_var.html">add_perm_var()</a></code>
+
+        </dt>
+        <dd>Sequencing and assignment: a permutation as a decision variable</dd>
+
+        <dt>
+
+          <code><a href="item_at.html">item_at()</a></code> <code><a href="item_at.html">slot_of()</a></code>
+
+        </dt>
+        <dd>Read a permutation: the item in a slot, the slot of an item</dd>
+
+        <dt>
+
+          <code><a href="precede.html">precede()</a></code>
+
+        </dt>
+        <dd>Require one item before another</dd>
+
+        <dt>
+
+          <code><a href="lookup_table.html">lookup_table()</a></code> <code><a href="lookup_table.html">`[`(<i>&lt;quicopt_table&gt;</i>)</a></code>
+
+        </dt>
+        <dd>A table of numbers read at positions the solver decides</dd>
+      </dl></div><div class="section level2">
+      <h2 id="solving-and-checking-a-solution">Solving, and checking a solution<a class="anchor" aria-label="anchor" href="#solving-and-checking-a-solution"></a></h2>
 
 
 
@@ -182,6 +254,20 @@
 
         </dt>
         <dd>Poll a submitted job</dd>
+
+        <dt>
+
+          <code><a href="evaluate.html">evaluate()</a></code>
+
+        </dt>
+        <dd>The value of an expression at a solution</dd>
+
+        <dt>
+
+          <code><a href="resample.html">resample()</a></code>
+
+        </dt>
+        <dd>Check a solution on scenarios it was not optimized for</dd>
 
         <dt>
 
@@ -243,7 +329,14 @@
 
         <dt>
 
-          <code><a href="ir.html">ir_const()</a></code> <code><a href="ir.html">ir_param()</a></code> <code><a href="ir.html">ir_var()</a></code> <code><a href="ir.html">ir_apply()</a></code> <code><a href="ir.html">ir_reduce()</a></code> <code><a href="ir.html">ir_source_ref()</a></code> <code><a href="ir.html">ir_set_ref()</a></code>
+          <code><a href="permutation_decl.html">permutation_decl()</a></code>
+
+        </dt>
+        <dd>A permutation declaration</dd>
+
+        <dt>
+
+          <code><a href="ir.html">ir_const()</a></code> <code><a href="ir.html">ir_param()</a></code> <code><a href="ir.html">ir_var()</a></code> <code><a href="ir.html">ir_apply()</a></code> <code><a href="ir.html">ir_reduce()</a></code> <code><a href="ir.html">ir_source_ref()</a></code> <code><a href="ir.html">ir_struct_ref()</a></code> <code><a href="ir.html">ir_table_ref()</a></code> <code><a href="ir.html">ir_set_ref()</a></code>
 
         </dt>
         <dd>quicopt IR — a model as plain data</dd>

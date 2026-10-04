@@ -13,7 +13,7 @@ never remembered)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,8 +115,11 @@ returning <code>list(status, headers, body)</code>.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The service's answer as a <code>quicopt_result</code>: a list with <code>status</code>,
-<code>objective</code>, <code>feasible</code>, <code>solution</code> (a named numeric vector),
+<code>objective</code>, <code>feasible</code>, <code>solution</code> (a named numeric vector, in the order
+the variables were declared),
 <code>model_class</code> (the class the service read the model as, e.g. <code>"milp"</code>),
+<code>structures</code> (for a model with permutations: per name, the integer
+vectors <code>item_at</code> and <code>slot_of</code>, see <code><a href="perm_var.html">perm_var()</a></code>; otherwise <code>NULL</code>),
 and the ready-to-print <code>display</code>. Printing the result prints <code>display</code>.</p>
     </div>
     <div class="section level2">

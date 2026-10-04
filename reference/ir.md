@@ -24,6 +24,10 @@ ir_reduce(op, idx, over, body, cond = NULL)
 
 ir_source_ref(name)
 
+ir_struct_ref(name)
+
+ir_table_ref(param, index)
+
 ir_set_ref(name, args = list())
 ```
 
@@ -67,22 +71,38 @@ ir_set_ref(name, args = list())
 
   Keep a term only where `cond` is non-zero; `NULL` keeps every term.
 
+- param:
+
+  The name of the parameter table read.
+
 ## Value
 
 A plain list, with no class attribute, holding one node of a model's
 expression tree. `ir_const()`, `ir_param()`, `ir_var()`, `ir_apply()`,
-`ir_reduce()` and `ir_source_ref()` each return an expression node: its
-`kind` field (`"const"`, `"param"`, `"var"`, `"apply"`, `"reduce"` or
-`"source"`) says which node it is, and the remaining fields are the
-arguments under their own names (`value` coerced to numeric). Such a
-node stands wherever an expression is expected: as an entry of another
-node's `args`, as the objective of a
+`ir_reduce()`, `ir_source_ref()`, `ir_struct_ref()` and `ir_table_ref()`
+each return an expression node: its `kind` field (`"const"`, `"param"`,
+`"var"`, `"apply"`, `"reduce"`, `"source"`, `"structure"` or `"table"`)
+says which node it is, and the remaining fields are the arguments under
+their own names (`value` coerced to numeric). Such a node stands
+wherever an expression is expected: as an entry of another node's
+`args`, as the objective of a
 [`program()`](https://quicopt.github.io/quicopt-r/reference/program.md),
 or as the `f` of a
 [`constraint()`](https://quicopt.github.io/quicopt-r/reference/constraint.md).
 `ir_set_ref()` returns a list with the fields `name` and `args`: a
 reference to an index set rather than an expression, so it carries no
 `kind`, and it is what `ir_reduce()` takes as `over`.
+
+`ir_struct_ref()` refers to a declared permutation by name, and is legal
+only as the second argument of the catalog operators `item_at` and
+`slot_of` (what
+[`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+and
+[`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+build). `ir_table_ref()` reads the parameter table `param` at one or two
+positions given as expression nodes (what indexing a
+[`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
+builds).
 
 ## Details
 
