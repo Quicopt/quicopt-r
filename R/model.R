@@ -46,9 +46,17 @@ model <- function() {
   assign("scenarios", 1, envir = m)
   assign("seed", 1, envir = m)
   assign("scen_set", FALSE, envir = m)
+  assign("structures", list(), envir = m)    # name -> list(n, start, precede), see structured.R
+  assign("tables", list(), envir = m)        # name -> numeric vector or matrix
   class(m) <- "quicopt_model"
   m
 }
+
+# The registry holds four kinds of handle under one namespace: decision
+# variables (quicopt_var), random variables (quicopt_rv), permutations
+# (quicopt_perm) and lookup tables (quicopt_table). Only the first lowers to
+# wire variables, which is what the solution is keyed by.
+.is_decision <- function(v) inherits(v, "quicopt_var")
 
 .m_get <- function(m, field) get(field, envir = m, inherits = FALSE)
 .m_set <- function(m, field, value) assign(field, value, envir = m)
@@ -157,7 +165,7 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 .flat_lookup <- function(m) {
   out <- list()
   for (v in .m_get(m, "vars")) {
-    if (inherits(v, "quicopt_rv")) next
+    if (!.is_decision(v)) next
     for (i in seq_len(v$n)) out[[v$flat[[i]]]] <- list(var = v$name, i = i)
   }
   out
@@ -168,6 +176,10 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 # variables of this model; `complete` demands every one of them.
 .solution_values <- function(m, solution, complete, caller) {
   if (inherits(solution, "quicopt_result")) solution <- solution$solution
+  # a model whose only decisions are permutations has an empty solution
+  if (is.null(solution) || (is.numeric(solution) && length(solution) == 0L)) {
+    solution <- numeric(0); names(solution) <- character(0)
+  }
   if (!is.numeric(solution) || is.null(names(solution)) || any(!nzchar(names(solution))))
     stop(caller, " takes a solve() result or a named numeric vector of variable values")
   if (anyNA(solution)) stop(caller, ": a variable value cannot be NA")
@@ -193,7 +205,9 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 #' ended rather than from scratch. Variables not named keep their start.
 #'
 #' An integer or binary variable's start is rounded by the service, and any
-#' start is clamped into the variable's bounds.
+#' start is clamped into the variable's bounds. A result also carries the
+#' order found for every permutation ([perm_var()]), which becomes that
+#' permutation's start.
 #'
 #' @param m A [model()].
 #' @param values A result from [solve()], or a named numeric vector keyed the
@@ -210,6 +224,10 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 #' @export
 set_start <- function(m, values) {
   .check_model(m, "set_start")
+  # a result's permutations, when it carries any; a plain vector names
+  # decision variables only and leaves every permutation's start alone
+  slots <- if (inherits(values, "quicopt_result") && !is.null(values$structures))
+    .result_slots(m, values, "set_start") else list()
   values <- .solution_values(m, values, complete = FALSE, caller = "set_start")
   lookup <- .flat_lookup(m)
   vars <- .m_get(m, "vars")
@@ -218,6 +236,9 @@ set_start <- function(m, values) {
     vars[[at$var]]$start[[at$i]] <- as.numeric(values[[key]])
   }
   .m_set(m, "vars", vars)
+  structs <- .m_get(m, "structures")
+  for (name in names(slots)) structs[[name]]$start <- slots[[name]]
+  .m_set(m, "structures", structs)
   invisible(m)
 }
 
@@ -410,8 +431,9 @@ add <- function(m, rel, margin = 0, when = NULL) {
 #' @export
 print.quicopt_model <- function(x, ...) {
   vars <- get("vars", envir = x, inherits = FALSE)
-  decision <- Filter(function(v) !inherits(v, "quicopt_rv"), vars)
+  decision <- Filter(.is_decision, vars)
   random <- Filter(function(v) inherits(v, "quicopt_rv"), vars)
+  perms <- Filter(function(v) inherits(v, "quicopt_perm"), vars)
   nflat <- sum(vapply(decision, function(v) v$n, 0L))
   obj <- get("objective", envir = x, inherits = FALSE)
   cat("quicopt model: ", nflat, " variable", if (nflat != 1L) "s", sep = "")
@@ -419,6 +441,8 @@ print.quicopt_model <- function(x, ...) {
     cat(", ", length(random), " random (",
         get("scenarios", envir = x, inherits = FALSE), " scenarios)", sep = "")
   }
+  if (length(perms))
+    cat(", ", length(perms), " permutation", if (length(perms) != 1L) "s", sep = "")
   cat(", ", length(get("constraints", envir = x, inherits = FALSE)),
       " constraint row(s)\n", sep = "")
   if (!is.null(obj))
@@ -442,7 +466,7 @@ as_program <- function(m) {
   vars <- .m_get(m, "vars")
   decls <- list()
   for (v in vars) {
-    if (inherits(v, "quicopt_rv")) next
+    if (!.is_decision(v)) next
     for (i in seq_len(v$n))
       decls[[length(decls) + 1L]] <-
         var_decl(v$flat[[i]], character(), v$domain, v$lower[[i]], v$upper[[i]], v$start[[i]])
@@ -483,11 +507,13 @@ as_program <- function(m) {
   }
 
   obj <- .m_get(m, "objective")
-  program(vars = decls,
+  program(params = .table_params(m),
+          vars = decls,
           objective = if (is.null(obj)) ir_const(0) else obj,
           sense = .m_get(m, "sense"),
           constraints = lapply(.m_get(m, "constraints"), .row_constraint, n_scen = scen),
           scenarios = scen,
           scenario_seed = .m_get(m, "seed"),
-          sources = sources)
+          sources = sources,
+          structures = .structure_decls(m))
 }

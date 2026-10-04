@@ -327,6 +327,37 @@ set_start(m8, res8)                     # start from where the first solve ended
 solve(m8)$solution[["x"]]
 ```
 
+## An order to decide: a delivery round
+
+Some decisions are not amounts but orders: the sequence of stops on a round,
+of jobs on a machine. `perm_var()` declares such a decision as a permutation,
+`n` items in `n` slots, one each, and the search keeps it that way. The items
+here are five stops on a line and the slots are the steps of the round; the
+distance between two stops is read from a `lookup_table()` at the stops the
+round visits, which only the solver knows. The travel time of each step is
+uncertain, so the objective is the expected length of the round, and stop 4
+must come before stop 1:
+
+```{r}
+m9 <- model()
+stop_x <- c(0, 3, 1, 4, 2)                                    # where each stop lies
+dist <- lookup_table(m9, "dist", abs(outer(stop_x, stop_x, "-")))
+tour <- perm_var(m9, "tour", 5)                               # item: a stop; slot: a step
+precede(tour, 4, 1)                                           # stop 4 before stop 1
+delay <- rand_var(m9, "delay", uniform(1, 1.5), n = 4)        # one factor per step
+set_scenarios(m9, 256, seed = 3)
+minimize(m9, expectation(sum(dist[item_at(1:4, tour), item_at(2:5, tour)] * delay)))
+res9 <- solve(m9)
+res9$structures$tour$item_at                                  # the stops, in visiting order
+res9$objective
+```
+
+`item_at(k, tour)` is the stop visited at step `k` and `slot_of(i, tour)` the
+step at which stop `i` is visited; both come back under `res9$structures`.
+The shortest round over these stops is 4 long, so the expected length is 4
+times the mean delay. `resample(m9, res9, seed = 4)` checks it on fresh
+delays, with the round held fixed.
+
 ## What comes back
 
 `solve()` returns the parsed answer: `status`, `objective`, a named `solution`

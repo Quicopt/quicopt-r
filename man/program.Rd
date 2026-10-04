@@ -15,7 +15,8 @@ program(
   fix = list(),
   scenarios = 1,
   scenario_seed = 1,
-  sources = list()
+  sources = list(),
+  structures = list()
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ program(
 \item{scenario_seed}{The seed they are drawn from (at least 1).}
 
 \item{sources}{Named \code{\link[=parametric]{parametric()}} / \code{\link[=empirical]{empirical()}} declarations.}
+
+\item{structures}{Named \code{\link[=permutation_decl]{permutation_decl()}} declarations.}
 }
 \value{
 An object of class \code{quicopt_program}: a list with one field per
@@ -63,4 +66,8 @@ many scenarios are drawn and the seed they are drawn from. The last two are
 model data — they pin the sampled instance, so the same program always sees
 the same draws. Left at their defaults they say nothing, and the encoded
 bytes are those of a deterministic model.
+
+A model with a permutation adds \code{structures}, a named list of
+\code{\link[=permutation_decl]{permutation_decl()}} declarations that \code{\link[=ir_struct_ref]{ir_struct_ref()}} nodes refer to.
+Left empty it says nothing, as \code{sources} does.
 }

@@ -176,6 +176,11 @@ NULL
       if (!is.null(e$cond)) .w_msg(b, 5, .expr_msg(e$cond))
     })),
     source = .w_msg(io, 6, .msg(function(b) .w_str(b, 1, e$name))),
+    structure = .w_msg(io, 7, .msg(function(b) .w_str(b, 1, e$name))),
+    table = .w_msg(io, 8, .msg(function(b) {
+      .w_str(b, 1, e$param)
+      for (i in e$index) .w_msg(b, 2, .expr_msg(i))
+    })),
     stop("wire: not an expression node: ", e$kind)
   )
 }
@@ -263,14 +268,29 @@ NULL
   } else stop("wire: not a source declaration: ", s$kind)
 }
 
+# A structure declaration: the name, the kind as its catalog key, and the
+# kind's fields. The start is packed (one length-delimited run of varints, as a
+# generated encoder emits a proto3 repeated int64) and omitted when empty;
+# `fixed` is omitted when false; precedences ride in the order given.
+.enc_structure <- function(io, name, s) {
+  .w_str(io, 1, name)
+  .w_str(io, 2, s$kind)
+  .w_varint(io, 3, s$size)
+  if (length(s$start))
+    .w_bytes(io, 4, .msg(function(b) for (x in s$start) .put_varint(b, x)))
+  if (isTRUE(s$fixed)) .w_varint(io, 5, 1)
+  for (p in s$precede)
+    .w_msg(io, 6, .msg(function(b) { .w_varint(b, 1, p[[1L]]); .w_varint(b, 2, p[[2L]]) }))
+}
+
 # ── the program ─────────────────────────────────────────────────────────────
 
 #' Encode a program to the bytes the service reads
 #'
 #' Two equal programs always encode to equal bytes, whichever order their
-#' tables happened to be built in. A model that declares no uncertainty encodes
-#' to exactly the bytes it would have before the stochastic layer existed, so
-#' declaring none costs an ordinary model nothing.
+#' tables happened to be built in. A model that declares no uncertainty and no
+#' permutation encodes to exactly the bytes it would have before those layers
+#' existed, so declaring none costs an ordinary model nothing.
 #'
 #' Encoding is normally invisible: [solve_model()] does it for you, and what it
 #' sends is exactly these bytes. Reach for `encode` to send them yourself,
@@ -283,8 +303,9 @@ NULL
 encode <- function(prog) {
   if (inherits(prog, "quicopt_model")) prog <- as_program(prog)
   if (!inherits(prog, "quicopt_program")) stop("encode takes a program() or a model()")
-  # Fields in schema order (1-8 deterministic, 9-11 stochastic); the order-free
-  # tables are emitted sorted, which is what makes equal programs equal bytes.
+  # Fields in schema order (1-8 deterministic, 9-11 stochastic, 12 structured);
+  # the order-free tables are emitted sorted, which is what makes equal
+  # programs equal bytes.
   # The two scenario scalars are omitted at their default of 1 — and that is
   # why the default is 1 and not 0: protobuf cannot tell a zero from an absent
   # field, so a 0 here would reach the service as "use your default".
@@ -315,6 +336,8 @@ encode <- function(prog) {
   if (prog$scenario_seed != 1) .w_varint(io, 10, prog$scenario_seed)
   for (name in .sort_names(names2(prog$sources)))
     .w_msg(io, 11, .msg(function(b) .enc_source(b, name, prog$sources[[name]])))
+  for (name in .sort_names(names2(prog$structures)))
+    .w_msg(io, 12, .msg(function(b) .enc_structure(b, name, prog$structures[[name]])))
   .bytes(io)
 }
 

@@ -1,3 +1,10 @@
+# quicopt 0.4.0
+
+* `perm_var(m, "tour", n)` declares a permutation: `n` items in `n` slots, one each, as a decision the service keeps consistent while it searches. `item_at(slot, P)` is the item in a slot and `slot_of(item, P)` the slot of an item, integer expressions vectorized over their first argument; `precede(P, a, b)` requires item `a` in an earlier slot than item `b`. A solution reports both views under `res$structures$<name>`, and `set_start()`, `evaluate()` and `resample()` carry the order along with the plain variables.
+* `lookup_table(m, "dist", values)` declares a numeric vector or matrix whose entries are read at positions the solver decides: `dist[item_at(1:4, tour), item_at(2:5, tour)]` is the legs of a round, `cost[choice]` a cost chosen through an integer variable. A lookup is an ordinary expression, and is random exactly when one of its positions is.
+* A model with a permutation or a lookup is solved by search, as a model under uncertainty is, and the two combine. The service must be recent enough to know these constructs; an older one refuses the model when it is sent.
+* `permutation_decl()`, `ir_struct_ref()` and `ir_table_ref()` are the data-layer forms, and `program()` takes `structures`.
+
 # quicopt 0.3.0
 
 * `uniform(min, max)`, `exponential(rate)` and `bernoulli(prob)` join `normal()` as named distributions, parameterized like `runif()`, `rexp()` and `rbinom(n, 1, prob)`. As with `normal()`, a parameter may be an expression, so a rate or a failure probability can depend on a decision. A numeric parameter outside its range is refused where the distribution is built.

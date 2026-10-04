@@ -47,6 +47,8 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #'   `objective`, `feasible`, `solution` (a named numeric vector, in the order
 #'   the variables were declared),
 #'   `model_class` (the class the service read the model as, e.g. `"milp"`),
+#'   `structures` (for a model with permutations: per name, the integer
+#'   vectors `item_at` and `slot_of`, see [perm_var()]; otherwise `NULL`),
 #'   and the ready-to-print `display`. Printing the result prints `display`.
 #' @export
 solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
@@ -281,6 +283,9 @@ print.quicopt_job <- function(x, ...) {
                  # solver_data; the sibling clients surface it at the top level,
                  # and so does this one.
                  model_class = parsed$solver_data$model_class,
+                 # The permutations found, both views as integer vectors; the
+                 # key is absent for a model that declares none.
+                 structures = .parse_structures(parsed$structures),
                  solve_time_seconds = parsed$solve_time_seconds,
                  solver_data = parsed$solver_data,
                  display = parsed$display,
@@ -288,11 +293,22 @@ print.quicopt_job <- function(x, ...) {
             class = "quicopt_result")
 }
 
+.parse_structures <- function(s) {
+  if (is.null(s)) return(NULL)
+  lapply(s, function(p) list(item_at = as.integer(unlist(p$item_at)),
+                             slot_of = as.integer(unlist(p$slot_of))))
+}
+
 #' @export
 print.quicopt_result <- function(x, ...) {
   if (!is.null(x$display)) cat(x$display, "\n", sep = "")
-  else cat("quicopt result: ", x$status,
-           if (!is.null(x$objective)) paste0(", objective ", x$objective), "\n", sep = "")
+  else {
+    cat("quicopt result: ", x$status,
+        if (!is.null(x$objective)) paste0(", objective ", x$objective), "\n", sep = "")
+    for (name in names(x$structures))
+      cat("  ", name, ": item_at = [", paste(x$structures[[name]]$item_at, collapse = ", "),
+          "]\n", sep = "")
+  }
   invisible(x)
 }
 

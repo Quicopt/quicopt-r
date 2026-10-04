@@ -58,6 +58,12 @@ NULL
 # numeric vector's constants.
 .nodes_of <- function(x, what = "expression") {
   if (inherits(x, "quicopt_expr")) return(x$nodes)
+  if (inherits(x, "quicopt_perm"))
+    stop("a permutation is read through item_at(slot, ", x$name, ") or slot_of(item, ",
+         x$name, "), not used directly in a model ", what)
+  if (inherits(x, "quicopt_table"))
+    stop("a lookup table is read by indexing it, ", x$name,
+         if (length(x$dim) == 1L) "[i]" else "[i, j]", ", not used directly in a model ", what)
   if (is.numeric(x) && !is.matrix(x)) {
     if (length(x) == 0L) stop("cannot use an empty numeric vector in a model ", what)
     if (anyNA(x)) stop("cannot use NA in a model ", what)
@@ -253,6 +259,8 @@ mean.quicopt_expr <- function(x, ...) {
                                                          collapse = ","), "]") else n$name,
     param = n$name,
     source = paste0("~", n$name),
+    structure = n$name,
+    table = paste0(n$param, "[", paste(vapply(n$index, .render, ""), collapse = ", "), "]"),
     apply = {
       args <- vapply(n$args, .render, "")
       # 0 - x is how the wire spells -x; print it the way it was written.

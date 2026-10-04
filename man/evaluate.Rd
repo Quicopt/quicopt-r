@@ -11,7 +11,8 @@ evaluate(m, solution, expr, seed = NULL, scenarios = NULL, ...)
 
 \item{solution}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector giving
 every decision variable's value (\code{"x"}, or \code{"x[1]"}, \code{"x[2]"}, ... for a
-vector variable).}
+vector variable). A model with a permutation (\code{\link[=perm_var]{perm_var()}}) takes a
+result, which carries the order found.}
 
 \item{expr}{A single non-random model expression.}
 

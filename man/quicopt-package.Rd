@@ -6,7 +6,7 @@
 \alias{quicopt-package}
 \title{quicopt: Client for the 'Quicopt' Optimization Service}
 \description{
-Author an optimization model — including a model under uncertainty, with random variables, expectations, conditional value at risk and chance constraints — in a native R interface, and solve it with the 'Quicopt' service \url{https://quicopt.com}. Models are encoded to the service's wire format and solved remotely; no solver is installed locally. Random variables carry distributions or empirical scenario columns taken directly from a data frame, so observed history becomes a stochastic program in one call.
+Author an optimization model — including a model under uncertainty, with random variables, expectations, conditional value at risk and chance constraints — in a native R interface, and solve it with the 'Quicopt' service \url{https://quicopt.com}. Models are encoded to the service's wire format and solved remotely; no solver is installed locally. Random variables carry distributions or empirical scenario columns taken directly from a data frame, so observed history becomes a stochastic program in one call. A permutation variable states an order or a one-to-one assignment directly, with lookup tables for the data along it.
 }
 \seealso{
 Useful links:

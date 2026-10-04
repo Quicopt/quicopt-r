@@ -10,7 +10,10 @@
 # The model lowered with every decision variable pinned at the solution.
 # Integer and binary values are rounded first: a pin is lower = upper = value,
 # and an integer variable pinned between two integers has no feasible value.
+# A permutation is pinned by declaring it fixed at the order the result
+# reports, so a model with one takes a solve() result, not a bare vector.
 .pinned_program <- function(m, solution, caller) {
+  slots <- .result_slots(m, solution, caller)
   values <- .solution_values(m, solution, complete = TRUE, caller = caller)
   prog <- as_program(m)
   prog$fix <- lapply(prog$vars, function(vd) {
@@ -21,6 +24,10 @@
            vd$lower, ", ", vd$upper, "]")
     list(var = vd$name, index = list(), value = v)
   })
+  for (name in names(slots)) {
+    prog$structures[[name]]$start <- slots[[name]]
+    prog$structures[[name]]$fixed <- TRUE
+  }
   prog
 }
 
@@ -48,7 +55,8 @@
 #' @param m A [model()].
 #' @param solution A result from [solve()], or a named numeric vector giving
 #'   every decision variable's value (`"x"`, or `"x[1]"`, `"x[2]"`, ... for a
-#'   vector variable).
+#'   vector variable). A model with a permutation ([perm_var()]) takes a
+#'   result, which carries the order found.
 #' @param expr A single non-random model expression.
 #' @param seed Left `NULL`, the model's own scenarios; given, a seed for fresh
 #'   ones.

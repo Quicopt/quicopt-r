@@ -24,7 +24,9 @@ ended rather than from scratch. Variables not named keep their start.
 }
 \details{
 An integer or binary variable's start is rounded by the service, and any
-start is clamped into the variable's bounds.
+start is clamped into the variable's bounds. A result also carries the
+order found for every permutation (\code{\link[=perm_var]{perm_var()}}), which becomes that
+permutation's start.
 }
 \examples{
 \dontrun{

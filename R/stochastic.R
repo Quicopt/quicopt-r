@@ -186,6 +186,7 @@ bernoulli <- function(prob) {
     source = TRUE,
     apply = any(vapply(n$args, .has_source, NA)),
     reduce = .has_source(n$body) || (!is.null(n$cond) && .has_source(n$cond)),
+    table = any(vapply(n$index, .has_source, NA)),     # a lookup at a random position
     FALSE)
 }
 
@@ -204,6 +205,7 @@ bernoulli <- function(prob) {
     source = TRUE,
     apply = if (n$op %in% .AGGREGATORS) FALSE else any(vapply(n$args, .is_random_node, NA)),
     reduce = .is_random_node(n$body) || (!is.null(n$cond) && .is_random_node(n$cond)),
+    table = any(vapply(n$index, .is_random_node, NA)),  # random exactly when an index is
     FALSE)
 }
 
