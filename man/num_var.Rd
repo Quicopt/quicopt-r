@@ -11,7 +11,7 @@ num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
 
 int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
 
-bin_var(m, name, n = 1)
+bin_var(m, name, n = 1, start = 0)
 
 add_var(
   m,

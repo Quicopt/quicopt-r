@@ -8,6 +8,8 @@
 \alias{ir_apply}
 \alias{ir_reduce}
 \alias{ir_source_ref}
+\alias{ir_struct_ref}
+\alias{ir_table_ref}
 \alias{ir_set_ref}
 \title{quicopt IR — a model as plain data}
 \usage{
@@ -22,6 +24,10 @@ ir_apply(op, args)
 ir_reduce(op, idx, over, body, cond = NULL)
 
 ir_source_ref(name)
+
+ir_struct_ref(name)
+
+ir_table_ref(param, index)
 
 ir_set_ref(name, args = list())
 }
@@ -43,19 +49,28 @@ ir_set_ref(name, args = list())
 \item{body}{The folded expression.}
 
 \item{cond}{Keep a term only where \code{cond} is non-zero; \code{NULL} keeps every term.}
+
+\item{param}{The name of the parameter table read.}
 }
 \value{
 A plain list, with no class attribute, holding one node of a model's
 expression tree. \code{ir_const()}, \code{ir_param()}, \code{ir_var()}, \code{ir_apply()},
-\code{ir_reduce()} and \code{ir_source_ref()} each return an expression node: its
-\code{kind} field (\code{"const"}, \code{"param"}, \code{"var"}, \code{"apply"}, \code{"reduce"} or
-\code{"source"}) says which node it is, and the remaining fields are the
+\code{ir_reduce()}, \code{ir_source_ref()}, \code{ir_struct_ref()} and \code{ir_table_ref()}
+each return an expression node: its \code{kind} field (\code{"const"}, \code{"param"},
+\code{"var"}, \code{"apply"}, \code{"reduce"}, \code{"source"}, \code{"structure"} or \code{"table"})
+says which node it is, and the remaining fields are the
 arguments under their own names (\code{value} coerced to numeric). Such a node
 stands wherever an expression is expected: as an entry of another node's
 \code{args}, as the objective of a \code{\link[=program]{program()}}, or as the \code{f} of a
 \code{\link[=constraint]{constraint()}}. \code{ir_set_ref()} returns a list with the fields \code{name} and
 \code{args}: a reference to an index set rather than an expression, so it
 carries no \code{kind}, and it is what \code{\link[=ir_reduce]{ir_reduce()}} takes as \code{over}.
+
+\code{ir_struct_ref()} refers to a declared permutation by name, and is legal
+only as the second argument of the catalog operators \code{item_at} and
+\code{slot_of} (what \code{\link[=item_at]{item_at()}} and \code{\link[=slot_of]{slot_of()}} build). \code{ir_table_ref()} reads
+the parameter table \code{param} at one or two positions given as expression
+nodes (what indexing a \code{\link[=lookup_table]{lookup_table()}} builds).
 }
 \description{
 The form a model takes between the interface that wrote it and the service

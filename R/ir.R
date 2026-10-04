@@ -19,15 +19,22 @@
 #'
 #' @return A plain list, with no class attribute, holding one node of a model's
 #'   expression tree. `ir_const()`, `ir_param()`, `ir_var()`, `ir_apply()`,
-#'   `ir_reduce()` and `ir_source_ref()` each return an expression node: its
-#'   `kind` field (`"const"`, `"param"`, `"var"`, `"apply"`, `"reduce"` or
-#'   `"source"`) says which node it is, and the remaining fields are the
+#'   `ir_reduce()`, `ir_source_ref()`, `ir_struct_ref()` and `ir_table_ref()`
+#'   each return an expression node: its `kind` field (`"const"`, `"param"`,
+#'   `"var"`, `"apply"`, `"reduce"`, `"source"`, `"structure"` or `"table"`)
+#'   says which node it is, and the remaining fields are the
 #'   arguments under their own names (`value` coerced to numeric). Such a node
 #'   stands wherever an expression is expected: as an entry of another node's
 #'   `args`, as the objective of a [program()], or as the `f` of a
 #'   [constraint()]. `ir_set_ref()` returns a list with the fields `name` and
 #'   `args`: a reference to an index set rather than an expression, so it
 #'   carries no `kind`, and it is what [ir_reduce()] takes as `over`.
+#'
+#'   `ir_struct_ref()` refers to a declared permutation by name, and is legal
+#'   only as the second argument of the catalog operators `item_at` and
+#'   `slot_of` (what [item_at()] and [slot_of()] build). `ir_table_ref()` reads
+#'   the parameter table `param` at one or two positions given as expression
+#'   nodes (what indexing a [lookup_table()] builds).
 #'
 #' @name ir
 NULL
@@ -67,6 +74,15 @@ ir_reduce <- function(op, idx, over, body, cond = NULL)
 #' @rdname ir
 #' @export
 ir_source_ref <- function(name) list(kind = "source", name = name)
+
+#' @rdname ir
+#' @export
+ir_struct_ref <- function(name) list(kind = "structure", name = name)
+
+#' @rdname ir
+#' @param param The name of the parameter table read.
+#' @export
+ir_table_ref <- function(param, index) list(kind = "table", param = param, index = index)
 
 #' @rdname ir
 #' @param args Enclosing bound indices the set is applied to (`list()` for a flat set).
@@ -141,6 +157,31 @@ empirical <- function(data) {
   if (anyNA(data)) stop("an empirical column cannot contain NA")
   structure(list(kind = "empirical", data = data), class = "quicopt_empirical")
 }
+
+# ── structured variables ────────────────────────────────────────────────────
+
+#' A permutation declaration
+#'
+#' `size` items in `size` slots, one each. `start[i]` is the slot item `i`
+#' starts in (a permutation of `1:size`; empty for the default, item `i` in
+#' slot `i`). `fixed` pins the permutation at `start`, which must then be
+#' given: how a solution is re-evaluated. Each entry of `precede` is a pair
+#' `c(before, after)` of items, requiring `before` in an earlier slot than
+#' `after`.
+#'
+#' @param size How many items, at least 2.
+#' @param start The starting slot of each item, or `integer()`.
+#' @param fixed Whether the permutation is pinned at `start`.
+#' @param precede A list of `c(before, after)` pairs.
+#' @return A plain list, with no class attribute, with the fields
+#'   `kind = "permutation"`, `size`, `start`, `fixed` and `precede`. It
+#'   declares one permutation, and is an entry of the named list a
+#'   [program()] takes as `structures`; the entry's name is the name
+#'   [ir_struct_ref()] refers to.
+#' @export
+permutation_decl <- function(size, start = integer(), fixed = FALSE, precede = list())
+  list(kind = "permutation", size = as.integer(size), start = as.integer(start),
+       fixed = isTRUE(fixed), precede = lapply(precede, as.integer))
 
 # ── declarations and the container ──────────────────────────────────────────
 
@@ -219,6 +260,10 @@ constraint <- function(f, set, over = list()) list(f = f, set = set, over = over
 #' the same draws. Left at their defaults they say nothing, and the encoded
 #' bytes are those of a deterministic model.
 #'
+#' A model with a permutation adds `structures`, a named list of
+#' [permutation_decl()] declarations that [ir_struct_ref()] nodes refer to.
+#' Left empty it says nothing, as `sources` does.
+#'
 #' @param sets A list of [index_set()]s.
 #' @param indexed_sets Dependent sets carried as data (see above).
 #' @param params Named parameter tables (see above).
@@ -230,6 +275,7 @@ constraint <- function(f, set, over = list()) list(f = f, set = set, over = over
 #' @param scenarios How many scenarios are drawn (at least 1).
 #' @param scenario_seed The seed they are drawn from (at least 1).
 #' @param sources Named [parametric()] / [empirical()] declarations.
+#' @param structures Named [permutation_decl()] declarations.
 #' @return An object of class `quicopt_program`: a list with one field per
 #'   argument, under the argument's name (`scenarios` and `scenario_seed`
 #'   coerced to numeric). It is the complete model in the form the service
@@ -239,12 +285,13 @@ constraint <- function(f, set, over = list()) list(f = f, set = set, over = over
 program <- function(sets = list(), indexed_sets = list(), params = list(),
                     vars = list(), objective = NULL, sense = "min",
                     constraints = list(), fix = list(),
-                    scenarios = 1, scenario_seed = 1, sources = list()) {
+                    scenarios = 1, scenario_seed = 1, sources = list(),
+                    structures = list()) {
   structure(list(sets = sets, indexed_sets = indexed_sets, params = params,
                  vars = vars, objective = objective, sense = sense,
                  constraints = constraints, fix = fix,
                  scenarios = as.numeric(scenarios),
                  scenario_seed = as.numeric(scenario_seed),
-                 sources = sources),
+                 sources = sources, structures = structures),
             class = "quicopt_program")
 }

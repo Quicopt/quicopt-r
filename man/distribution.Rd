@@ -3,31 +3,82 @@
 \name{distribution}
 \alias{distribution}
 \alias{normal}
+\alias{uniform}
+\alias{exponential}
+\alias{bernoulli}
 \title{Distributions for random variables}
 \usage{
 distribution(head, ...)
 
 normal(mean, sd)
+
+uniform(min, max)
+
+exponential(rate)
+
+bernoulli(prob)
 }
 \arguments{
 \item{head}{The distribution's name in the service's catalog.}
 
-\item{...}{Its parameters, each a number or a deterministic expression.}
+\item{...}{Its parameters, each a number, a numeric vector, or a non-random
+expression.}
 
 \item{mean, sd}{The mean and standard deviation, as in \code{rnorm()}.}
+
+\item{min, max}{The lower and upper limits, as in \code{runif()}.}
+
+\item{rate}{The rate, as in \code{rexp()}; the mean is \code{1 / rate}.}
+
+\item{prob}{The probability of a 1, as in \code{rbinom(n, 1, prob)}.}
 }
 \value{
 A distribution, ready for \code{\link[=rand_var]{rand_var()}} or \code{\link[=set_distribution]{set_distribution()}}.
 }
 \description{
-\code{normal(mean, sd)} follows \code{rnorm()}'s parameterization: the mean and the
-standard deviation. \code{distribution(head, ...)} is the escape hatch for any
-distribution the service supports that has no named constructor here yet.
+The named constructors follow the parameterizations of R's own samplers:
 }
 \details{
-A parameter may be a number or a deterministic model expression. An
-expression gives an \emph{endogenous} distribution — one whose parameters depend
-on the decision, such as a demand whose mean rises with the price you set. A
-parameter may never contain a random variable: a distribution's parameters
-are data, not draws.
+\itemize{
+\item \code{normal(mean, sd)}, as \code{rnorm()}: the mean and the standard deviation.
+\item \code{uniform(min, max)}, as \code{runif()}: the two limits.
+\item \code{exponential(rate)}, as \code{rexp()}: the rate, so the mean is \code{1 / rate}.
+\item \code{bernoulli(prob)}, as \code{rbinom(n, 1, prob)}: 1 with probability \code{prob},
+else 0.
+}
+
+\code{distribution(head, ...)} names a distribution by its catalog name, for a
+distribution the service's catalog holds and no constructor here names yet.
+A head the catalog does not hold is refused when the model is sent. Every
+other distribution is available through \code{\link[=empirical]{empirical()}}: draw a column in R
+and declare it (see the vignette).
+
+A parameter may be a number or a non-random model expression. An
+expression gives an \emph{endogenous} distribution, one whose parameters depend
+on the decision, such as a demand whose mean falls with the price you set
+or a failure whose probability falls with what you spend on maintenance.
+A parameter may never contain a random variable: a distribution's
+parameters are data, not draws.
+
+A parameter may also be a vector, and the distribution then declares a
+vector random variable: \code{normal(c(6, 5, 4), 1)} is three independent
+normals with their own means and a shared standard deviation. Every
+parameter has length 1 or the vector's length.
+
+A numeric parameter outside its distribution's range is refused where the
+distribution is built: a rate that is not positive, a probability outside
+0 to 1, a lower limit above its upper limit. A parameter given as an
+expression cannot be checked this way, since its value is the solver's to
+choose; bound the decision variables so that it stays in range.
+}
+\examples{
+m <- model()
+lead_time <- rand_var(m, "lead_time", uniform(2, 5))
+gap       <- rand_var(m, "gap", exponential(1 / 30))   # mean 30
+fails     <- rand_var(m, "fails", bernoulli(0.02))
+
+# an endogenous distribution: spending on maintenance lowers the failure
+# probability
+spend  <- num_var(m, "spend", 0, 10)
+breaks <- rand_var(m, "breaks", bernoulli(0.2 - 0.015 * spend))
 }

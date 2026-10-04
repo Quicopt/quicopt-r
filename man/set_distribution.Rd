@@ -11,7 +11,8 @@ set_distribution(m, v, dist)
 
 \item{v}{The random variable's handle, from \code{\link[=rand_var]{rand_var()}}.}
 
-\item{dist}{A \code{\link[=distribution]{distribution()}} or an \code{\link[=empirical]{empirical()}} column.}
+\item{dist}{A \code{\link[=distribution]{distribution()}} or an \code{\link[=empirical]{empirical()}} column, of the handle's
+length.}
 }
 \value{
 The model, invisibly.

@@ -7,10 +7,10 @@
 expectation(x)
 }
 \arguments{
-\item{x}{A model expression.}
+\item{x}{A random model expression (see \code{\link[=is_random]{is_random()}}).}
 }
 \value{
-An expression of the same length.
+An expression of the same length, no longer random.
 }
 \description{
 Minimizing an expectation optimizes the average case and says nothing about

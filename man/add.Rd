@@ -4,12 +4,17 @@
 \alias{add}
 \title{Add constraints to a model}
 \usage{
-add(m, rel)
+add(m, rel, margin = 0, when = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
 \item{rel}{A comparison built with \code{<=}, \code{>=} or \code{==}.}
+
+\item{margin}{For a chance constraint: how many standard errors to tighten
+the level by (default none).}
+
+\item{when}{A binary variable (from \code{\link[=bin_var]{bin_var()}}) that switches the row on.}
 }
 \value{
 The model, invisibly.
@@ -18,5 +23,46 @@ The model, invisibly.
 A comparison of model expressions is a constraint, not a logical:
 \code{add(m, x + y <= 5)} requires the row to hold, and \code{==} states an equality.
 A comparison of vector expressions adds one row per element, so
-\code{add(m, x <= cap)} with two length-\code{n} vectors is \code{n} rows.
+\code{add(m, x <= cap)} with two length-\code{n} vectors is \code{n} rows. \code{<}, \code{>} and
+\code{!=} are refused: for a continuous quantity the first two mean \code{<=} and
+\code{>=}, and the third is no constraint at all (see \code{\link[=holds]{holds()}} for the 0/1
+expression it does make).
+}
+\details{
+A constraint cannot be random. In a model under uncertainty, close the
+expression with an aggregator first (\code{\link[=expectation]{expectation()}}, \code{\link[=cvar]{cvar()}}, \code{\link[=prob]{prob()}}
+and the others the \link{stochastic} topic lists); a chance constraint is
+\code{add(m, prob(demand - x <= 0) >= 0.9)}.
+}
+\section{A safety margin on a chance constraint}{
+
+The probability in \code{prob(...) >= 0.9} is estimated from the scenarios, and
+an estimate has a standard error: \code{sqrt(0.9 * 0.1 / n)} for \code{n} scenarios,
+about 0.013 at 512. A solution found with the constraint just satisfied in
+sample therefore misses the level on fresh scenarios about half the time
+(see \code{\link[=resample]{resample()}}). \code{margin = k} asks for the level tightened by \code{k}
+standard errors instead, \code{0.9 + k * sqrt(0.9 * 0.1 / n)} here, so that the
+true probability clears the level with confidence \code{pnorm(k)}: about 84\% at
+\code{k = 1}, 98\% at \code{k = 2}. For an upper bound, \code{prob(...) <= 0.1}, the level
+is lowered instead. The margin applies to a comparison of a \code{\link[=prob]{prob()}} with
+a number strictly between 0 and 1, and is resolved against the scenario
+count when the model is sent, so it may be given before \code{\link[=set_scenarios]{set_scenarios()}}.
+}
+
+\section{A constraint that applies only when a switch is on}{
+
+\code{when = b}, with \code{b} a binary variable, imposes the row only where \code{b} is
+1: \code{add(m, x <= 0, when = is_closed)}. \code{b} is one variable, or a vector
+variable with one element per row. In a model with no random variable a
+switched row makes the problem combinatorial, and the service then expects
+integer variables with finite bounds, as for \code{\link[=holds]{holds()}}.
+}
+
+\examples{
+m <- model()
+x <- num_var(m, "x", 0, 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+add(m, prob(demand - x <= 0) >= 0.9)              # the level as stated
+add(m, prob(demand - x <= 0) >= 0.9, margin = 2)  # the level plus 2 SE: 0.927
 }

@@ -5,23 +5,35 @@
 \title{quicopt expressions — model arithmetic in plain R}
 \description{
 Arithmetic on a model's variables builds an expression rather than computing
-a number, and comparing two expressions builds a constraint rather than
+a number, and comparing two expressions builds a comparison rather than
 answering a logical. The operators are R's own — \verb{+ - * / ^}, \code{sqrt}, \code{exp},
-\code{log}, \code{sin}, \code{cos}, \code{abs}, \code{max}, \code{min}, \code{sum}, \code{prod} — dispatched through
-the \code{Ops}, \code{Math} and \code{Summary} group generics, so a model reads as ordinary
-R code.
+\code{log}, \code{sin}, \code{cos}, \code{abs}, \code{max}, \code{min}, \code{sum}, \code{prod}, \code{mean} — dispatched
+through the \code{Ops}, \code{Math} and \code{Summary} group generics, so a model reads as
+ordinary R code.
 }
 \details{
 Expressions are vectors, like everything in R: a variable declared with
-\code{n = 10} has length 10, arithmetic is elementwise, \code{x[3]} indexes, and
-\code{sum(x)} folds. Lengths must match exactly or be 1 (a scalar broadcasts);
-anything else is an error — a model is no place for silent recycling.
+\code{n = 10} has length 10, arithmetic is elementwise, \code{x[3]} indexes, \code{c()}
+concatenates, and \code{sum(x)} folds. So do \code{prod()}, \code{max()}, \code{min()} and \code{mean()}: they fold
+every element of every argument into one, as they do on numeric vectors
+(\code{max(x, 0)} is the largest of all elements of \code{x} and 0; there is no
+elementwise \code{pmax}). \code{mean()} is the mean over the elements; the mean over
+the scenarios is \code{\link[=expectation]{expectation()}}. Lengths must match exactly or be 1 (a
+scalar broadcasts); anything else is an error — a model is no place for
+silent recycling.
 
-An operator the service does not support raises at the point of use. So do
-the comparisons that have no constraint counterpart: \code{<} and \code{>} (use \code{<=}
-or \code{>=}, which for continuous quantities mean the same thing) and \code{!=}.
+A comparison goes one of three ways: \code{\link[=add]{add()}} makes it a constraint,
+\code{\link[=prob]{prob()}} measures how often it holds across scenarios, and \code{\link[=holds]{holds()}} makes
+it a 0/1 expression. \code{add()} and \code{prob()} take \code{<=}, \code{>=} and (\code{add()}
+only) \code{==}; \code{holds()} takes all six.
 
-One caveat comes with \code{==} building a constraint: \code{unique()} still works on
+An operator the service does not support raises at the point of use
+(\code{round}, \code{\%\%}, \code{log} with a base). In a model with no random variable,
+\code{max()}, \code{min()} and \code{holds()} make the problem combinatorial, and the
+service then expects integer variables with finite bounds; with a random
+variable anywhere in the model there is no such restriction.
+
+One caveat comes with \code{==} building a comparison: \code{unique()} still works on
 these objects, but \code{\%in\%} and \code{match()} silently answer as if no two were
 equal — compare identity with \code{identical()} instead.
 }

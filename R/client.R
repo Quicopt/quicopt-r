@@ -44,8 +44,11 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #'   `function(req)` taking `list(method, url, headers, body, timeout)` and
 #'   returning `list(status, headers, body)`.
 #' @return The service's answer as a `quicopt_result`: a list with `status`,
-#'   `objective`, `feasible`, `solution` (a named numeric vector),
+#'   `objective`, `feasible`, `solution` (a named numeric vector, in the order
+#'   the variables were declared),
 #'   `model_class` (the class the service read the model as, e.g. `"milp"`),
+#'   `structures` (for a model with permutations: per name, the integer
+#'   vectors `item_at` and `slot_of`, see [perm_var()]; otherwise `NULL`),
 #'   and the ready-to-print `display`. Printing the result prints `display`.
 #' @export
 solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
@@ -55,7 +58,18 @@ solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
                    body = if (is.raw(m)) m else encode(m),
                    meta = .meta_config(m, project, config), gzip = gzip,
                    api_key = api_key, timeout = timeout, transport = transport)
-  .parse_result(resp$body)
+  .parse_result(resp$body, .declared(m))
+}
+
+# The decision variables' wire names in the order they were declared: the order
+# a solution is handed back in. The service answers with a JSON object, whose
+# order is its own, and in an R vector position means something, so that
+# `which(res$solution == 1)` had better count the way the model was written.
+# Raw bytes carry no order this side can read without decoding them.
+.declared <- function(m) {
+  if (inherits(m, "quicopt_model")) m <- as_program(m)
+  if (!inherits(m, "quicopt_program")) return(NULL)
+  vapply(m$vars, function(v) v$name, "")
 }
 
 #' @rdname solve_model
@@ -95,7 +109,8 @@ submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
   .adopt_key(parsed$api_key, explicit = !is.null(api_key))
   if (is.null(parsed$job_id)) stop("the service accepted the job but returned no job_id")
   structure(list(job_id = parsed$job_id, base_url = base_url,
-                 api_key = api_key, timeout = timeout, transport = transport),
+                 api_key = api_key, timeout = timeout, transport = transport,
+                 declared = .declared(m)),
             class = "quicopt_job")
 }
 
@@ -123,7 +138,7 @@ job_result <- function(job, wait = TRUE, timeout = 120, poll = 0.5) {
   repeat {
     resp <- tryCatch(.job_request(job, "GET", "/result"),
                      quicopt_error = function(e) e)
-    if (!inherits(resp, "quicopt_error")) return(.parse_result(resp$body))
+    if (!inherits(resp, "quicopt_error")) return(.parse_result(resp$body, job$declared))
     if (!wait || !identical(resp$reason, "not_done") || Sys.time() > deadline)
       stop(resp)
     Sys.sleep(poll)
@@ -251,10 +266,15 @@ print.quicopt_job <- function(x, ...) {
 # ── the answer ──────────────────────────────────────────────────────────────
 
 # The service's JSON, decoded leniently: absent fields stay NULL rather than
-# raising, and the solution becomes a named numeric vector.
-.parse_result <- function(body) {
+# raising, and the solution becomes a named numeric vector, the `declared`
+# names first and in that order, any other name after them as it arrived.
+.parse_result <- function(body, declared = NULL) {
   parsed <- jsonlite::fromJSON(rawToChar(body), simplifyVector = FALSE)
   solution <- if (is.null(parsed$solution)) NULL else unlist(parsed$solution)
+  if (length(solution) && length(declared)) {
+    known <- intersect(declared, names(solution))
+    solution <- solution[c(known, setdiff(names(solution), known))]
+  }
   structure(list(status = parsed$status,
                  objective = parsed$objective,
                  feasible = parsed$feasible,
@@ -263,6 +283,9 @@ print.quicopt_job <- function(x, ...) {
                  # solver_data; the sibling clients surface it at the top level,
                  # and so does this one.
                  model_class = parsed$solver_data$model_class,
+                 # The permutations found, both views as integer vectors; the
+                 # key is absent for a model that declares none.
+                 structures = .parse_structures(parsed$structures),
                  solve_time_seconds = parsed$solve_time_seconds,
                  solver_data = parsed$solver_data,
                  display = parsed$display,
@@ -270,11 +293,22 @@ print.quicopt_job <- function(x, ...) {
             class = "quicopt_result")
 }
 
+.parse_structures <- function(s) {
+  if (is.null(s)) return(NULL)
+  lapply(s, function(p) list(item_at = as.integer(unlist(p$item_at)),
+                             slot_of = as.integer(unlist(p$slot_of))))
+}
+
 #' @export
 print.quicopt_result <- function(x, ...) {
   if (!is.null(x$display)) cat(x$display, "\n", sep = "")
-  else cat("quicopt result: ", x$status,
-           if (!is.null(x$objective)) paste0(", objective ", x$objective), "\n", sep = "")
+  else {
+    cat("quicopt result: ", x$status,
+        if (!is.null(x$objective)) paste0(", objective ", x$objective), "\n", sep = "")
+    for (name in names(x$structures))
+      cat("  ", name, ": item_at = [", paste(x$structures[[name]]$item_at, collapse = ", "),
+          "]\n", sep = "")
+  }
   invisible(x)
 }
 

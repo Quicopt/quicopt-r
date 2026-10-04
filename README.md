@@ -75,6 +75,14 @@ res$solution[["x"]]                              # 118.7: the 90% service
 are drawn by the service from the model's own seed (`set_scenarios`), so
 `set.seed()` plays no role here.
 
+The solution was found on those scenarios, so check it on others before
+trusting it:
+
+```r
+resample(m, res, seed = 7)$feasible      # does the 90% level still hold on fresh draws?
+add(m, prob(demand - x <= 0) >= 0.9, margin = 2)   # if not: the level plus 2 standard errors
+```
+
 Have the uncertainty as data instead of a distribution? Every column of a data
 frame becomes a random variable, jointly, with correlation preserved:
 

@@ -19,5 +19,8 @@ The model, invisibly.
 }
 \description{
 The objective is a single expression; fold a vector with \code{sum()} first. A
-model given no objective is a feasibility problem.
+model given no objective is a feasibility problem. In a model under
+uncertainty the objective cannot be random: close it over the scenarios
+first, with \code{\link[=expectation]{expectation()}}, \code{\link[=cvar]{cvar()}} or another aggregator (the
+\link{stochastic} topic lists them).
 }

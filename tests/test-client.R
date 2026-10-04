@@ -167,6 +167,25 @@ res <- solve_model(mv, transport = rec$fn)
 check("family values come back keyed by flat names",
       identical(res$solution, c("xs[1]" = 1.0, "xs[2]" = 2.0, "xs[3]" = 3.0)))
 
+# ... and in the order they were declared, whatever order the answer arrived in
+shuffled <- '{"status":"optimal","solution":{"xs[2]":0.0,"y":7.0,"xs[3]":1.0,"extra":9.0,"xs[1]":1.0}}'
+mo <- model(); xo <- bin_var(mo, "xs", n = 3); yo <- num_var(mo, "y", 0, 9); minimize(mo, sum(xo) + yo)
+forget_session_key()
+rec <- recorder(list(ok_response(shuffled), ok_response(shuffled),
+                     list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-o"}')),
+                     ok_response(shuffled)))
+res <- solve_model(mo, transport = rec$fn)
+check("a solution is ordered as the variables were declared, strangers last",
+      identical(names(res$solution), c("xs[1]", "xs[2]", "xs[3]", "y", "extra")))
+check("so that position counts the way the model was written",
+      identical(unname(which(res$solution[1:3] == 1)), c(1L, 3L)))
+check("raw bytes keep the order of arrival",
+      identical(names(solve_model(encode(mo), transport = rec$fn)$solution),
+                c("xs[2]", "y", "xs[3]", "extra", "xs[1]")))
+check("a job's result is ordered the same way",
+      identical(names(job_result(submit(mo, transport = rec$fn))$solution),
+                c("xs[1]", "xs[2]", "xs[3]", "y", "extra")))
+
 # ── asynchronous jobs ───────────────────────────────────────────────────────
 
 # submit: body, path, and the key echoed in the accepted-response JSON

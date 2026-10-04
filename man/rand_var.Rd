@@ -5,9 +5,9 @@
 \alias{add_rand_var}
 \title{Declare a random variable}
 \usage{
-rand_var(m, name, dist = NULL)
+rand_var(m, name, dist = NULL, n = NULL)
 
-add_rand_var(m, name, dist = NULL)
+add_rand_var(m, name, dist = NULL, n = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -17,9 +17,12 @@ add_rand_var(m, name, dist = NULL)
 \item{dist}{A \code{\link[=distribution]{distribution()}} such as \code{normal(100, 15)}, or an
 \code{\link[=empirical]{empirical()}} column holding one observed value per scenario. May be left
 \code{NULL} and supplied later with \code{\link[=set_distribution]{set_distribution()}}.}
+
+\item{n}{How many elements the random variable has; left \code{NULL}, as many as
+the distribution's parameters say (1 for an empirical column).}
 }
 \value{
-The random variable's handle (an expression of length 1).
+The random variable's handle (an expression of length \code{n}).
 
 \code{add_rand_var} returns the model, invisibly.
 }
@@ -29,6 +32,13 @@ choosing it, and every use of it means the same sample within a scenario.
 Two independent random variables are two declarations under two names.
 }
 \details{
-A random variable takes no bounds and no domain — its distribution already
+A random variable takes no bounds and no domain; its distribution already
 says what values it takes.
+
+A distribution with vector parameters declares a vector random variable,
+\code{weight[1]}, ..., \code{weight[n]}, one independent draw per element:
+\code{rand_var(m, "weight", normal(c(6, 5, 4), 1))}. With \code{n} given and scalar
+parameters, the elements are \code{n} independent copies of one distribution.
+Elements of a vector random variable are independent of each other;
+correlated uncertainty is declared from data with \code{\link[=set_empirical]{set_empirical()}}.
 }

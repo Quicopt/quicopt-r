@@ -46,8 +46,11 @@ returning \code{list(status, headers, body)}.}
 }
 \value{
 The service's answer as a \code{quicopt_result}: a list with \code{status},
-\code{objective}, \code{feasible}, \code{solution} (a named numeric vector),
+\code{objective}, \code{feasible}, \code{solution} (a named numeric vector, in the order
+the variables were declared),
 \code{model_class} (the class the service read the model as, e.g. \code{"milp"}),
+\code{structures} (for a model with permutations: per name, the integer
+vectors \code{item_at} and \code{slot_of}, see \code{\link[=perm_var]{perm_var()}}; otherwise \code{NULL}),
 and the ready-to-print \code{display}. Printing the result prints \code{display}.
 }
 \description{

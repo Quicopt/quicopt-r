@@ -1,6 +1,6 @@
 Package: quicopt
 Title: Client for the 'Quicopt' Optimization Service
-Version: 0.1.1
+Version: 0.4.0
 Authors@R: person("Tim", "Bode", email = "t.bode@fz-juelich.de",
                   role = c("aut", "cre", "cph"))
 Description: Author an optimization model — including a model under
@@ -10,7 +10,9 @@ Description: Author an optimization model — including a model under
     service's wire format and solved remotely; no solver is installed
     locally. Random variables carry distributions or empirical scenario
     columns taken directly from a data frame, so observed history becomes a
-    stochastic program in one call.
+    stochastic program in one call. A permutation variable states an order or
+    a one-to-one assignment directly, with lookup tables for the data along
+    it.
 License: Apache License (== 2.0)
 Encoding: UTF-8
 Imports: curl, jsonlite, utils
