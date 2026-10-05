@@ -2,37 +2,45 @@
 % Please edit documentation in R/model.R
 \name{set_start}
 \alias{set_start}
-\title{Start the search from a known solution}
+\title{Start the next search from a known solution}
 \usage{
 set_start(m, values)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{values}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector keyed the
-way a solution is: \code{"x"} for a scalar, \code{"x[1]"}, \code{"x[2]"}, ... for a
-vector variable.}
+\item{values}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector, with
+names as in a solution: \code{"x"} for a single variable, \code{"x[1]"}, \code{"x[2]"},
+... for the elements of a vector variable.}
 }
 \value{
 The model, invisibly.
 }
 \description{
-Sets the start value of every variable named in \code{values}, so the next
-solve begins there. The usual source is a previous result: solve, tighten
-a constraint or add a scenario, and solve again from where the last search
-ended rather than from scratch. Variables not named keep their start.
+The service's search starts from each variable's start value, which is 0
+unless set otherwise. When a model is solved again after a small change,
+such as a tightened constraint or more scenarios, starting from the
+previous answer usually gets to a good solution sooner than starting from
+scratch. \code{set_start()} sets the start values from a result, or from a
+named vector of values. Variables it is not given keep their start value.
 }
 \details{
-An integer or binary variable's start is rounded by the service, and any
-start is clamped into the variable's bounds. A result also carries the
-order found for every permutation (\code{\link[=perm_var]{perm_var()}}), which becomes that
-permutation's start.
+The service rounds the start of a whole-number variable, and moves a start
+that lies outside the variable's bounds to the nearest bound. A result also
+holds the order found for each permutation (see \code{\link[=perm_var]{perm_var()}}), and that
+order becomes the permutation's start.
 }
 \examples{
 \dontrun{
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
 res <- solve(m)
-add(m, x <= 100)              # a new restriction
-set_start(m, res)             # begin where the last search ended
+
+set_scenarios(m, 1000, seed = 42)    # the same model, more scenarios
+set_start(m, res)                    # start where the last search ended
 solve(m)
 }
 }

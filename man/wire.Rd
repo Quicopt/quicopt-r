@@ -2,10 +2,14 @@
 % Please edit documentation in R/wire.R
 \name{wire}
 \alias{wire}
-\title{quicopt wire — a program's bytes}
+\title{The bytes sent to the service}
 \description{
-\code{\link[=encode]{encode()}} turns a \code{\link[=program]{program()}} into the bytes the service reads. Encoding is
-deterministic: the same model always produces the same bytes, and they are
-the bytes the service produces for that model too — checked byte for byte
-against committed goldens in \verb{tests/}.
+\code{\link[=solve]{solve()}} sends a model to the service as a sequence of bytes, in a format
+defined by the service. \code{\link[=encode]{encode()}} produces these bytes from a model or a
+\code{\link[=program]{program()}}, and \code{\link[=encode_params]{encode_params()}} the bytes for parameter tables on their
+own. Encoding gives the same bytes for the same model every time.
+}
+\details{
+You need these functions only to store the bytes, compare them, or send
+them yourself; \code{\link[=solve]{solve()}} encodes a model for you.
 }

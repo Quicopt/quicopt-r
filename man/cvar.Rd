@@ -2,22 +2,35 @@
 % Please edit documentation in R/stochastic.R
 \name{cvar}
 \alias{cvar}
-\title{The conditional value at risk at level \code{alpha}}
+\title{The average over the worst scenarios}
 \usage{
 cvar(x, alpha)
 }
 \arguments{
-\item{x}{A random model expression (see \code{\link[=is_random]{is_random()}}).}
+\item{x}{A random expression (see \code{\link[=is_random]{is_random()}}).}
 
-\item{alpha}{The tail level, a plain number strictly between 0 and 1; it
-cannot depend on a decision.}
+\item{alpha}{A number strictly between 0 and 1. It cannot depend on a
+decision.}
 }
 \value{
-An expression of the same length, no longer random.
+An expression of the same length as \code{x}, no longer random.
 }
 \description{
-The mean of \code{x} over its worst \code{1 - alpha} fraction of scenarios — at
-\code{alpha = 0.95}, the average of the worst 5\%. Minimizing it optimizes the
-tail instead of the average, and is the usual way to ask for a solution
-that holds up in bad scenarios rather than merely on average.
+\code{cvar(x, alpha)} is the average of \code{x} over the worst \code{1 - alpha} share of
+the scenarios, the ones in which \code{x} is largest. With \code{alpha = 0.95}, it is
+the average over the worst 5\%. The measure is known as the \emph{conditional
+value at risk}. Minimizing it asks for a decision that keeps the bad
+scenarios as good as possible, rather than the average one.
+}
+\details{
+\code{x} is read as a cost: large values are bad. For a profit, use the
+negative, \code{cvar(-profit, 0.95)}.
+}
+\examples{
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+cost <- 3 * stock + 10 * max(demand - stock, 0)
+minimize(m, cvar(cost, 0.95))              # the average cost of the worst 5\% of scenarios
 }

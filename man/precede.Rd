@@ -2,27 +2,34 @@
 % Please edit documentation in R/structured.R
 \name{precede}
 \alias{precede}
-\title{Require one item before another}
+\title{Require one item to come before another}
 \usage{
 precede(P, before, after)
 }
 \arguments{
 \item{P}{A permutation from \code{\link[=perm_var]{perm_var()}}.}
 
-\item{before, after}{Items, whole numbers from 1 to the permutation's size.}
+\item{before, after}{Items: whole numbers from 1 to the size of the
+permutation.}
 }
 \value{
 The permutation, invisibly.
 }
 \description{
-\code{precede(P, before, after)} requires item \code{before} to sit in an earlier
-slot than item \code{after}, in every solution: a pickup before its delivery, a
-job before the one that needs its output. The requirement is held by the
-search itself, not by a penalty, so it is never violated. The requirements
-of a permutation must be consistent: a cycle among them is refused.
+\code{precede(P, before, after)} requires item \code{before} to be in an earlier
+slot of the permutation \code{P} than item \code{after}: a pickup before its
+delivery, or a job before the job that needs its output. The service only
+considers arrangements that meet the requirement, so every solution meets
+it.
+}
+\details{
+\code{precede()} may be called several times for one permutation. Requirements
+that contradict each other, such as 1 before 2 and 2 before 1, are an
+error.
 }
 \examples{
 m <- model()
-tour <- perm_var(m, "tour", 5)
-precede(tour, 4, 1)                 # stop 4 before stop 1
+route <- perm_var(m, "route", 5)
+precede(route, 4, 1)                # stop 4 is visited before stop 1
+precede(route, 2, 5)                # and stop 2 before stop 5
 }

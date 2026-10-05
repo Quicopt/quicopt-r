@@ -5,7 +5,7 @@
 \alias{job_result}
 \alias{job_log}
 \alias{job_delete}
-\title{Poll a submitted job}
+\title{Follow up a submitted job}
 \usage{
 job_status(job)
 
@@ -16,27 +16,41 @@ job_log(job)
 job_delete(job)
 }
 \arguments{
-\item{job}{A \code{quicopt_job} from \code{\link[=submit]{submit()}}.}
+\item{job}{A job, as returned by \code{\link[=submit]{submit()}}.}
 
-\item{wait}{Poll until the job is done (\code{TRUE}), or fetch exactly once.}
+\item{wait}{\code{TRUE} waits until the job is finished. \code{FALSE} asks once, and
+is an error if the job is not finished yet.}
 
-\item{timeout}{Maximum seconds to keep polling before giving up.}
+\item{timeout}{How many seconds to wait at most.}
 
-\item{poll}{Seconds between polls.}
+\item{poll}{How many seconds to wait between two checks.}
 }
 \value{
-\code{job_status} returns the service's job state as a list.
+\code{job_status()} returns the job's state as a list.
 
-\code{job_result} returns the finished solve as a \code{quicopt_result}.
+\code{job_result()} returns the answer, a list of class
+\code{quicopt_result} (see \code{\link[=solve]{solve()}}).
 
-\code{job_log} returns the log as a single string.
+\code{job_log()} returns the log as a single character string.
 
-\code{job_delete} returns \code{NULL}, invisibly.
+\code{job_delete()} returns \code{NULL}, invisibly.
 }
 \description{
-\code{job_status} fetches the job's state (\code{queued}, \code{running}, \code{done},
-\code{failed}) and its log tail. \code{job_result} fetches the finished solve,
-polling past the service's \code{not_done} answer until the worker finishes.
-\code{job_log} fetches the plain-text log, and \code{job_delete} removes the job and
-its stored result from the service.
+\itemize{
+\item \code{job_status()} returns the job's state, \code{"queued"}, \code{"running"},
+\code{"done"} or \code{"failed"}, together with the last lines of its log.
+\item \code{job_result()} returns the answer of the job, in the same form as
+\code{\link[=solve]{solve()}}. By default it waits for the job to finish, checking every
+\code{poll} seconds for up to \code{timeout} seconds.
+\item \code{job_log()} returns the job's log as text.
+\item \code{job_delete()} deletes the job and its stored answer from the service.
+}
+}
+\examples{
+\dontrun{
+job <- submit(m)
+job_status(job)
+res <- job_result(job)
+job_delete(job)
+}
 }

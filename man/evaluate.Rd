@@ -2,50 +2,62 @@
 % Please edit documentation in R/evaluate.R
 \name{evaluate}
 \alias{evaluate}
-\title{The value of an expression at a solution}
+\title{Compute a quantity at a given solution}
 \usage{
 evaluate(m, solution, expr, seed = NULL, scenarios = NULL, ...)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{solution}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector giving
-every decision variable's value (\code{"x"}, or \code{"x[1]"}, \code{"x[2]"}, ... for a
-vector variable). A model with a permutation (\code{\link[=perm_var]{perm_var()}}) takes a
-result, which carries the order found.}
+\item{solution}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector with a
+value for every decision variable, named as in a solution: \code{"x"}, or
+\code{"x[1]"}, \code{"x[2]"}, ... for a vector variable. A model with a permutation
+needs a result, because only a result holds the arrangement.}
 
-\item{expr}{A single non-random model expression.}
+\item{expr}{The quantity to compute: one expression that is not random.}
 
-\item{seed}{Left \code{NULL}, the model's own scenarios; given, a seed for fresh
-ones.}
+\item{seed}{Left \code{NULL}, the model's own scenarios are used. Otherwise, the
+seed for new scenarios, different from the model's own.}
 
-\item{scenarios}{With \code{seed}: how many fresh scenarios to draw (default: as
-many as the model has).}
+\item{scenarios}{With \code{seed}: how many new scenarios to draw. Left \code{NULL},
+as many as the model has. More scenarios give a more precise value.}
 
-\item{...}{Connection settings, passed on to \code{\link[=solve_model]{solve_model()}}: \code{base_url},
-\code{api_key}, \code{project}, \code{config}, \code{gzip}, \code{timeout}, \code{transport}.}
+\item{...}{Settings for the request, as for \code{\link[=solve_model]{solve_model()}}: \code{base_url},
+\code{api_key}, \code{project}, \code{config}, \code{gzip}, \code{timeout} and \code{transport}.}
 }
 \value{
-The expression's value, a number.
+The value of \code{expr}, a number.
 }
 \description{
-A solve returns the values of the variables and of the objective. For any
-other quantity of the model, the shortfall the solution leaves, a
-probability it reaches, a cost it incurs, \code{evaluate()} computes the value
-at that solution on the model's own scenarios.
+A solve reports the values of the decision variables and of the
+objective. \code{evaluate()} computes any other quantity of the model at a
+given solution: the share of scenarios in which demand is met, the average
+shortfall, the cost of a plan written out by hand. It sends the model to
+the service with every decision variable fixed at the solution's value, so
+each call is one request.
 }
 \details{
-The expression cannot be random: close it over the scenarios first, as for
-an objective. With a \code{seed}, the value is computed on fresh scenarios
-instead of the model's own, which is how a probability or an expected cost
-is checked out of sample (see \code{\link[=resample]{resample()}} for the rules on fresh
-scenarios). Each call is one request to the service.
+The quantity must be a single number, so a random expression is summarized
+first, for example with \code{\link[=prob]{prob()}} or \code{\link[=expectation]{expectation()}}, as for an objective.
+
+Without a \code{seed}, the value is computed on the model's own scenarios. With
+a \code{seed}, it is computed on new scenarios drawn from that seed, which shows
+how the solution does on scenarios it was not chosen for. \code{\link[=resample]{resample()}}
+explains which random variables are drawn again.
 }
 \examples{
 \dontrun{
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
+add(m, prob(demand <= stock) >= 0.9)
 res <- solve(m)
-evaluate(m, res, prob(demand - x <= 0))              # the service level reached
-evaluate(m, res, prob(demand - x <= 0), seed = 2)    # and on fresh scenarios
-evaluate(m, res, expectation(max(demand - x, 0)))    # the expected shortfall
+
+met <- prob(demand <= stock)
+evaluate(m, res, met)                                  # on the model's scenarios
+evaluate(m, res, met, seed = 7, scenarios = 1000)      # on 1000 new ones
+evaluate(m, c(stock = 110), met)                       # for a stock of 110
 }
 }

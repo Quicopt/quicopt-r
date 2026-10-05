@@ -3,7 +3,7 @@
 \name{solve_model}
 \alias{solve_model}
 \alias{solve.quicopt_model}
-\title{Solve a model with the Quicopt service}
+\title{Solve a model}
 \usage{
 solve_model(
   m,
@@ -19,50 +19,101 @@ solve_model(
 \method{solve}{quicopt_model}(a, b, ...)
 }
 \arguments{
-\item{m}{A \code{\link[=model]{model()}}, a \code{\link[=program]{program()}}, or already-encoded bytes.}
+\item{m}{A \code{\link[=model]{model()}}. A \code{\link[=program]{program()}}, or the bytes from \code{\link[=encode]{encode()}}, also
+work.}
 
-\item{base_url}{The service to talk to; defaults to \link{DEFAULT_BASE_URL}.}
+\item{base_url}{The address of the service.}
 
-\item{api_key}{A key you hold, or \code{NULL} to mint and reuse a free-tier key.}
+\item{api_key}{Your API key, or \code{NULL} to use the session's free key (see
+the API keys section).}
 
-\item{project}{A project tag for per-project invoicing, or \code{NULL}.}
+\item{project}{A project name, for billing by project, or \code{NULL}.}
 
-\item{config}{Named list of extra query parameters; a \code{source_language}
-here overrides the automatic tag.}
+\item{config}{A named list of further settings, sent to the service as
+query parameters.}
 
-\item{gzip}{Compress the request body.}
+\item{gzip}{Whether to compress the model before sending it; worth it for
+a large model.}
 
-\item{timeout}{Seconds to wait for the service.}
+\item{timeout}{How many seconds to wait for the answer.}
 
-\item{transport}{The HTTP layer, replaceable for testing: a
-\verb{function(req)} taking \code{list(method, url, headers, body, timeout)} and
-returning \code{list(status, headers, body)}.}
+\item{transport}{For tests: a function that is called instead of sending
+the request. It takes a list with the elements \code{method}, \code{url},
+\code{headers}, \code{body} and \code{timeout}, and returns a list with the elements
+\code{status}, \code{headers} and \code{body}.}
 
-\item{a}{The model (the argument is named \code{a} to match the \code{solve} generic).}
+\item{a}{The model. The argument is called \code{a} because base R's \code{solve()}
+calls it that.}
 
-\item{b}{Unused; supplying it is an error.}
+\item{b}{Not used; giving it is an error.}
 
-\item{...}{Passed on to \code{\link[=solve_model]{solve_model()}}.}
+\item{...}{Further arguments for \code{solve_model()}, by name.}
 }
 \value{
-The service's answer as a \code{quicopt_result}: a list with \code{status},
-\code{objective}, \code{feasible}, \code{solution} (a named numeric vector, in the order
-the variables were declared),
-\code{model_class} (the class the service read the model as, e.g. \code{"milp"}),
-\code{structures} (for a model with permutations: per name, the integer
-vectors \code{item_at} and \code{slot_of}, see \code{\link[=perm_var]{perm_var()}}; otherwise \code{NULL}),
-and the ready-to-print \code{display}. Printing the result prints \code{display}.
+A list of class \code{quicopt_result}, with these elements:
+\itemize{
+\item \code{status}: what kind of answer it is (see the Status section).
+\item \code{feasible}: whether the solution meets every constraint.
+\item \code{objective}: the value of the objective at the solution.
+\item \code{solution}: a named numeric vector with the value of each decision
+variable, in the order they were declared.
+\item \code{structures}: for a model with permutations, one element per
+permutation, holding the integer vectors \code{item_at} and \code{slot_of} (see
+\code{\link[=perm_var]{perm_var()}}); otherwise \code{NULL}.
+\item \code{model_class}: the kind of model the service recognized, such as
+\code{"lp"}, \code{"milp"} or \code{"stochastic"}.
+\item \code{solver_data}: further details from the service, such as
+\code{max_violation}, by how much the worst constraint is missed.
+\item \code{display}: a summary prepared by the service, which is what printing
+the result shows.
+}
 }
 \description{
-Encodes the model, sends it, and returns the parsed result. The first
-keyless call mints an API key, remembered for the rest of the R session;
-pass \code{api_key} to authenticate with a key you already hold (used as-is,
-never remembered).
+\code{solve()} sends a model to the Quicopt service, waits for the answer, and
+returns it as a list (see the Value section). \code{solve_model()} is the same
+function under a name that cannot be confused with base R's \code{solve()},
+which can read better in a pipe.
 }
 \details{
-\code{solve(m)} and \code{solve_model(m)} are the same function — the former extends
-the \code{base::solve} generic (as \code{solve.qr} does), the latter is the
-unambiguous name for pipes and for reading. For a long-running model, or a
-first call against a cold worker, \code{\link[=submit]{submit()}} queues the same request
-asynchronously instead of blocking.
+\code{solve()} waits for up to \code{timeout} seconds. For a model that takes
+longer, \code{\link[=submit]{submit()}} sends it without waiting.
+}
+\section{API keys}{
+
+The service needs an API key. The first time a model is solved in an R
+session without one, the service issues a free key, and quicopt keeps it
+in memory until the session ends; it is never written to disk. To use a
+key of your own, pass it as \code{api_key}. It is then used for that call only,
+and not kept.
+}
+
+\section{Status}{
+
+\code{status} says what kind of answer the result holds:
+\itemize{
+\item \code{"optimal"}: the service has proved that no better solution exists.
+\item \code{"heuristic"}: the best solution a search found, without that proof.
+Models with random variables, permutations or lookup tables are solved
+this way. If such a result has \code{feasible = FALSE}, the search found no
+solution that meets every constraint, which does not prove that none
+exists.
+}
+
+Other values say why no solution is available.
+}
+
+\examples{
+\dontrun{
+m <- model()
+tables <- int_var(m, "tables", lower = 0)
+chairs <- int_var(m, "chairs", lower = 0)
+maximize(m, 50 * tables + 20 * chairs)
+add(m, 3 * tables + chairs <= 41)
+add(m, tables + chairs <= 18)
+
+res <- solve(m)
+res$status
+res$solution
+res
+}
 }

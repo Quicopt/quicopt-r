@@ -11,7 +11,7 @@
 \alias{ir_struct_ref}
 \alias{ir_table_ref}
 \alias{ir_set_ref}
-\title{quicopt IR — a model as plain data}
+\title{Expression nodes, for building a program by hand}
 \usage{
 ir_const(value)
 
@@ -32,59 +32,78 @@ ir_table_ref(param, index)
 ir_set_ref(name, args = list())
 }
 \arguments{
-\item{value}{A numeric constant.}
+\item{value}{A number.}
 
-\item{name}{The referenced name.}
+\item{name}{The name of the variable, table, random variable, permutation
+or index set referred to.}
 
-\item{index}{An index tuple (a list of integers and strings; \code{list()} for a scalar).}
+\item{index}{A position: a list of whole numbers and index names, \code{list()}
+for none. For \code{ir_table_ref()}, a list of one or two expression nodes.}
 
-\item{op}{A catalog operator key, e.g. \code{"+"}.}
+\item{op}{The name of an operator the service knows, such as \code{"+"}, \code{"*"}
+or \code{"sqrt"}. For \code{ir_reduce()}, the operator that combines the terms,
+such as \code{"+"} for a sum.}
 
-\item{args}{Enclosing bound indices the set is applied to (\code{list()} for a flat set).}
+\item{args}{For \code{ir_apply()}, a list of argument nodes. For \code{ir_set_ref()},
+the indices the set depends on, \code{list()} for a set that depends on none.}
 
-\item{idx}{The bound dummy index name.}
+\item{idx}{The name of the index that runs over the set, as used in \code{body}.}
 
-\item{over}{An \code{\link[=ir_set_ref]{ir_set_ref()}} the fold ranges across.}
+\item{over}{The index set to run over, from \code{ir_set_ref()}.}
 
-\item{body}{The folded expression.}
+\item{body}{The expression to combine over the set.}
 
-\item{cond}{Keep a term only where \code{cond} is non-zero; \code{NULL} keeps every term.}
+\item{cond}{An expression node: only the terms in which it is not 0 are
+included. \code{NULL} includes every term.}
 
-\item{param}{The name of the parameter table read.}
+\item{param}{The name of the parameter table.}
 }
 \value{
-A plain list, with no class attribute, holding one node of a model's
-expression tree. \code{ir_const()}, \code{ir_param()}, \code{ir_var()}, \code{ir_apply()},
-\code{ir_reduce()}, \code{ir_source_ref()}, \code{ir_struct_ref()} and \code{ir_table_ref()}
-each return an expression node: its \code{kind} field (\code{"const"}, \code{"param"},
-\code{"var"}, \code{"apply"}, \code{"reduce"}, \code{"source"}, \code{"structure"} or \code{"table"})
-says which node it is, and the remaining fields are the
-arguments under their own names (\code{value} coerced to numeric). Such a node
-stands wherever an expression is expected: as an entry of another node's
-\code{args}, as the objective of a \code{\link[=program]{program()}}, or as the \code{f} of a
-\code{\link[=constraint]{constraint()}}. \code{ir_set_ref()} returns a list with the fields \code{name} and
-\code{args}: a reference to an index set rather than an expression, so it
-carries no \code{kind}, and it is what \code{\link[=ir_reduce]{ir_reduce()}} takes as \code{over}.
-
-\code{ir_struct_ref()} refers to a declared permutation by name, and is legal
-only as the second argument of the catalog operators \code{item_at} and
-\code{slot_of} (what \code{\link[=item_at]{item_at()}} and \code{\link[=slot_of]{slot_of()}} build). \code{ir_table_ref()} reads
-the parameter table \code{param} at one or two positions given as expression
-nodes (what indexing a \code{\link[=lookup_table]{lookup_table()}} builds).
+A plain list without a class. Every function except \code{ir_set_ref()}
+returns an expression node, which can stand wherever a program expects an
+expression: in another node's \code{args}, as the program's objective, or as
+the \code{f} of a \code{\link[=constraint]{constraint()}}. \code{ir_set_ref()} returns a reference to an
+index set instead, a list with the fields \code{name} and \code{args} and no
+\code{kind}, which is what \code{ir_reduce()} takes as \code{over}.
 }
 \description{
-The form a model takes between the interface that wrote it and the service
-that solves it: variables, expressions and constraints, with no trace of how
-they were authored. \code{\link[=model]{model()}} and friends build one of these on the way out;
-\code{\link[=encode]{encode()}} turns it into the bytes the service reads. The shape is the
-service's published contract — these constructors track it, they never fork it.
+These functions build the pieces of a \code{\link[=program]{program()}}'s expressions directly,
+as plain lists. A \code{\link[=model]{model()}} builds them for you from ordinary R
+arithmetic, so you need them only to build a program by hand. Each node is
+a list whose \code{kind} field says what it is:
 }
 \details{
-Nodes are plain lists tagged by a \code{kind} field. An index tuple is a plain
-list whose entries are integers (concrete coordinates) or strings (bound
-index names).
+\itemize{
+\item \code{ir_const(value)}: a number.
+\item \code{ir_var(name, index)}: a decision variable.
+\item \code{ir_param(name, index)}: an entry of one of the program's parameter
+tables.
+\item \code{ir_source_ref(name)}: a random variable declared in the program's
+\code{sources}.
+\item \code{ir_apply(op, args)}: an operator, such as \code{"+"} or \code{"sqrt"}, applied to
+a list of argument nodes.
+\item \code{ir_reduce(op, idx, over, body, cond)}: \code{body} combined over the elements
+of an index set, for example the sum of \code{body} over all \code{i} in a set
+\code{S}.
+\item \code{ir_set_ref(name, args)}: the index set a reduction runs over.
+\item \code{ir_struct_ref(name)}: a permutation declared in the program's
+\code{structures}. It may appear only as the second argument of the operators
+\code{"item_at"} and \code{"slot_of"}, which is what \code{\link[=item_at]{item_at()}} and \code{\link[=slot_of]{slot_of()}}
+build.
+\item \code{ir_table_ref(param, index)}: an entry of a parameter table at positions
+given by expression nodes, which is what indexing a \code{\link[=lookup_table]{lookup_table()}}
+builds.
+}
 
-The constructors carry an \code{ir_} prefix rather than mirroring the Python
-client's bare names: \code{Reduce} is a base R function, and this package extends
-base names, it does not mask them.
+An \code{index} is a list of whole numbers, for fixed positions, and strings,
+for the names of indices bound by an enclosing reduction or constraint; it
+is \code{list()} for a variable or entry without an index.
+}
+\examples{
+# 3 * x + 1
+ir_apply("+", list(ir_apply("*", list(ir_const(3), ir_var("x"))), ir_const(1)))
+
+# the sum of cost[i] * y[i] over the elements i of the set "items"
+ir_reduce("+", "i", ir_set_ref("items"),
+          ir_apply("*", list(ir_param("cost", list("i")), ir_var("y", list("i")))))
 }

@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
-#' quicopt wire — a program's bytes
+#' The bytes sent to the service
 #'
-#' [encode()] turns a [program()] into the bytes the service reads. Encoding is
-#' deterministic: the same model always produces the same bytes, and they are
-#' the bytes the service produces for that model too — checked byte for byte
-#' against committed goldens in `tests/`.
+#' [solve()] sends a model to the service as a sequence of bytes, in a format
+#' defined by the service. [encode()] produces these bytes from a model or a
+#' [program()], and [encode_params()] the bytes for parameter tables on their
+#' own. Encoding gives the same bytes for the same model every time.
+#'
+#' You need these functions only to store the bytes, compare them, or send
+#' them yourself; [solve()] encodes a model for you.
 #'
 #' @name wire
 NULL
@@ -285,20 +288,21 @@ NULL
 
 # ── the program ─────────────────────────────────────────────────────────────
 
-#' Encode a program to the bytes the service reads
+#' Encode a model as the bytes the service reads
 #'
-#' Two equal programs always encode to equal bytes, whichever order their
-#' tables happened to be built in. A model that declares no uncertainty and no
-#' permutation encodes to exactly the bytes it would have before those layers
-#' existed, so declaring none costs an ordinary model nothing.
+#' Turns a model or a program into the bytes that [solve()] sends. The same
+#' program always gives the same bytes, in whatever order its parts were
+#' built. [solve()] also accepts the bytes directly.
 #'
-#' Encoding is normally invisible: [solve_model()] does it for you, and what it
-#' sends is exactly these bytes. Reach for `encode` to send them yourself,
-#' store them, or check them.
-#'
-#' @param prog A [program()], or a model built with [model()] (which is lowered
-#'   first).
-#' @return A raw vector: the encoded program.
+#' @param prog A [model()] or a [program()].
+#' @return A raw vector.
+#' @examples
+#' m <- model()
+#' x <- num_var(m, "x", lower = 0, upper = 4)
+#' maximize(m, 3 * x)
+#' bytes <- encode(m)
+#' length(bytes)
+#' identical(bytes, encode(as_program(m)))   # TRUE
 #' @export
 encode <- function(prog) {
   if (inherits(prog, "quicopt_model")) prog <- as_program(prog)
@@ -351,14 +355,19 @@ encode <- function(prog) {
 
 names2 <- function(x) if (is.null(names(x))) character(0) else names(x)
 
-#' Encode parameter tables alone, for rebinding data
+#' Encode parameter tables on their own
 #'
-#' Send the program once, then one of these per instance to re-solve the same
-#' structure on new data without re-sending the model. Tables are written in
-#' sorted order, so the same data always encodes to the same bytes.
+#' Encodes the parameter tables of a [program()] without the rest of it. The
+#' format has this message so that a program can be given new data without
+#' sending the whole program again; no function in this package sends it.
+#' Tables are written in a fixed order, so the same data always gives the
+#' same bytes.
 #'
-#' @param params Named parameter tables, as in [program()].
-#' @return A raw vector: the encoded tables.
+#' @param params Parameter tables, as for [program()].
+#' @return A raw vector.
+#' @examples
+#' cost <- list(list(key = list(1L), value = 3), list(key = list(2L), value = 1.5))
+#' encode_params(list(cost = cost))
 #' @export
 encode_params <- function(params) {
   io <- .sink()

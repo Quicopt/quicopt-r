@@ -7,29 +7,42 @@
 prob(rel)
 }
 \arguments{
-\item{rel}{A comparison built with \code{<=} or \code{>=}.}
+\item{rel}{A comparison of expressions, written with \code{<=} or \code{>=}.}
 }
 \value{
-An expression: a probability between 0 and 1 per compared element.
+An expression with one probability, between 0 and 1, per element
+of the comparison.
 }
 \description{
-The fraction of scenarios in which it does. This is what a chance
-constraint is built from:
+\code{prob(a <= b)} is the share of the scenarios in which \code{a <= b} holds: an
+estimate of its probability. It is a single number, so it can be used in a
+constraint. A requirement on a probability is called a \emph{chance
+constraint}:
 }
 \details{
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{add(m, prob(demand - x <= 0) >= 0.9)
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{add(m, prob(demand <= stock) >= 0.9)
 }\if{html}{\out{</div>}}
 
-which reads as \emph{demand is met in at least 90\% of scenarios}. The line holds
-two comparisons, both meaningful: the one inside \code{prob} is the event being
-measured, the outer one is the service level demanded of it.
+reads as "demand is met in at least 90\% of the scenarios". The line holds
+two comparisons, which do different jobs: the inner one, \code{demand <= stock},
+is the event checked in each scenario, and the outer one, \verb{>= 0.9}, is the
+requirement on how often it happens. The \code{margin} argument of \code{\link[=add]{add()}}
+allows for the sampling error of the estimate.
 
-\code{rel} is a comparison, \code{a <= b} or \code{a >= b}, with at least one side
-containing a random variable. An equality is refused: for a continuous
-quantity its probability is zero. So are \code{<} and \code{>}, which for a
-continuous quantity mean the same as \code{<=} and \code{>=}. Elementwise over vector
-comparisons.
+The comparison is written with \code{<=} or \code{>=}, and at least one side must
+contain a random variable. \code{==} is not accepted, since the probability
+that a quantity which can take any value equals one particular value is 0.
+\code{<} and \code{>} are not accepted either, since for such a quantity they mean
+the same as \code{<=} and \code{>=}. For vector expressions, each element gets its
+own probability.
 
-The same event as a 0/1 expression, scenario by scenario, is
-\code{\link[=holds]{holds()}}: \code{expectation(holds(rel))} is \code{prob(rel)}.
+\code{\link[=holds]{holds()}} turns the same comparison into a 0/1 value in each scenario, and
+\code{expectation(holds(a <= b))} is the same number as \code{prob(a <= b)}.
+}
+\examples{
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+add(m, prob(demand <= stock) >= 0.9)       # demand met in at least 90\% of scenarios
 }

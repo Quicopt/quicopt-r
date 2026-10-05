@@ -2,24 +2,29 @@
 % Please edit documentation in R/ir.R
 \name{parametric}
 \alias{parametric}
-\title{A random variable drawn from a distribution}
+\title{A random variable with a distribution, for building a program by hand}
 \usage{
 parametric(head, params)
 }
 \arguments{
-\item{head}{The distribution's catalog name.}
+\item{head}{The name under which the service knows the distribution.}
 
-\item{params}{A list of parameter nodes.}
+\item{params}{A list of expression nodes, one per parameter.}
 }
 \value{
-A plain list, with no class attribute, with the fields
-\code{kind = "parametric"}, \code{head} and \code{params} as given. It declares one
-random variable by its distribution, and is an entry of the named list a
-\code{\link[=program]{program()}} takes as \code{sources}; the entry's name is the name
+A plain list without a class, with the fields
+\code{kind = "parametric"}, \code{head} and \code{params}. It is an element of the named
+list a \code{\link[=program]{program()}} takes as \code{sources}, and the element's name is the name
 \code{\link[=ir_source_ref]{ir_source_ref()}} refers to.
 }
 \description{
-\code{head} is a catalog operator (\code{"normal"}, ...) and each parameter is an
-ordinary deterministic expression node — so a distribution whose mean is
-itself a decision needs nothing the grammar does not already have.
+Declares one random variable of a \code{\link[=program]{program()}} by its distribution. \code{head}
+names the distribution, such as \code{"normal"}, and \code{params} holds its
+parameters as expression nodes, in the same order as for \code{\link[=normal]{normal()}} and the
+other distribution functions. A parameter may contain decision variables,
+but no random variable. \code{\link[=rand_var]{rand_var()}} builds these for you.
+}
+\examples{
+# demand ~ normal(100, 15)
+sources <- list(demand = parametric("normal", list(ir_const(100), ir_const(15))))
 }

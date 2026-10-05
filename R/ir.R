@@ -1,54 +1,65 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
-#' quicopt IR — a model as plain data
+#' Expression nodes, for building a program by hand
 #'
-#' The form a model takes between the interface that wrote it and the service
-#' that solves it: variables, expressions and constraints, with no trace of how
-#' they were authored. [model()] and friends build one of these on the way out;
-#' [encode()] turns it into the bytes the service reads. The shape is the
-#' service's published contract — these constructors track it, they never fork it.
+#' These functions build the pieces of a [program()]'s expressions directly,
+#' as plain lists. A [model()] builds them for you from ordinary R
+#' arithmetic, so you need them only to build a program by hand. Each node is
+#' a list whose `kind` field says what it is:
 #'
-#' Nodes are plain lists tagged by a `kind` field. An index tuple is a plain
-#' list whose entries are integers (concrete coordinates) or strings (bound
-#' index names).
+#' * `ir_const(value)`: a number.
+#' * `ir_var(name, index)`: a decision variable.
+#' * `ir_param(name, index)`: an entry of one of the program's parameter
+#'   tables.
+#' * `ir_source_ref(name)`: a random variable declared in the program's
+#'   `sources`.
+#' * `ir_apply(op, args)`: an operator, such as `"+"` or `"sqrt"`, applied to
+#'   a list of argument nodes.
+#' * `ir_reduce(op, idx, over, body, cond)`: `body` combined over the elements
+#'   of an index set, for example the sum of `body` over all `i` in a set
+#'   `S`.
+#' * `ir_set_ref(name, args)`: the index set a reduction runs over.
+#' * `ir_struct_ref(name)`: a permutation declared in the program's
+#'   `structures`. It may appear only as the second argument of the operators
+#'   `"item_at"` and `"slot_of"`, which is what [item_at()] and [slot_of()]
+#'   build.
+#' * `ir_table_ref(param, index)`: an entry of a parameter table at positions
+#'   given by expression nodes, which is what indexing a [lookup_table()]
+#'   builds.
 #'
-#' The constructors carry an `ir_` prefix rather than mirroring the Python
-#' client's bare names: `Reduce` is a base R function, and this package extends
-#' base names, it does not mask them.
+#' An `index` is a list of whole numbers, for fixed positions, and strings,
+#' for the names of indices bound by an enclosing reduction or constraint; it
+#' is `list()` for a variable or entry without an index.
 #'
-#' @return A plain list, with no class attribute, holding one node of a model's
-#'   expression tree. `ir_const()`, `ir_param()`, `ir_var()`, `ir_apply()`,
-#'   `ir_reduce()`, `ir_source_ref()`, `ir_struct_ref()` and `ir_table_ref()`
-#'   each return an expression node: its `kind` field (`"const"`, `"param"`,
-#'   `"var"`, `"apply"`, `"reduce"`, `"source"`, `"structure"` or `"table"`)
-#'   says which node it is, and the remaining fields are the
-#'   arguments under their own names (`value` coerced to numeric). Such a node
-#'   stands wherever an expression is expected: as an entry of another node's
-#'   `args`, as the objective of a [program()], or as the `f` of a
-#'   [constraint()]. `ir_set_ref()` returns a list with the fields `name` and
-#'   `args`: a reference to an index set rather than an expression, so it
-#'   carries no `kind`, and it is what [ir_reduce()] takes as `over`.
+#' @return A plain list without a class. Every function except `ir_set_ref()`
+#'   returns an expression node, which can stand wherever a program expects an
+#'   expression: in another node's `args`, as the program's objective, or as
+#'   the `f` of a [constraint()]. `ir_set_ref()` returns a reference to an
+#'   index set instead, a list with the fields `name` and `args` and no
+#'   `kind`, which is what `ir_reduce()` takes as `over`.
+#' @examples
+#' # 3 * x + 1
+#' ir_apply("+", list(ir_apply("*", list(ir_const(3), ir_var("x"))), ir_const(1)))
 #'
-#'   `ir_struct_ref()` refers to a declared permutation by name, and is legal
-#'   only as the second argument of the catalog operators `item_at` and
-#'   `slot_of` (what [item_at()] and [slot_of()] build). `ir_table_ref()` reads
-#'   the parameter table `param` at one or two positions given as expression
-#'   nodes (what indexing a [lookup_table()] builds).
-#'
+#' # the sum of cost[i] * y[i] over the elements i of the set "items"
+#' ir_reduce("+", "i", ir_set_ref("items"),
+#'           ir_apply("*", list(ir_param("cost", list("i")), ir_var("y", list("i")))))
 #' @name ir
 NULL
 
 # ── expression nodes ────────────────────────────────────────────────────────
 
 #' @rdname ir
-#' @param value A numeric constant.
+#' @param value A number.
 #' @export
 ir_const <- function(value) list(kind = "const", value = as.numeric(value))
 
 #' @rdname ir
-#' @param name The referenced name.
-#' @param index An index tuple (a list of integers and strings; `list()` for a scalar).
+#' @param name The name of the variable, table, random variable, permutation
+#'   or index set referred to.
+#' @param index A position: a list of whole numbers and index names, `list()`
+#'   for none. For `ir_table_ref()`, a list of one or two expression nodes.
 #' @export
 ir_param <- function(name, index = list()) list(kind = "param", name = name, index = index)
 
@@ -57,16 +68,20 @@ ir_param <- function(name, index = list()) list(kind = "param", name = name, ind
 ir_var <- function(name, index = list()) list(kind = "var", name = name, index = index)
 
 #' @rdname ir
-#' @param op A catalog operator key, e.g. `"+"`.
-#' @param args A list of argument nodes.
+#' @param op The name of an operator the service knows, such as `"+"`, `"*"`
+#'   or `"sqrt"`. For `ir_reduce()`, the operator that combines the terms,
+#'   such as `"+"` for a sum.
+#' @param args For `ir_apply()`, a list of argument nodes. For `ir_set_ref()`,
+#'   the indices the set depends on, `list()` for a set that depends on none.
 #' @export
 ir_apply <- function(op, args) list(kind = "apply", op = op, args = args)
 
 #' @rdname ir
-#' @param idx The bound dummy index name.
-#' @param over An [ir_set_ref()] the fold ranges across.
-#' @param body The folded expression.
-#' @param cond Keep a term only where `cond` is non-zero; `NULL` keeps every term.
+#' @param idx The name of the index that runs over the set, as used in `body`.
+#' @param over The index set to run over, from `ir_set_ref()`.
+#' @param body The expression to combine over the set.
+#' @param cond An expression node: only the terms in which it is not 0 are
+#'   included. `NULL` includes every term.
 #' @export
 ir_reduce <- function(op, idx, over, body, cond = NULL)
   list(kind = "reduce", op = op, idx = idx, over = over, body = body, cond = cond)
@@ -80,31 +95,38 @@ ir_source_ref <- function(name) list(kind = "source", name = name)
 ir_struct_ref <- function(name) list(kind = "structure", name = name)
 
 #' @rdname ir
-#' @param param The name of the parameter table read.
+#' @param param The name of the parameter table.
 #' @export
 ir_table_ref <- function(param, index) list(kind = "table", param = param, index = index)
 
 #' @rdname ir
-#' @param args Enclosing bound indices the set is applied to (`list()` for a flat set).
 #' @export
 ir_set_ref <- function(name, args = list()) list(name = name, args = args)
 
 # ── constraint sets ─────────────────────────────────────────────────────────
 
-#' Constraint sets
+#' Constraint sets, for building a program by hand
 #'
-#' A constraint is a set membership: the expression `f` must land in the set,
-#' so `x + 2*y <= 5` is written as `5 - (x + 2*y)` in [nonneg()] — one sign
-#' convention rather than two.
+#' In a [program()], a constraint states that an expression lies in a set:
 #'
-#' @return A plain list, with no class attribute, naming the set a constrained
-#'   expression must lie in; it is what [constraint()] takes as `set`. `zero()`
-#'   returns `list(kind = "zero")`, meaning the expression equals 0. `nonneg()`
-#'   returns `list(kind = "nonneg")`, meaning the expression is at least 0.
-#'   `indicator()` returns a list with `kind = "indicator"` and the fields
-#'   `bin` and `inner` as given, meaning `inner` is imposed only where `bin`
-#'   is active.
+#' * `zero()`: the expression equals 0;
+#' * `nonneg()`: the expression is at least 0;
+#' * `indicator(bin, inner)`: the expression lies in the set `inner` whenever
+#'   the binary variable `bin` is 1, and is unrestricted when it is 0.
 #'
+#' So `x + 2 * y <= 5` is written as `5 - (x + 2 * y)` in `nonneg()`, and
+#' `x == 3` as `x - 3` in `zero()`. [add()] makes this conversion for you.
+#'
+#' @return A plain list without a class, to be passed as the `set` of a
+#'   [constraint()]: `list(kind = "zero")`, `list(kind = "nonneg")`, or for
+#'   `indicator()` a list with `kind = "indicator"` and the fields `bin` and
+#'   `inner`.
+#' @examples
+#' # x + 2 * y <= 5
+#' constraint(ir_apply("-", list(ir_const(5),
+#'                               ir_apply("+", list(ir_var("x"),
+#'                                                  ir_apply("*", list(ir_const(2), ir_var("y"))))))),
+#'            nonneg())
 #' @name consets
 NULL
 
@@ -117,40 +139,61 @@ zero <- function() list(kind = "zero")
 nonneg <- function() list(kind = "nonneg")
 
 #' @rdname consets
-#' @param bin The binary [ir_var()] whose activity implies the inner set.
-#' @param inner The constraint set that holds when `bin` is active.
+#' @param bin The binary variable that switches the constraint on, as an
+#'   [ir_var()] node.
+#' @param inner The set the expression must lie in when `bin` is 1: `zero()`
+#'   or `nonneg()`.
 #' @export
 indicator <- function(bin, inner) list(kind = "indicator", bin = bin, inner = inner)
 
 # ── stochastic sources ──────────────────────────────────────────────────────
 
-#' A random variable drawn from a distribution
+#' A random variable with a distribution, for building a program by hand
 #'
-#' `head` is a catalog operator (`"normal"`, ...) and each parameter is an
-#' ordinary deterministic expression node — so a distribution whose mean is
-#' itself a decision needs nothing the grammar does not already have.
+#' Declares one random variable of a [program()] by its distribution. `head`
+#' names the distribution, such as `"normal"`, and `params` holds its
+#' parameters as expression nodes, in the same order as for [normal()] and the
+#' other distribution functions. A parameter may contain decision variables,
+#' but no random variable. [rand_var()] builds these for you.
 #'
-#' @param head The distribution's catalog name.
-#' @param params A list of parameter nodes.
-#' @return A plain list, with no class attribute, with the fields
-#'   `kind = "parametric"`, `head` and `params` as given. It declares one
-#'   random variable by its distribution, and is an entry of the named list a
-#'   [program()] takes as `sources`; the entry's name is the name
+#' @param head The name under which the service knows the distribution.
+#' @param params A list of expression nodes, one per parameter.
+#' @return A plain list without a class, with the fields
+#'   `kind = "parametric"`, `head` and `params`. It is an element of the named
+#'   list a [program()] takes as `sources`, and the element's name is the name
 #'   [ir_source_ref()] refers to.
+#' @examples
+#' # demand ~ normal(100, 15)
+#' sources <- list(demand = parametric("normal", list(ir_const(100), ir_const(15))))
 #' @export
 parametric <- function(head, params) list(kind = "parametric", head = head, params = params)
 
-#' A random variable given as a fixed scenario column
+#' A random variable given by a sample
 #'
-#' Exactly `scenarios` values, one per scenario. Several empirical columns are
-#' read at the same scenario index, so columns observed jointly stay correlated —
-#' which is how a joint distribution is expressed.
+#' `empirical(x)` describes a random variable by a sample of its values, one
+#' per scenario, instead of by a distribution. Pass it to [rand_var()], as in
+#' `rand_var(m, "demand", empirical(x))`. The length of the sample sets the
+#' number of scenarios.
 #'
-#' @param data A numeric vector, one value per scenario.
-#' @return An object of class `quicopt_empirical`: a list with the fields
-#'   `kind = "empirical"` and `data`, the column as a numeric vector. It
-#'   declares one random variable by its observed values, and is an entry of
-#'   the named list a [program()] takes as `sources`.
+#' This is how to use a distribution the package has no function for: draw a
+#' sample in R, for example with `rlnorm()`, and pass it to `empirical()`.
+#'
+#' The samples of a model are read side by side, the `i`-th value of each in
+#' scenario `i`, so values observed together stay together. [set_empirical()]
+#' does this for every column of a data frame.
+#'
+#' A sample is fixed data. If it was drawn in R, R's `set.seed()` determines
+#' it, not the model's seed, and [resample()] does not draw it again.
+#'
+#' @param data The sample: a numeric vector without `NA`, one value per
+#'   scenario.
+#' @return An object of class `quicopt_empirical`, for [rand_var()] or
+#'   [set_distribution()]. It can also be an element of the `sources` of a
+#'   [program()].
+#' @examples
+#' set.seed(1)
+#' m <- model()
+#' demand <- rand_var(m, "demand", empirical(rlnorm(500, log(100), 0.3)))   # lognormal
 #' @export
 empirical <- function(data) {
   data <- as.numeric(data)
@@ -160,24 +203,27 @@ empirical <- function(data) {
 
 # ── structured variables ────────────────────────────────────────────────────
 
-#' A permutation declaration
+#' A permutation, for building a program by hand
 #'
-#' `size` items in `size` slots, one each. `start[i]` is the slot item `i`
-#' starts in (a permutation of `1:size`; empty for the default, item `i` in
-#' slot `i`). `fixed` pins the permutation at `start`, which must then be
-#' given: how a solution is re-evaluated. Each entry of `precede` is a pair
-#' `c(before, after)` of items, requiring `before` in an earlier slot than
-#' `after`.
+#' Declares one permutation of a [program()]: `size` items in `size` slots,
+#' one item per slot (see [perm_var()]). [perm_var()] builds these for you.
 #'
 #' @param size How many items, at least 2.
-#' @param start The starting slot of each item, or `integer()`.
-#' @param fixed Whether the permutation is pinned at `start`.
-#' @param precede A list of `c(before, after)` pairs.
-#' @return A plain list, with no class attribute, with the fields
-#'   `kind = "permutation"`, `size`, `start`, `fixed` and `precede`. It
-#'   declares one permutation, and is an entry of the named list a
-#'   [program()] takes as `structures`; the entry's name is the name
-#'   [ir_struct_ref()] refers to.
+#' @param start The arrangement the search starts from: `start[i]` is the
+#'   slot of item `i`, so `start` contains each of the numbers 1 to `size`
+#'   once. `integer()` starts with item `i` in slot `i`.
+#' @param fixed Whether the permutation is fixed at `start`, which must then
+#'   be given. This is how [evaluate()] and [resample()] keep the arrangement
+#'   of a solution.
+#' @param precede A list of pairs `c(before, after)`, each requiring item
+#'   `before` to be in an earlier slot than item `after`.
+#' @return A plain list without a class, with the fields
+#'   `kind = "permutation"`, `size`, `start`, `fixed` and `precede`. It is an
+#'   element of the named list a [program()] takes as `structures`, and the
+#'   element's name is the name [ir_struct_ref()] refers to.
+#' @examples
+#' # five stops, stop 4 before stop 1
+#' structures <- list(route = permutation_decl(5, precede = list(c(4, 1))))
 #' @export
 permutation_decl <- function(size, start = integer(), fixed = FALSE, precede = list())
   list(kind = "permutation", size = as.integer(size), start = as.integer(start),
@@ -199,88 +245,113 @@ INTEGER <- 2L
 #' @export
 BINARY <- 3L
 
-#' A variable declaration
+#' A decision variable, for building a program by hand
 #'
-#' @param name The variable's name; solutions come back keyed by it.
-#' @param axes Index-set names the variable ranges over (`character()` for a scalar).
-#' @param domain [CONTINUOUS], [INTEGER] or [BINARY].
-#' @param lower,upper A number (`-Inf`/`Inf` for an open direction), or the
-#'   name of a parameter table when the bound varies by index.
-#' @param start The initial point handed to the solver.
-#' @return `var_decl()` returns a plain list, with no class attribute, with the
-#'   fields `name`, `axes`, `domain` (the integer domain code), `lower`,
-#'   `upper` and `start` (numeric). It declares one variable of the model, and
-#'   is an entry of the list a [program()] takes as `vars`.
+#' Declares one decision variable of a [program()]. [num_var()], [int_var()]
+#' and [bin_var()] build these for you.
 #'
-#'   `CONTINUOUS`, `INTEGER` and `BINARY` are not functions but integer
-#'   constants (`1L`, `2L` and `3L`): the codes the service uses for a
-#'   variable's domain, to be passed as `domain`.
+#' @param name The variable's name, used for it in the answer.
+#' @param axes The names of the index sets the variable is indexed over;
+#'   `character()` for a single variable.
+#' @param domain `CONTINUOUS`, `INTEGER` or `BINARY`.
+#' @param lower,upper A number (`-Inf` or `Inf` for no bound), or the name of
+#'   a parameter table, for a bound that differs from index to index.
+#' @param start The value the search starts from.
+#' @return `var_decl()` returns a plain list without a class, with the fields
+#'   `name`, `axes`, `domain`, `lower`, `upper` and `start`. It is an element
+#'   of the list a [program()] takes as `vars`.
+#'
+#'   `CONTINUOUS`, `INTEGER` and `BINARY` are not functions but constants: the
+#'   whole numbers 1, 2 and 3, which stand for the three kinds of variable in
+#'   `domain`.
+#' @examples
+#' var_decl("tables", domain = INTEGER, lower = 0)
 #' @export
 var_decl <- function(name, axes = character(), domain = CONTINUOUS,
                      lower = -Inf, upper = Inf, start = 0)
   list(name = name, axes = axes, domain = as.integer(domain),
        lower = lower, upper = upper, start = as.numeric(start))
 
-#' A named index set with concrete elements
+#' An index set, for building a program by hand
+#'
+#' A named set of elements, for indexing variables (the `axes` of
+#' [var_decl()]), for reductions such as sums ([ir_reduce()]), and for
+#' repeating a constraint over its elements (the `over` of [constraint()]).
 #'
 #' @param name The set's name.
-#' @param elements A list of integers and strings.
-#' @return A plain list, with no class attribute, with the fields `name` and
-#'   `elements` as given. It defines one index set of the model, and is an
-#'   entry of the list a [program()] takes as `sets`.
+#' @param elements A list of whole numbers and strings.
+#' @return A plain list without a class, with the fields `name` and
+#'   `elements`. It is an element of the list a [program()] takes as `sets`.
+#' @examples
+#' index_set("items", list(1L, 2L, 3L))
 #' @export
 index_set <- function(name, elements) list(name = name, elements = elements)
 
-#' A constraint row
+#' A constraint, for building a program by hand
 #'
-#' @param f The constrained expression node.
-#' @param set The constraint set `f` must lie in ([zero()], [nonneg()], [indicator()]).
-#' @param over Quantifier bindings, a list of `list(idx, set_ref)` pairs
-#'   (`list()` for a single scalar row).
-#' @return A plain list, with no class attribute, with the fields `f`, `set`
-#'   and `over` as given. It states that `f` lies in `set`, once for every
-#'   binding of the indices in `over`, and is an entry of the list a
-#'   [program()] takes as `constraints`.
+#' States that the expression `f` lies in `set` (see [zero()] and the other
+#' constraint sets). With `over`, the constraint is repeated for every element
+#' of one or more index sets, like a constraint written "for all `i` in `S`".
+#' [add()] builds these for you.
+#'
+#' @param f The expression node.
+#' @param set The set `f` must lie in: [zero()], [nonneg()] or [indicator()].
+#' @param over A list of `list(idx, set_ref)` pairs, each repeating the
+#'   constraint for every element of the set `set_ref` (from [ir_set_ref()]),
+#'   with the index named `idx` standing for the element in `f`. `list()` for a
+#'   single constraint.
+#' @return A plain list without a class, with the fields `f`, `set` and
+#'   `over`. It is an element of the list a [program()] takes as
+#'   `constraints`.
+#' @examples
+#' # x <= 4, written as 4 - x >= 0
+#' constraint(ir_apply("-", list(ir_const(4), ir_var("x"))), nonneg())
 #' @export
 constraint <- function(f, set, over = list()) list(f = f, set = set, over = over)
 
-#' A complete optimization model as plain data
+#' A model as plain data
 #'
-#' The tables keyed by index tuples are lists of entries rather than named
-#' lists, because an index tuple is not a string: `params` maps a table name to
-#' a list of `list(key = <index tuple>, value = <number>)` entries,
-#' `indexed_sets` maps a name to `list(key = ..., value = <element list>)`
-#' fibres, and `fix` is a list of `list(var = , index = , value = )` pins.
-#' Entry order does not matter; encoding sorts them canonically.
+#' A program holds a complete model as plain R lists, in the form the service
+#' reads: [encode()] turns it into bytes, and [solve()] and [submit()] accept
+#' it directly. [as_program()] converts a [model()] into a program. Building
+#' one by hand, with this function and the ones it links to, is for parts of
+#' the format that a [model()] does not offer, such as index sets and
+#' parameter tables.
 #'
-#' A model under uncertainty adds three more: the random variables it draws
-#' (`sources`, a named list of [parametric()] / [empirical()] declarations), how
-#' many scenarios are drawn and the seed they are drawn from. The last two are
-#' model data — they pin the sampled instance, so the same program always sees
-#' the same draws. Left at their defaults they say nothing, and the encoded
-#' bytes are those of a deterministic model.
+#' Data indexed by positions is given as lists of entries, because a position
+#' (a list of numbers and strings) cannot be a name:
 #'
-#' A model with a permutation adds `structures`, a named list of
-#' [permutation_decl()] declarations that [ir_struct_ref()] nodes refer to.
-#' Left empty it says nothing, as `sources` does.
+#' * `params` maps the name of a parameter table to a list of entries
+#'   `list(key = <position>, value = <number>)`;
+#' * `indexed_sets` maps a name to a list of entries
+#'   `list(key = <position>, value = <list of elements>)`, a set that differs
+#'   from position to position;
+#' * `fix` is a list of entries `list(var = , index = , value = )`, each fixing
+#'   one variable at a value.
+#'
+#' The order of the entries does not matter.
+#'
+#' A model with random variables also needs `sources`, which declares them,
+#' and `scenarios` and `scenario_seed`, which say how many scenarios are drawn
+#' and from which seed. A model with permutations needs `structures`.
 #'
 #' @param sets A list of [index_set()]s.
-#' @param indexed_sets Dependent sets carried as data (see above).
-#' @param params Named parameter tables (see above).
+#' @param indexed_sets Sets that differ from position to position (see
+#'   above).
+#' @param params Parameter tables (see above).
 #' @param vars A list of [var_decl()]s.
-#' @param objective The objective expression node.
+#' @param objective The objective, an expression node (see [ir]).
 #' @param sense `"min"` or `"max"`.
 #' @param constraints A list of [constraint()]s.
-#' @param fix Per-index variable pins (see above).
-#' @param scenarios How many scenarios are drawn (at least 1).
-#' @param scenario_seed The seed they are drawn from (at least 1).
-#' @param sources Named [parametric()] / [empirical()] declarations.
-#' @param structures Named [permutation_decl()] declarations.
-#' @return An object of class `quicopt_program`: a list with one field per
-#'   argument, under the argument's name (`scenarios` and `scenario_seed`
-#'   coerced to numeric). It is the complete model in the form the service
-#'   reads, with nothing left to resolve: [encode()] turns it into bytes, and
-#'   [solve_model()] and [submit()] accept it directly.
+#' @param fix Variables fixed at a value (see above).
+#' @param scenarios How many scenarios to draw, at least 1.
+#' @param scenario_seed The seed to draw them from, at least 1.
+#' @param sources The random variables: a named list of [parametric()] and
+#'   [empirical()] declarations.
+#' @param structures The permutations: a named list of [permutation_decl()]
+#'   declarations.
+#' @return An object of class `quicopt_program`: a list with one element per
+#'   argument, under the argument's name.
 #' @export
 program <- function(sets = list(), indexed_sets = list(), params = list(),
                     vars = list(), objective = NULL, sense = "min",

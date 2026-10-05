@@ -3,49 +3,61 @@
 
 #' Optimization under uncertainty
 #'
-#' Part of a model's data is often unknown when the decision has to be made:
-#' demand, prices, yields, arrival times. Declare that data as random variables
-#' carrying distributions, and the model is solved over a sample of scenarios
-#' drawn from them.
+#' Some decisions have to be made before all the data is known: how much
+#' stock to order before demand is known, which jobs to accept before knowing
+#' how long they will take. quicopt models such a decision by describing each
+#' uncertain quantity as a *random variable*. The service draws many possible
+#' outcomes of the random variables, called *scenarios*, and finds the
+#' decision that does best across them.
 #'
-#' Two rules describe the whole surface:
+#' @section Building blocks:
+#' * [rand_var()] declares a random variable with a distribution such as
+#'   [normal()]; [set_empirical()] declares random variables from the columns
+#'   of a data frame instead, one row per scenario.
+#' * [set_scenarios()] sets how many scenarios the service draws, and the
+#'   seed it draws them from.
+#' * Any expression that contains a random variable has one value per
+#'   scenario; it is called *random* (see [is_random()]). The objective and
+#'   the constraints must each be one number, so a random expression is
+#'   summarized across the scenarios before it is used there.
 #'
-#' * A variable declared with [rand_var()] is a random variable, not a decision
-#'   variable. Every use of it references the same sample.
-#' * An expression containing a random variable is itself random (see
-#'   [is_random()]), and cannot serve as an objective or a constraint until an
-#'   aggregator reduces it over the scenarios: [expectation()] for the mean,
-#'   [cvar()] for the tail, [prob()] for a chance constraint, [variance()] and
-#'   [std_dev()] for the spread, [scenario_max()], [scenario_min()] and
-#'   [scenario_quantile()] for single scenario values. [holds()] turns an
-#'   event into a 0/1 value inside a scenario, for arithmetic before the
-#'   aggregation.
+#' @section Summaries across the scenarios:
+#' * [expectation()]: the average.
+#' * [prob()]: the share of scenarios in which a comparison holds, for a
+#'   requirement such as "demand is met on 90% of days".
+#' * [cvar()]: the average over the worst scenarios.
+#' * [scenario_max()], [scenario_min()], [scenario_quantile()]: the largest
+#'   value, the smallest, and a quantile.
+#' * [variance()] and [std_dev()]: how much the value varies.
 #'
-#' [set_scenarios()] sets how many scenarios are drawn and from which seed.
-#' Both belong to the model, so repeated solves see the same sample. The
-#' drawing happens in the service, from the model's own seed; R's
-#' `set.seed()` plays no role here.
+#' [holds()] turns a comparison into a 0/1 value in each scenario, which can
+#' be combined with other quantities before it is summarized.
 #'
-#' A solution is shaped by the scenarios it was found on, so its objective and
-#' its chance levels are in-sample figures. [resample()] and [evaluate()]
-#' check a solution on fresh scenarios, and `margin` in [add()] builds the
-#' expected shortfall of a chance constraint into the model.
+#' @section Checking a solution:
+#' A solution is chosen to do well on the model's scenarios, so it tends to do
+#' a little worse on others, and the objective the service reports is
+#' optimistic. [evaluate()] and [resample()] compute the figures on new
+#' scenarios, and the `margin` argument of [add()] raises the target of a
+#' requirement on a probability to allow for this.
+#'
+#' `vignette("stochastic", package = "quicopt")` introduces all of this with
+#' a worked example.
 #'
 #' @examples
 #' \dontrun{
-#' # Order x units at 3 apiece against a demand learned later, pay 10 per unit
-#' # of shortfall, and meet demand in at least 90% of scenarios:
+#' # Order stock at 3 per unit before demand is known, pay 10 for each unit
+#' # of demand that cannot be met, and meet demand in at least 90% of scenarios.
 #' m <- model()
-#' x <- num_var(m, "x", 0, 200)
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
 #' demand <- rand_var(m, "demand", normal(100, 15))
 #' set_scenarios(m, 512, seed = 42)
-#' minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
-#' add(m, prob(demand - x <= 0) >= 0.9)
+#' minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
+#' add(m, prob(demand <= stock) >= 0.9)
 #' res <- solve(m)
 #' res$solution
 #'
-#' # The same order on scenarios it was not optimized for:
-#' resample(m, res, seed = 7)$feasible
+#' # Does the requirement still hold on 1000 new scenarios?
+#' resample(m, res, seed = 7, scenarios = 1000)$feasible
 #' }
 #' @name stochastic
 NULL
@@ -54,51 +66,52 @@ NULL
 
 #' Distributions for random variables
 #'
-#' The named constructors follow the parameterizations of R's own samplers:
+#' These functions describe how a random variable is distributed, for use in
+#' [rand_var()]. Each takes the same parameters, in the same order, as R's
+#' corresponding random number function:
 #'
-#' * `normal(mean, sd)`, as `rnorm()`: the mean and the standard deviation.
-#' * `uniform(min, max)`, as `runif()`: the two limits.
-#' * `exponential(rate)`, as `rexp()`: the rate, so the mean is `1 / rate`.
-#' * `bernoulli(prob)`, as `rbinom(n, 1, prob)`: 1 with probability `prob`,
-#'   else 0.
+#' * `normal(mean, sd)`, like `rnorm()`: the mean and the standard deviation.
+#' * `uniform(min, max)`, like `runif()`: the smallest and the largest value.
+#' * `exponential(rate)`, like `rexp()`: the rate, so that the mean is
+#'   `1 / rate`.
+#' * `bernoulli(prob)`, like `rbinom(n, 1, prob)`: 1 with probability `prob`,
+#'   and 0 otherwise.
 #'
-#' `distribution(head, ...)` names a distribution by its catalog name, for a
-#' distribution the service's catalog holds and no constructor here names yet.
-#' A head the catalog does not hold is refused when the model is sent. Every
-#' other distribution is available through [empirical()]: draw a column in R
-#' and declare it (see the vignette).
+#' For any other distribution, draw a sample in R and pass it to
+#' [empirical()]. `distribution(head, ...)` names a distribution that the
+#' service offers but this package has no function for yet; the service
+#' refuses a name it does not know.
 #'
-#' A parameter may be a number or a non-random model expression. An
-#' expression gives an *endogenous* distribution, one whose parameters depend
-#' on the decision, such as a demand whose mean falls with the price you set
-#' or a failure whose probability falls with what you spend on maintenance.
-#' A parameter may never contain a random variable: a distribution's
-#' parameters are data, not draws.
+#' @section Parameters that depend on a decision:
+#' A parameter may be an expression of decision variables rather than a
+#' number. The distribution then depends on the decision: a demand whose mean
+#' falls as the price rises, or a breakdown that becomes less likely the more
+#' is spent on maintenance. A parameter cannot contain a random variable.
 #'
-#' A parameter may also be a vector, and the distribution then declares a
-#' vector random variable: `normal(c(6, 5, 4), 1)` is three independent
-#' normals with their own means and a shared standard deviation. Every
-#' parameter has length 1 or the vector's length.
+#' A parameter given as a number is checked right away: a rate that is not
+#' positive, a probability outside 0 to 1, or a `min` above `max` is an error.
+#' A parameter given as an expression cannot be checked in advance, so give
+#' the decision variables in it bounds that keep it in range.
 #'
-#' A numeric parameter outside its distribution's range is refused where the
-#' distribution is built: a rate that is not positive, a probability outside
-#' 0 to 1, a lower limit above its upper limit. A parameter given as an
-#' expression cannot be checked this way, since its value is the solver's to
-#' choose; bound the decision variables so that it stays in range.
+#' @section Vector parameters:
+#' A parameter may be a vector. The distribution then describes that many
+#' random variables, drawn independently: `normal(c(6, 5, 4), 1)` is three
+#' normal variables with means 6, 5 and 4 and standard deviation 1. Each
+#' parameter has length 1 or the common length.
 #'
-#' @param head The distribution's name in the service's catalog.
-#' @param ... Its parameters, each a number, a numeric vector, or a non-random
-#'   expression.
-#' @return A distribution, ready for [rand_var()] or [set_distribution()].
+#' @param head The name under which the service knows the distribution.
+#' @param ... The distribution's parameters, each a number, a numeric vector,
+#'   or an expression without random variables.
+#' @return A distribution, to be passed to [rand_var()] or
+#'   [set_distribution()].
 #' @examples
 #' m <- model()
-#' lead_time <- rand_var(m, "lead_time", uniform(2, 5))
-#' gap       <- rand_var(m, "gap", exponential(1 / 30))   # mean 30
-#' fails     <- rand_var(m, "fails", bernoulli(0.02))
+#' lead_time <- rand_var(m, "lead_time", uniform(2, 5))      # between 2 and 5 days
+#' gap       <- rand_var(m, "gap", exponential(1 / 30))      # 30 minutes on average
+#' fails     <- rand_var(m, "fails", bernoulli(0.02))        # 1 with probability 0.02
 #'
-#' # an endogenous distribution: spending on maintenance lowers the failure
-#' # probability
-#' spend  <- num_var(m, "spend", 0, 10)
+#' # the more is spent on maintenance, the less likely a breakdown
+#' spend  <- num_var(m, "spend", lower = 0, upper = 10)
 #' breaks <- rand_var(m, "breaks", bernoulli(0.2 - 0.015 * spend))
 #' @export
 distribution <- function(head, ...) {
@@ -111,12 +124,12 @@ distribution <- function(head, ...) {
 }
 
 #' @rdname distribution
-#' @param mean,sd The mean and standard deviation, as in `rnorm()`.
+#' @param mean,sd The mean and the standard deviation, as in `rnorm()`.
 #' @export
 normal <- function(mean, sd) distribution("normal", mean, sd)
 
 #' @rdname distribution
-#' @param min,max The lower and upper limits, as in `runif()`.
+#' @param min,max The smallest and the largest value, as in `runif()`.
 #' @export
 uniform <- function(min, max) {
   if (is.numeric(min) && is.numeric(max) && !anyNA(min) && !anyNA(max) && any(min > max))
@@ -211,22 +224,27 @@ bernoulli <- function(prob) {
 
 #' Does an expression vary across scenarios?
 #'
-#' An expression is random while it contains a random variable that no
-#' aggregator has closed: `demand - x` is random, `expectation(demand - x)`
-#' is not, and neither is `3 * x`. Only a non-random expression can be an
-#' objective or a constraint; only a random one can be aggregated. Both rules
-#' are checked where the expression is used, so this predicate is for your own
-#' code: a helper that accepts either kind, or a check before a long build.
+#' An expression that contains a random variable has a different value in
+#' each scenario, and is called *random*. Summarizing it across the scenarios,
+#' for example with [expectation()], gives a single number again:
+#' `demand - stock` is random, `expectation(demand - stock)` is not, and
+#' neither is `3 * stock`.
 #'
-#' @param x A model expression, or a numeric vector (never random).
-#' @return A logical vector, one entry per element of `x`.
+#' An objective or a constraint must not be random, and a summary such as
+#' [expectation()] needs a random expression to summarize. quicopt checks
+#' both rules itself and stops with an error when one is broken, so you need
+#' `is_random()` only in your own code, for example in a function that
+#' accepts both kinds of expression.
+#'
+#' @param x An expression, or a numeric vector (which is never random).
+#' @return A logical vector with one element per element of `x`.
 #' @examples
 #' m <- model()
-#' x <- num_var(m, "x", 0, 10)
-#' d <- rand_var(m, "d", normal(5, 1))
-#' is_random(d - x)                 # TRUE
-#' is_random(expectation(d - x))    # FALSE
-#' is_random(c(x, x^2))             # FALSE FALSE
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' is_random(demand - stock)                  # TRUE
+#' is_random(expectation(demand - stock))     # FALSE
+#' is_random(c(stock, stock^2))               # FALSE FALSE
 #' @export
 is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 
@@ -254,28 +272,40 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 
 #' Declare a random variable
 #'
-#' The variable is not a decision: the solver is handed its value rather than
-#' choosing it, and every use of it means the same sample within a scenario.
-#' Two independent random variables are two declarations under two names.
+#' A random variable stands for a quantity that is not known when the
+#' decision is made, such as tomorrow's demand. It can be used in expressions
+#' like a decision variable, but the service does not choose its value: in
+#' each scenario, the value is drawn from the variable's distribution. Within
+#' one scenario, every use of the variable has the same value. Two random
+#' variables declared separately are drawn independently.
 #'
-#' A random variable takes no bounds and no domain; its distribution already
-#' says what values it takes.
+#' A random variable has no bounds; its distribution says which values it
+#' can take.
 #'
-#' A distribution with vector parameters declares a vector random variable,
-#' `weight[1]`, ..., `weight[n]`, one independent draw per element:
-#' `rand_var(m, "weight", normal(c(6, 5, 4), 1))`. With `n` given and scalar
-#' parameters, the elements are `n` independent copies of one distribution.
-#' Elements of a vector random variable are independent of each other;
-#' correlated uncertainty is declared from data with [set_empirical()].
+#' A distribution with vector parameters declares several random variables
+#' under one name, which behave like an R vector: `rand_var(m, "hours",
+#' normal(c(6, 5, 4), 1))` declares `hours[1]`, `hours[2]` and `hours[3]`.
+#' With scalar parameters and `n` given, it declares `n` variables with the
+#' same distribution. Either way, the elements are drawn independently of each
+#' other. Random variables that move together, such as demand and price, are
+#' best declared from observed data with [set_empirical()].
+#'
+#' `add_rand_var()` declares the variable in the same way but returns the
+#' model, for use in a pipe; `m$name` then retrieves the variable.
 #'
 #' @param m A [model()].
 #' @param name The random variable's name, unique within the model.
-#' @param dist A [distribution()] such as `normal(100, 15)`, or an
-#'   [empirical()] column holding one observed value per scenario. May be left
-#'   `NULL` and supplied later with [set_distribution()].
-#' @param n How many elements the random variable has; left `NULL`, as many as
-#'   the distribution's parameters say (1 for an empirical column).
-#' @return The random variable's handle (an expression of length `n`).
+#' @param dist A distribution such as `normal(100, 15)` (see [distribution()]),
+#'   or an [empirical()] sample with one value per scenario. It may be left out
+#'   and given later with [set_distribution()].
+#' @param n How many random variables to declare under this name. Left `NULL`,
+#'   the number follows from the length of the distribution's parameters.
+#' @return The random variable, an expression of length `n`.
+#' @examples
+#' m <- model()
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
+#' delay  <- rand_var(m, "delay", uniform(1, 1.5), n = 4)   # four with the same distribution
 #' @export
 rand_var <- function(m, name, dist = NULL, n = NULL) {
   .check_model(m, "rand_var")
@@ -324,11 +354,18 @@ rand_var <- function(m, name, dist = NULL, n = NULL) {
 
 #' Give a random variable its distribution
 #'
+#' Sets or replaces the distribution of a random variable declared with
+#' [rand_var()], for example one declared without a distribution.
+#'
 #' @param m A [model()].
-#' @param v The random variable's handle, from [rand_var()].
-#' @param dist A [distribution()] or an [empirical()] column, of the handle's
-#'   length.
+#' @param v The random variable, as returned by [rand_var()].
+#' @param dist A distribution such as `normal(100, 15)`, or an [empirical()]
+#'   sample, of the same length as `v`.
 #' @return The model, invisibly.
+#' @examples
+#' m <- model()
+#' demand <- rand_var(m, "demand")
+#' set_distribution(m, demand, normal(100, 15))
 #' @export
 set_distribution <- function(m, v, dist) {
   .check_model(m, "set_distribution")
@@ -349,7 +386,7 @@ set_distribution <- function(m, v, dist) {
 }
 
 #' @rdname rand_var
-#' @return `add_rand_var` returns the model, invisibly.
+#' @return `add_rand_var()` returns the model, invisibly.
 #' @export
 add_rand_var <- function(m, name, dist = NULL, n = NULL) {
   rand_var(m, name, dist, n)
@@ -358,22 +395,29 @@ add_rand_var <- function(m, name, dist = NULL, n = NULL) {
 
 #' Set how many scenarios are drawn, and from which seed
 #'
-#' More scenarios estimate the true problem more closely and cost more to
-#' solve. Both settings belong to the model, not to the solve, so the same
-#' model always faces the same sample and two solves of it are comparable.
-#' Left unset, a model is solved over one scenario — unless an [empirical()]
-#' column sets the count by its own length.
+#' The service draws `n` scenarios: `n` possible outcomes of the model's
+#' random variables. More scenarios describe the uncertainty more accurately,
+#' and take longer to solve. A model whose scenarios are never set is solved
+#' over a single scenario, unless an [empirical()] sample sets the number by
+#' its length.
 #'
-#' The scenarios are drawn by the service from this seed; R's `set.seed()`
-#' plays no role. `n` and `seed` are both at least 1. The service caps the
-#' count: a model over its limit is refused when sent, with the limit named
-#' in the refusal (the client does not know it in advance, since it is the
-#' service's to set).
+#' The number of scenarios and the seed belong to the model, so solving the
+#' same model again uses the same scenarios, and two solves of it can be
+#' compared. The scenarios are drawn by the service, so R's `set.seed()` has
+#' no effect on them.
+#'
+#' The service limits the number of scenarios. A model above the limit is
+#' refused when it is solved, with a message that states the limit.
 #'
 #' @param m A [model()].
-#' @param n How many scenarios to draw.
-#' @param seed The draw seed; left `NULL`, the current one is kept.
+#' @param n How many scenarios to draw, at least 1.
+#' @param seed The seed for the draws, at least 1. Left `NULL`, the model
+#'   keeps its current seed.
 #' @return The model, invisibly.
+#' @examples
+#' m <- model()
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
 #' @export
 set_scenarios <- function(m, n, seed = NULL) {
   .check_model(m, "set_scenarios")
@@ -391,22 +435,32 @@ set_scenarios <- function(m, n, seed = NULL) {
   invisible(m)
 }
 
-#' Turn observed history into a model's uncertainty
+#' Use observed data as a model's uncertainty
 #'
-#' Every chosen column of a data frame becomes an [empirical()] random
-#' variable named after the column, and the number of rows becomes the model's
-#' scenario count. All columns are read at the same scenario index, so rows
-#' observed jointly stay jointly distributed — correlation in the data survives
-#' into the model.
+#' Turns the columns of a data frame into random variables: each column
+#' becomes one, named after the column, and each row becomes one scenario.
+#' The columns are read row by row, so values observed together stay
+#' together, and any correlation between the columns carries over into the
+#' model. No distribution has to be chosen or fitted.
 #'
-#' A non-numeric column is an error, not a skip: a silently dropped column
-#' would leave a model that solves fine and answers the wrong question. Select
-#' with `cols` when the frame carries more than its uncertainty.
+#' The random variables are not returned; retrieve them by name, as
+#' `m$demand`. The number of scenarios is set to the number of rows.
+#'
+#' Every column used must be numeric; a column that is not is an error rather
+#' than being skipped. Use `cols` to select the columns that describe the
+#' uncertainty when the data frame holds others too.
 #'
 #' @param m A [model()].
-#' @param data A data frame of jointly observed rows.
-#' @param cols Which columns to use (default: all of them).
-#' @return The model, invisibly. The handles are retrievable as `m$<column>`.
+#' @param data A data frame with one row per observation.
+#' @param cols The names of the columns to use. Left `NULL`, all of them.
+#' @return The model, invisibly.
+#' @examples
+#' history <- data.frame(demand = c(96, 104, 121, 88, 110),
+#'                       price  = c(12.1, 11.8, 11.2, 12.5, 11.6))
+#' m <- model()
+#' stock <- num_var(m, "stock", lower = 0, upper = 200)
+#' set_empirical(m, history)
+#' maximize(m, expectation(m$price * min(m$demand, stock)) - 3 * stock)
 #' @export
 set_empirical <- function(m, data, cols = NULL) {
   .check_model(m, "set_empirical")
@@ -435,32 +489,51 @@ set_empirical <- function(m, data, cols = NULL) {
 
 # ── aggregators: where a random quantity becomes a number ───────────────────
 
-#' The expected value over the scenarios
+#' The average over the scenarios
 #'
-#' Minimizing an expectation optimizes the average case and says nothing about
-#' the bad ones; use [cvar()] when the bad ones are what matter.
+#' `expectation(x)` is the average of `x` over the model's scenarios: an
+#' estimate of its expected value. It turns a random expression into a single
+#' number, which can be used in the objective or in a constraint.
 #'
-#' `x` is any expression containing a random variable. The result is
-#' deterministic, and can be used anywhere a number can. Applied to a vector
-#' expression, it aggregates each element.
+#' Minimizing an average makes the typical scenario good, and says little
+#' about the bad ones; [cvar()] looks at those instead. For a vector `x`, each
+#' element is averaged separately.
 #'
-#' @param x A random model expression (see [is_random()]).
-#' @return An expression of the same length, no longer random.
+#' @param x A random expression (see [is_random()]).
+#' @return An expression of the same length as `x`, no longer random.
+#' @examples
+#' m <- model()
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' shortfall <- max(demand - stock, 0)        # units short, in each scenario
+#' minimize(m, 3 * stock + 10 * expectation(shortfall))
 #' @export
 expectation <- function(x)
   .qexpr(lapply(.need_random(x, "expectation()"), function(n) ir_apply("smean", list(n))))
 
-#' The conditional value at risk at level `alpha`
+#' The average over the worst scenarios
 #'
-#' The mean of `x` over its worst `1 - alpha` fraction of scenarios — at
-#' `alpha = 0.95`, the average of the worst 5%. Minimizing it optimizes the
-#' tail instead of the average, and is the usual way to ask for a solution
-#' that holds up in bad scenarios rather than merely on average.
+#' `cvar(x, alpha)` is the average of `x` over the worst `1 - alpha` share of
+#' the scenarios, the ones in which `x` is largest. With `alpha = 0.95`, it is
+#' the average over the worst 5%. The measure is known as the *conditional
+#' value at risk*. Minimizing it asks for a decision that keeps the bad
+#' scenarios as good as possible, rather than the average one.
 #'
-#' @param x A random model expression (see [is_random()]).
-#' @param alpha The tail level, a plain number strictly between 0 and 1; it
-#'   cannot depend on a decision.
-#' @return An expression of the same length, no longer random.
+#' `x` is read as a cost: large values are bad. For a profit, use the
+#' negative, `cvar(-profit, 0.95)`.
+#'
+#' @param x A random expression (see [is_random()]).
+#' @param alpha A number strictly between 0 and 1. It cannot depend on a
+#'   decision.
+#' @return An expression of the same length as `x`, no longer random.
+#' @examples
+#' m <- model()
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' cost <- 3 * stock + 10 * max(demand - stock, 0)
+#' minimize(m, cvar(cost, 0.95))              # the average cost of the worst 5% of scenarios
 #' @export
 cvar <- function(x, alpha) {
   if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha))
@@ -473,31 +546,31 @@ cvar <- function(x, alpha) {
 
 #' The variance and the standard deviation over the scenarios
 #'
-#' How much a quantity varies from scenario to scenario, as opposed to what it
-#' averages to. `expectation(cost) + k * std_dev(cost)` is the mean-risk
-#' objective that penalizes spread, and `add(m, variance(ret) <= v)` caps it.
+#' How much a quantity varies from scenario to scenario, as opposed to what
+#' it is on average. `expectation(cost) + 2 * std_dev(cost)` is an objective
+#' that trades a low average cost against a steady one, and
+#' `add(m, variance(cost) <= 100)` limits the variation.
 #'
-#' By default the scenarios are taken as the whole distribution, each with
-#' weight `1/n`, so `variance(x)` is `expectation(x^2) - expectation(x)^2`.
-#' That is not what `var()` and `sd()` compute: they divide by `n - 1`, to
-#' estimate the variance of a population from a sample of it. `sample = TRUE`
-#' gives that estimate. The two differ by the factor `n / (n - 1)`, which
-#' matters to a reported number and not to which decision minimizes it.
+#' By default the scenarios count as the whole distribution, each with weight
+#' `1 / n`, so `variance(x)` is `expectation(x^2) - expectation(x)^2`. R's
+#' `var()` and `sd()` divide by `n - 1` instead, because they estimate the
+#' variance of a population from a sample of it; `sample = TRUE` does the
+#' same. The two differ by a factor `n / (n - 1)`, which changes the value
+#' reported but not which decision is best.
 #'
-#' Unlike [cvar()], these measure deviation in both directions: a scenario
-#' that turns out far better than average raises them as much as one that
-#' turns out far worse.
+#' Unlike [cvar()], these measure variation in both directions: a scenario
+#' far better than average increases them as much as one far worse.
 #'
-#' @param x A random model expression (see [is_random()]).
-#' @param sample `FALSE` (the default) divides by the number of scenarios;
+#' @param x A random expression (see [is_random()]).
+#' @param sample `FALSE`, the default, divides by the number of scenarios;
 #'   `TRUE` divides by one less, as `var()` and `sd()` do.
-#' @return An expression of the same length, no longer random.
+#' @return An expression of the same length as `x`, no longer random.
 #' @examples
 #' m <- model()
-#' x <- num_var(m, "x", 0, 200)
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
 #' demand <- rand_var(m, "demand", normal(100, 15))
 #' set_scenarios(m, 512, seed = 42)
-#' cost <- 3 * x + 10 * max(demand - x, 0)
+#' cost <- 3 * stock + 10 * max(demand - stock, 0)
 #' minimize(m, expectation(cost) + 2 * std_dev(cost))
 #' @export
 variance <- function(x, sample = FALSE) {
@@ -524,44 +597,41 @@ std_dev <- function(x, sample = FALSE) {
 
 #' The largest, the smallest and a quantile over the scenarios
 #'
-#' The value a quantity takes in one particular scenario: the one where it is
-#' largest, the one where it is smallest, or the one that a given share of the
-#' scenarios does not exceed.
+#' The value a quantity takes in one particular scenario:
 #'
-#' * `scenario_max(x)` is the largest value of `x` over the scenarios.
-#'   Minimizing it is the robust reading of a cost: do as well as possible in
-#'   the worst scenario of the sample.
-#' * `scenario_min(x)` is the smallest. Maximizing it is the same for a
-#'   profit.
-#' * `scenario_quantile(x, prob)` is the smallest scenario value that at least
-#'   the share `prob` of the scenarios is at or below; with `n` scenarios, the
-#'   `ceiling(prob * n)`-th smallest, which is what `quantile(x, prob, type =
-#'   1)` returns for a sample. For a cost this is the value at risk at level
-#'   `prob`; [cvar()] at the same level is the mean of what lies beyond it.
-#'   `scenario_quantile(x, 1)` is `scenario_max(x)`.
+#' * `scenario_max(x)` is the largest value of `x` among the scenarios.
+#'   Minimizing it makes the worst scenario as good as possible.
+#' * `scenario_min(x)` is the smallest. Maximizing it does the same for a
+#'   quantity where large is good, such as a profit.
+#' * `scenario_quantile(x, prob)` is the value that the share `prob` of the
+#'   scenarios stays at or below. With `n` scenarios it is the
+#'   `ceiling(prob * n)`-th smallest value, which is what
+#'   `quantile(x, prob, type = 1)` returns for a sample.
+#'   `scenario_quantile(x, 1)` is `scenario_max(x)`. For a cost it is also
+#'   known as the *value at risk*; [cvar()] at the same level is the average
+#'   of the values above it.
 #'
-#' These are not `max()`, `min()` and `quantile()`. `max(a, b)` is the larger
-#' of two expressions *within* each scenario and stays random;
-#' `scenario_max(x)` compares one expression *across* the scenarios and is a
-#' number.
+#' These are different from `max()`, `min()` and `quantile()`. `max(a, b)`
+#' compares two expressions *within* each scenario, and the result is still
+#' random. `scenario_max(x)` compares the values of one expression *across*
+#' the scenarios, and the result is a single number.
 #'
-#' An extreme is set by a single scenario, so it moves more from one sample to
-#' the next than a mean or a tail mean does, and a larger sample will usually
-#' hold a more extreme scenario. Check a solution built on one with
-#' [resample()].
+#' A single scenario decides the largest or smallest value, so it changes
+#' more from one sample of scenarios to the next than an average does, and a
+#' larger sample usually contains a more extreme scenario. Check a solution
+#' found with these on new scenarios, with [resample()].
 #'
-#' @param x A random model expression (see [is_random()]).
-#' @param prob The level, a plain number above 0 and at most 1; it cannot
-#'   depend on a decision.
-#' @return An expression of the same length, no longer random.
+#' @param x A random expression (see [is_random()]).
+#' @param prob A number above 0 and at most 1. It cannot depend on a decision.
+#' @return An expression of the same length as `x`, no longer random.
 #' @examples
 #' m <- model()
-#' x <- num_var(m, "x", 0, 200)
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
 #' demand <- rand_var(m, "demand", normal(100, 15))
 #' set_scenarios(m, 512, seed = 42)
-#' cost <- 3 * x + 10 * max(demand - x, 0)
-#' minimize(m, scenario_max(cost))                   # the worst scenario
-#' add(m, scenario_quantile(cost, 0.95) <= 500)      # 95% of scenarios cost at most 500
+#' cost <- 3 * stock + 10 * max(demand - stock, 0)
+#' minimize(m, scenario_max(cost))                  # the cost of the worst scenario
+#' add(m, scenario_quantile(cost, 0.95) <= 500)     # at most 500 in 95% of scenarios
 #' @export
 scenario_max <- function(x)
   .qexpr(lapply(.need_random(x, "scenario_max()"), function(n) ir_apply("smax", list(n))))
@@ -584,28 +654,40 @@ scenario_quantile <- function(x, prob) {
 
 #' The probability that a comparison holds
 #'
-#' The fraction of scenarios in which it does. This is what a chance
-#' constraint is built from:
+#' `prob(a <= b)` is the share of the scenarios in which `a <= b` holds: an
+#' estimate of its probability. It is a single number, so it can be used in a
+#' constraint. A requirement on a probability is called a *chance
+#' constraint*:
 #'
 #' ```r
-#' add(m, prob(demand - x <= 0) >= 0.9)
+#' add(m, prob(demand <= stock) >= 0.9)
 #' ```
 #'
-#' which reads as *demand is met in at least 90% of scenarios*. The line holds
-#' two comparisons, both meaningful: the one inside `prob` is the event being
-#' measured, the outer one is the service level demanded of it.
+#' reads as "demand is met in at least 90% of the scenarios". The line holds
+#' two comparisons, which do different jobs: the inner one, `demand <= stock`,
+#' is the event checked in each scenario, and the outer one, `>= 0.9`, is the
+#' requirement on how often it happens. The `margin` argument of [add()]
+#' allows for the sampling error of the estimate.
 #'
-#' `rel` is a comparison, `a <= b` or `a >= b`, with at least one side
-#' containing a random variable. An equality is refused: for a continuous
-#' quantity its probability is zero. So are `<` and `>`, which for a
-#' continuous quantity mean the same as `<=` and `>=`. Elementwise over vector
-#' comparisons.
+#' The comparison is written with `<=` or `>=`, and at least one side must
+#' contain a random variable. `==` is not accepted, since the probability
+#' that a quantity which can take any value equals one particular value is 0.
+#' `<` and `>` are not accepted either, since for such a quantity they mean
+#' the same as `<=` and `>=`. For vector expressions, each element gets its
+#' own probability.
 #'
-#' The same event as a 0/1 expression, scenario by scenario, is
-#' [holds()]: `expectation(holds(rel))` is `prob(rel)`.
+#' [holds()] turns the same comparison into a 0/1 value in each scenario, and
+#' `expectation(holds(a <= b))` is the same number as `prob(a <= b)`.
 #'
-#' @param rel A comparison built with `<=` or `>=`.
-#' @return An expression: a probability between 0 and 1 per compared element.
+#' @param rel A comparison of expressions, written with `<=` or `>=`.
+#' @return An expression with one probability, between 0 and 1, per element
+#'   of the comparison.
+#' @examples
+#' m <- model()
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' add(m, prob(demand <= stock) >= 0.9)       # demand met in at least 90% of scenarios
 #' @export
 prob <- function(rel) {
   if (!inherits(rel, "quicopt_relation"))

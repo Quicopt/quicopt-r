@@ -2,7 +2,7 @@
 % Please edit documentation in R/client.R
 \name{submit}
 \alias{submit}
-\title{Submit a model for asynchronous solving}
+\title{Solve a model without waiting}
 \usage{
 submit(
   m,
@@ -16,32 +16,47 @@ submit(
 )
 }
 \arguments{
-\item{m}{A \code{\link[=model]{model()}}, a \code{\link[=program]{program()}}, or already-encoded bytes.}
+\item{m}{A \code{\link[=model]{model()}}. A \code{\link[=program]{program()}}, or the bytes from \code{\link[=encode]{encode()}}, also
+work.}
 
-\item{base_url}{The service to talk to; defaults to \link{DEFAULT_BASE_URL}.}
+\item{base_url}{The address of the service.}
 
-\item{api_key}{A key you hold, or \code{NULL} to mint and reuse a free-tier key.}
+\item{api_key}{Your API key, or \code{NULL} to use the session's free key (see
+the API keys section).}
 
-\item{project}{A project tag for per-project invoicing, or \code{NULL}.}
+\item{project}{A project name, for billing by project, or \code{NULL}.}
 
-\item{config}{Named list of extra query parameters; a \code{source_language}
-here overrides the automatic tag.}
+\item{config}{A named list of further settings, sent to the service as
+query parameters.}
 
-\item{gzip}{Compress the request body.}
+\item{gzip}{Whether to compress the model before sending it; worth it for
+a large model.}
 
-\item{timeout}{Seconds to wait for the service.}
+\item{timeout}{How many seconds to wait for the answer.}
 
-\item{transport}{The HTTP layer, replaceable for testing: a
-\verb{function(req)} taking \code{list(method, url, headers, body, timeout)} and
-returning \code{list(status, headers, body)}.}
+\item{transport}{For tests: a function that is called instead of sending
+the request. It takes a list with the elements \code{method}, \code{url},
+\code{headers}, \code{body} and \code{timeout}, and returns a list with the elements
+\code{status}, \code{headers} and \code{body}.}
 }
 \value{
-A \code{quicopt_job} handle.
+A job, of class \code{quicopt_job}, for \code{\link[=job_result]{job_result()}}, \code{\link[=job_status]{job_status()}},
+\code{\link[=job_log]{job_log()}} and \code{\link[=job_delete]{job_delete()}}.
 }
 \description{
-Queues the model and returns immediately with a job handle; the solve runs
-on the service while your session goes on. Await it with \code{\link[=job_result]{job_result()}},
-peek with \code{\link[=job_status]{job_status()}} or \code{\link[=job_log]{job_log()}}, and discard it with \code{\link[=job_delete]{job_delete()}}.
-The arguments are those of \code{\link[=solve_model]{solve_model()}}; the handle keeps the connection
-settings, so the polling calls need none of them repeated.
+\code{submit()} sends a model to the service like \code{\link[=solve]{solve()}} does, but returns
+at once with a \emph{job}, while the service solves the model in the
+background and your R session can go on. \code{\link[=job_result]{job_result()}} collects the
+answer when it is ready, and \code{\link[=job_status]{job_status()}} shows how far the job has got.
+}
+\details{
+The job keeps the address, the key and the other settings it was submitted
+with, so the functions that follow it up need only the job.
+}
+\examples{
+\dontrun{
+job <- submit(m)
+job_status(job)$status
+res <- job_result(job)        # waits until the job is finished
+}
 }

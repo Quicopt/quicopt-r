@@ -2,31 +2,48 @@
 % Please edit documentation in R/model.R
 \name{model}
 \alias{model}
-\title{Create an empty optimization model}
+\title{Create an empty model}
 \usage{
 model()
 }
 \value{
-A model, an environment of class \code{quicopt_model}.
+An empty model, an object of class \code{quicopt_model}.
 }
 \description{
-A model owns decision variables, an objective, constraint rows, and — for a
-model under uncertainty — random variables and a scenario count. Declare
-variables with \code{\link[=num_var]{num_var()}}, \code{\link[=int_var]{int_var()}}, \code{\link[=bin_var]{bin_var()}} and \code{\link[=rand_var]{rand_var()}}, state
-the goal with \code{\link[=minimize]{minimize()}} or \code{\link[=maximize]{maximize()}}, add constraints with \code{\link[=add]{add()}},
-and hand the model to \code{\link[=solve]{solve()}}.
+A model collects everything the service needs to find the best decision:
+the decisions to be made, the objective, the constraints and, when some of
+the data is uncertain, the random variables and the number of scenarios.
+\code{model()} creates an empty one, and these functions fill it:
 }
 \details{
-Every setter both mutates the model and returns it invisibly, so the
-imperative style and the pipe are the same functions:
+\itemize{
+\item decisions: \code{\link[=num_var]{num_var()}}, \code{\link[=int_var]{int_var()}}, \code{\link[=bin_var]{bin_var()}}, and \code{\link[=perm_var]{perm_var()}} for an
+order;
+\item uncertain data: \code{\link[=rand_var]{rand_var()}} and \code{\link[=set_empirical]{set_empirical()}};
+\item the objective: \code{\link[=minimize]{minimize()}} or \code{\link[=maximize]{maximize()}};
+\item constraints: \code{\link[=add]{add()}}.
+}
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{m <- model()
-x <- num_var(m, "x", 0, 4)          # handle style
+\code{\link[=solve]{solve()}} then sends the model to the service. \code{m$name} retrieves a
+variable declared in \code{m} by its name, and printing a model shows a short
+summary of it.
 
-m <- model() |>                     # pipe style; m$x retrieves the handle
-  add_var("x", 0, 4)
+Each of the functions above changes the model in place and returns it
+invisibly, so a model can also be written as a pipe:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{m <- model() |>
+  add_var("x", lower = 0, upper = 4)    # m$x retrieves the variable
 }\if{html}{\out{</div>}}
 
-Note the pipe mutates its input — the model is one shared object, not a
-value being copied along the chain.
+Unlike most R objects, a model is not copied when it is passed to a
+function. After \code{m2 <- m |> add(m$x <= 3)}, \code{m} has the constraint too,
+and \code{m2} and \code{m} are the same model.
+}
+\examples{
+m <- model()
+tables <- num_var(m, "tables", lower = 0)
+chairs <- num_var(m, "chairs", lower = 0)
+maximize(m, 50 * tables + 20 * chairs)
+add(m, tables + chairs <= 18)
+m
 }

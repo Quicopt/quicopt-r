@@ -2,7 +2,7 @@
 % Please edit documentation in R/ir.R
 \name{program}
 \alias{program}
-\title{A complete optimization model as plain data}
+\title{A model as plain data}
 \usage{
 program(
   sets = list(),
@@ -22,52 +22,59 @@ program(
 \arguments{
 \item{sets}{A list of \code{\link[=index_set]{index_set()}}s.}
 
-\item{indexed_sets}{Dependent sets carried as data (see above).}
+\item{indexed_sets}{Sets that differ from position to position (see
+above).}
 
-\item{params}{Named parameter tables (see above).}
+\item{params}{Parameter tables (see above).}
 
 \item{vars}{A list of \code{\link[=var_decl]{var_decl()}}s.}
 
-\item{objective}{The objective expression node.}
+\item{objective}{The objective, an expression node (see \link{ir}).}
 
 \item{sense}{\code{"min"} or \code{"max"}.}
 
 \item{constraints}{A list of \code{\link[=constraint]{constraint()}}s.}
 
-\item{fix}{Per-index variable pins (see above).}
+\item{fix}{Variables fixed at a value (see above).}
 
-\item{scenarios}{How many scenarios are drawn (at least 1).}
+\item{scenarios}{How many scenarios to draw, at least 1.}
 
-\item{scenario_seed}{The seed they are drawn from (at least 1).}
+\item{scenario_seed}{The seed to draw them from, at least 1.}
 
-\item{sources}{Named \code{\link[=parametric]{parametric()}} / \code{\link[=empirical]{empirical()}} declarations.}
+\item{sources}{The random variables: a named list of \code{\link[=parametric]{parametric()}} and
+\code{\link[=empirical]{empirical()}} declarations.}
 
-\item{structures}{Named \code{\link[=permutation_decl]{permutation_decl()}} declarations.}
+\item{structures}{The permutations: a named list of \code{\link[=permutation_decl]{permutation_decl()}}
+declarations.}
 }
 \value{
-An object of class \code{quicopt_program}: a list with one field per
-argument, under the argument's name (\code{scenarios} and \code{scenario_seed}
-coerced to numeric). It is the complete model in the form the service
-reads, with nothing left to resolve: \code{\link[=encode]{encode()}} turns it into bytes, and
-\code{\link[=solve_model]{solve_model()}} and \code{\link[=submit]{submit()}} accept it directly.
+An object of class \code{quicopt_program}: a list with one element per
+argument, under the argument's name.
 }
 \description{
-The tables keyed by index tuples are lists of entries rather than named
-lists, because an index tuple is not a string: \code{params} maps a table name to
-a list of \verb{list(key = <index tuple>, value = <number>)} entries,
-\code{indexed_sets} maps a name to \verb{list(key = ..., value = <element list>)}
-fibres, and \code{fix} is a list of \code{list(var = , index = , value = )} pins.
-Entry order does not matter; encoding sorts them canonically.
+A program holds a complete model as plain R lists, in the form the service
+reads: \code{\link[=encode]{encode()}} turns it into bytes, and \code{\link[=solve]{solve()}} and \code{\link[=submit]{submit()}} accept
+it directly. \code{\link[=as_program]{as_program()}} converts a \code{\link[=model]{model()}} into a program. Building
+one by hand, with this function and the ones it links to, is for parts of
+the format that a \code{\link[=model]{model()}} does not offer, such as index sets and
+parameter tables.
 }
 \details{
-A model under uncertainty adds three more: the random variables it draws
-(\code{sources}, a named list of \code{\link[=parametric]{parametric()}} / \code{\link[=empirical]{empirical()}} declarations), how
-many scenarios are drawn and the seed they are drawn from. The last two are
-model data — they pin the sampled instance, so the same program always sees
-the same draws. Left at their defaults they say nothing, and the encoded
-bytes are those of a deterministic model.
+Data indexed by positions is given as lists of entries, because a position
+(a list of numbers and strings) cannot be a name:
+\itemize{
+\item \code{params} maps the name of a parameter table to a list of entries
+\verb{list(key = <position>, value = <number>)};
+\item \code{indexed_sets} maps a name to a list of entries
+\verb{list(key = <position>, value = <list of elements>)}, a set that differs
+from position to position;
+\item \code{fix} is a list of entries \code{list(var = , index = , value = )}, each fixing
+one variable at a value.
+}
 
-A model with a permutation adds \code{structures}, a named list of
-\code{\link[=permutation_decl]{permutation_decl()}} declarations that \code{\link[=ir_struct_ref]{ir_struct_ref()}} nodes refer to.
-Left empty it says nothing, as \code{sources} does.
+The order of the entries does not matter.
+
+A model with random variables also needs \code{sources}, which declares them,
+and \code{scenarios} and \code{scenario_seed}, which say how many scenarios are drawn
+and from which seed. A model with permutations needs \code{structures}.
 }
