@@ -1,40 +1,68 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
-#' quicopt expressions — model arithmetic in plain R
+#' Expressions: arithmetic on variables
 #'
-#' Arithmetic on a model's variables builds an expression rather than computing
-#' a number, and comparing two expressions builds a comparison rather than
-#' answering a logical. The operators are R's own — `+ - * / ^`, `sqrt`, `exp`,
-#' `log`, `sin`, `cos`, `abs`, `max`, `min`, `sum`, `prod`, `mean` — dispatched
-#' through the `Ops`, `Math` and `Summary` group generics, so a model reads as
-#' ordinary R code.
+#' The values of decision variables and random variables are not known when
+#' you write a model, so arithmetic on them cannot compute a number. Instead
+#' it builds an *expression*: a description of a quantity, which the service
+#' evaluates for every solution it considers. Expressions are written as
+#' ordinary R code, with these operators and functions:
 #'
-#' Expressions are vectors, like everything in R: a variable declared with
-#' `n = 10` has length 10, arithmetic is elementwise, `x[3]` indexes, `c()`
-#' concatenates, and `sum(x)` folds. So do `prod()`, `max()`, `min()` and `mean()`: they fold
-#' every element of every argument into one, as they do on numeric vectors
-#' (`max(x, 0)` is the largest of all elements of `x` and 0; there is no
-#' elementwise `pmax`). `mean()` is the mean over the elements; the mean over
-#' the scenarios is [expectation()]. Lengths must match exactly or be 1 (a
-#' scalar broadcasts); anything else is an error — a model is no place for
-#' silent recycling.
+#' * `+`, `-`, `*`, `/` and `^`;
+#' * `abs()`, `sqrt()`, `exp()`, `log()`, `sin()` and `cos()`;
+#' * `sum()`, `prod()`, `max()`, `min()` and `mean()`.
 #'
-#' A comparison goes one of three ways: [add()] makes it a constraint,
-#' [prob()] measures how often it holds across scenarios, and [holds()] makes
-#' it a 0/1 expression. `add()` and `prob()` take `<=`, `>=` and (`add()`
-#' only) `==`; `holds()` takes all six.
+#' Expressions need not be linear. Printing an expression shows what was
+#' built.
 #'
-#' An operator the service does not support raises at the point of use
-#' (`round`, `%%`, `log` with a base). In a model with no random variable,
-#' `max()`, `min()` and `holds()` make the problem combinatorial, and the
-#' service then expects integer variables with finite bounds; with a random
-#' variable anywhere in the model there is no such restriction.
+#' @section Expressions are vectors:
+#' A variable declared with `n = 10` is an expression of length 10, and
+#' expressions behave like numeric vectors in most ways: arithmetic works
+#' element by element, `x[3]` picks one element, `c()` combines expressions
+#' and numbers into a longer expression, and `length()` counts the elements.
 #'
-#' One caveat comes with `==` building a comparison: `unique()` still works on
-#' these objects, but `%in%` and `match()` silently answer as if no two were
-#' equal — compare identity with `identical()` instead.
+#' There are two differences. First, the two sides of an arithmetic operation
+#' must have the same length, or one of them length 1. R would recycle the
+#' shorter vector, which in a model is almost always a mistake, so here it is
+#' an error. Second, `sum()`, `prod()`, `max()`, `min()` and `mean()` combine
+#' all the elements of all their arguments into one, as they do for numbers:
+#' `max(x, 0)` is the largest of all the elements of `x` and 0, not an
+#' element-by-element maximum, and there is no `pmax()`. `mean(x)` is the mean
+#' over the elements of `x`; the mean over the scenarios is [expectation()].
 #'
+#' @section Comparisons:
+#' Comparing two expressions, as in `x <= y`, builds a comparison rather than
+#' returning `TRUE` or `FALSE`. What the comparison means depends on the
+#' function it is given to: [add()] makes it a constraint, [prob()] measures
+#' how often it holds across the scenarios, and [holds()] turns it into an
+#' expression that is 1 where it holds and 0 where it does not. `add()` and
+#' `prob()` accept `<=` and `>=`, and `add()` also `==`; `holds()` accepts
+#' all six comparisons.
+#'
+#' @section What does not work:
+#' Functions not listed above, such as `round()`, `%%` and `log()` with a
+#' base, stop with an error. Base R functions that are not written for
+#' expressions do not work on them either: use [variance()] instead of
+#' `var()`, [holds()] instead of `ifelse()`, and `identical()` instead of
+#' `%in%` or `match()` to check whether two expressions are the same.
+#'
+#' In a model without random variables, `max()`, `min()` and [holds()] limit
+#' the kind of model the service accepts: every variable must then be an
+#' integer or a binary variable, with finite bounds. In a model with random
+#' variables there is no such limit.
+#'
+#' @examples
+#' m <- model()
+#' tables <- num_var(m, "tables", lower = 0)
+#' chairs <- num_var(m, "chairs", lower = 0)
+#' 50 * tables + 20 * chairs                 # an expression, not a number
+#' tables + chairs <= 18                     # a comparison, not TRUE or FALSE
+#'
+#' x <- num_var(m, "x", lower = 0, upper = 1, n = 3)
+#' 2 * x                                     # element by element
+#' sum(x)                                    # one expression
+#' max(x, 0.5)                               # the largest of all four
 #' @name expressions
 NULL
 
@@ -154,37 +182,44 @@ Summary.quicopt <- function(..., na.rm = FALSE) {
 
 #' A comparison as a 0/1 expression
 #'
-#' `holds(a <= b)` is 1 where the comparison is true and 0 where it is not,
-#' as a model expression: a count, a penalty, or an event can be built from
-#' it with ordinary arithmetic. All six comparisons are allowed, since here
-#' they are values rather than constraints: `holds(x != y)` is 1 where the
-#' two differ.
+#' `holds(a <= b)` is 1 when the comparison is true and 0 when it is false.
+#' Unlike a constraint, it does not require anything: it is an expression
+#' like any other, so it can be added up, multiplied by a cost, or used in
+#' the objective. `sum(holds(x >= 1))`, for example, counts the elements of
+#' `x` that are at least 1. All six comparisons are accepted, including `<`,
+#' `>` and `!=`, which [add()] refuses.
 #'
-#' Across scenarios, `holds()` evaluates in each scenario separately, so
-#' `expectation(holds(demand <= x))` is the share of scenarios in which demand
-#' is met, the same number [prob()] gives. The difference is what can be
-#' done before aggregating: `expectation(price * holds(demand <= x))` prices
-#' the event in each scenario first.
+#' With random variables, `holds()` is evaluated in each scenario
+#' separately. `expectation(holds(demand <= stock))` is then the share of
+#' scenarios in which demand is met, the same number as
+#' `prob(demand <= stock)`. The difference is that `holds()` lets you combine
+#' the event with other quantities before averaging: for example,
+#' `expectation(200 * holds(demand > stock))` is the expected cost of a fixed
+#' charge of 200 whenever the stock runs out.
 #'
-#' `tol` widens the comparison: `holds(a == b, tol = 0.01)` is 1 where the two
-#' are within 0.01 of each other, `holds(a <= b, tol = 0.01)` where `a` is at
-#' most `b + 0.01`. Without it, `==` and `!=` compare exactly.
+#' `tol` loosens the comparison. `holds(a == b, tol = 0.01)` is 1 when `a`
+#' and `b` are within 0.01 of each other, and `holds(a <= b, tol = 0.01)` is
+#' 1 when `a` is at most `b + 0.01`. Without it, `==` and `!=` compare exactly.
 #'
-#' In a model with no random variable, a 0/1 expression makes the problem
-#' combinatorial, and the service then expects integer variables with finite
-#' bounds (the same holds for `max()` and `min()`). With a random variable
-#' anywhere in the model there is no such restriction.
+#' In a model without random variables, `holds()` limits the kind of model
+#' the service accepts: every variable must then be an integer or a binary
+#' variable, with finite bounds. The same holds for `max()` and `min()`. In a
+#' model with random variables there is no such limit.
 #'
-#' @param rel A comparison of model expressions.
-#' @param tol A non-negative tolerance, default 0.
-#' @return An expression with one 0/1 element per compared element.
+#' @param rel A comparison of expressions.
+#' @param tol How far the comparison may be off and still count as true; a
+#'   number of at least 0.
+#' @return An expression with one 0/1 element per element of the comparison.
 #' @examples
 #' m <- model()
-#' x <- num_var(m, "x", 0, 200)
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
 #' demand <- rand_var(m, "demand", normal(100, 15))
 #' set_scenarios(m, 512, seed = 42)
-#' met <- holds(demand <= x)                    # 1 in the scenarios where demand is met
-#' add(m, expectation(met) >= 0.9)              # the same constraint as prob(demand <= x) >= 0.9
+#' stockout <- holds(demand > stock)            # 1 in the scenarios where the stock runs out
+#' minimize(m, 3 * stock + 200 * expectation(stockout))
+#'
+#' met <- holds(demand <= stock)
+#' add(m, expectation(met) >= 0.9)              # the same as prob(demand <= stock) >= 0.9
 #' @export
 holds <- function(rel, tol = 0) {
   if (!inherits(rel, "quicopt_relation"))

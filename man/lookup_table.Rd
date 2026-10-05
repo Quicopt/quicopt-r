@@ -3,7 +3,7 @@
 \name{lookup_table}
 \alias{lookup_table}
 \alias{[.quicopt_table}
-\title{A table of numbers read at positions the solver decides}
+\title{A table of data indexed by decisions}
 \usage{
 lookup_table(m, name, values)
 
@@ -14,49 +14,60 @@ lookup_table(m, name, values)
 
 \item{name}{The table's name, unique within the model.}
 
-\item{values}{A numeric vector or matrix, with no \code{NA}.}
+\item{values}{A numeric vector or matrix without \code{NA}.}
 
 \item{x}{A lookup table.}
 
-\item{i, j}{Positions: numbers, or model expressions such as \code{\link[=item_at]{item_at()}};
-\code{j} only for a matrix table.}
+\item{i, j}{Positions in the table: numbers, or expressions such as
+\code{\link[=item_at]{item_at()}}. \code{j} only for a table made from a matrix.}
 }
 \value{
-The table's handle; \verb{m$<name>} retrieves it too.
+The table, to be indexed with \code{[}.
 
-\code{x[i]} and \code{x[i, j]} return an expression, one element per position.
+\code{x[i]} and \code{x[i, j]} return an expression with one element per
+position.
 }
 \description{
-Data that depends on a decision cannot be indexed with it in plain R:
-\code{dist[item_at(1, tour), item_at(2, tour)]} has to be looked up after the
-solver has chosen the order. A lookup table is such data, declared in the
-model under a name, and indexing it with model expressions builds the
-lookup as an expression: a vector table takes one index, a matrix table
-two, and either index may be a number, a vector of numbers, or an
-expression such as \code{\link[=item_at]{item_at()}} or an integer variable. The indexing is
-vectorized, so \code{dist[item_at(1:4, P), item_at(2:5, P)]} is the four legs
-of a five-stop round.
+Sometimes a model needs a number from a table at a position that is not
+known yet: the distance between the first and the second stop of a route
+whose order the service is still choosing, or the price of an option that
+an integer variable picks. An ordinary R vector or matrix cannot be indexed
+this way. \code{lookup_table()} adds the data to the model under a name, and
+indexing the result with expressions, such as \code{\link[=item_at]{item_at()}} or an integer
+variable, builds an expression whose value is the entry at the positions
+the service chooses.
 }
 \details{
-The lookup is an ordinary expression: multiply it by a cost, sum it, put it
-under an \code{\link[=expectation]{expectation()}}. Its value is the table entry at the chosen
-positions; an index that is not a whole number in range is rounded and
-clamped into the table, so a continuous variable may index a table too.
+A table made from a vector takes one index, and a table made from a matrix
+two. Each index may be a number, a vector of numbers, or an expression.
 
-A lookup makes the model one that is solved by search, as a permutation or
-a random variable does. The table travels with the model, one entry per
-cell, so a very large table makes for a large request.
+Unlike indexing an ordinary R matrix, the two indices are paired up
+element by element: \code{km[1:4, 2:5]} is a 4 x 4 block of a matrix \code{km}, but
+for a lookup table \code{dist}, \code{dist[1:4, 2:5]} has four elements, the entries
+\verb{[1, 2]}, \verb{[2, 3]}, \verb{[3, 4]} and \verb{[4, 5]}. This is what makes
+\code{dist[item_at(1:4, P), item_at(2:5, P)]} the four legs of a five-stop
+route.
+
+The result is an ordinary expression: it can be multiplied by a cost,
+added up, or averaged with \code{\link[=expectation]{expectation()}}. An index that is not a whole
+number is rounded, and one outside the table is moved to the nearest end,
+so a continuous variable can be used as an index too.
+
+A model with a lookup table is solved by a search, so its status is
+\code{"heuristic"}. The whole table is sent with the model, so a very large
+table makes the request large.
 }
 \examples{
+# the distances between five stops along a road
+position <- c(0, 3, 1, 4, 2)
 m <- model()
-where <- c(0, 3, 1, 4, 2)
-dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
-tour <- perm_var(m, "tour", 5)
-leg <- dist[item_at(1:4, tour), item_at(2:5, tour)]     # the four legs
-minimize(m, sum(leg))
+dist  <- lookup_table(m, "dist", abs(outer(position, position, "-")))
+route <- perm_var(m, "route", 5)
+legs  <- dist[item_at(1:4, route), item_at(2:5, route)]    # the four legs of the route
+minimize(m, sum(legs))
 
-# a cost per option, chosen through an integer variable
-cost <- lookup_table(m, "cost", c(3, 1, 4, 1.5))
-choice <- int_var(m, "choice", 1, 4)
-cost[choice]
+# the price of one of four options, picked by an integer variable
+price  <- lookup_table(m, "price", c(3, 1, 4, 1.5))
+choice <- int_var(m, "choice", lower = 1, upper = 4)
+price[choice]
 }

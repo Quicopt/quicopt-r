@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{as_program}
 \alias{as_program}
-\title{Lower a model to a program}
+\title{Convert a model to a program}
 \usage{
 as_program(m)
 }
@@ -13,7 +13,15 @@ as_program(m)
 A \code{\link[=program]{program()}}.
 }
 \description{
-The program is the model as plain data — what \code{\link[=encode]{encode()}} serializes and the
-service reads. \code{\link[=solve]{solve()}} does this on the way out; call it directly to
-inspect what will be sent.
+A program is the model written out as plain R lists: every variable,
+expression and constraint, in the form that \code{\link[=encode]{encode()}} turns into the
+bytes sent to the service. \code{\link[=solve]{solve()}} makes this conversion itself, so you
+only need \code{as_program()} to look at exactly what a model sends, or to work
+with the \code{\link[=program]{program()}} functions directly.
+}
+\examples{
+m <- model()
+x <- num_var(m, "x", lower = 0, upper = 4)
+maximize(m, 3 * x)
+str(as_program(m)$vars)
 }

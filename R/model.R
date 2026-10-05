@@ -12,29 +12,43 @@
 # reserved for the user and resolves variable names only, so a variable named
 # "vars" can never shadow the registry.
 
-#' Create an empty optimization model
+#' Create an empty model
 #'
-#' A model owns decision variables, an objective, constraint rows, and — for a
-#' model under uncertainty — random variables and a scenario count. Declare
-#' variables with [num_var()], [int_var()], [bin_var()] and [rand_var()], state
-#' the goal with [minimize()] or [maximize()], add constraints with [add()],
-#' and hand the model to [solve()].
+#' A model collects everything the service needs to find the best decision:
+#' the decisions to be made, the objective, the constraints and, when some of
+#' the data is uncertain, the random variables and the number of scenarios.
+#' `model()` creates an empty one, and these functions fill it:
 #'
-#' Every setter both mutates the model and returns it invisibly, so the
-#' imperative style and the pipe are the same functions:
+#' * decisions: [num_var()], [int_var()], [bin_var()], and [perm_var()] for an
+#'   order;
+#' * uncertain data: [rand_var()] and [set_empirical()];
+#' * the objective: [minimize()] or [maximize()];
+#' * constraints: [add()].
+#'
+#' [solve()] then sends the model to the service. `m$name` retrieves a
+#' variable declared in `m` by its name, and printing a model shows a short
+#' summary of it.
+#'
+#' Each of the functions above changes the model in place and returns it
+#' invisibly, so a model can also be written as a pipe:
 #'
 #' ```r
-#' m <- model()
-#' x <- num_var(m, "x", 0, 4)          # handle style
-#'
-#' m <- model() |>                     # pipe style; m$x retrieves the handle
-#'   add_var("x", 0, 4)
+#' m <- model() |>
+#'   add_var("x", lower = 0, upper = 4)    # m$x retrieves the variable
 #' ```
 #'
-#' Note the pipe mutates its input — the model is one shared object, not a
-#' value being copied along the chain.
+#' Unlike most R objects, a model is not copied when it is passed to a
+#' function. After `m2 <- m |> add(m$x <= 3)`, `m` has the constraint too,
+#' and `m2` and `m` are the same model.
 #'
-#' @return A model, an environment of class `quicopt_model`.
+#' @return An empty model, an object of class `quicopt_model`.
+#' @examples
+#' m <- model()
+#' tables <- num_var(m, "tables", lower = 0)
+#' chairs <- num_var(m, "chairs", lower = 0)
+#' maximize(m, 50 * tables + 20 * chairs)
+#' add(m, tables + chairs <= 18)
+#' m
 #' @export
 model <- function() {
   m <- new.env(parent = emptyenv())
@@ -115,22 +129,39 @@ model <- function() {
 
 #' Declare decision variables
 #'
-#' `num_var` declares a continuous variable, `int_var` an integer one, and
-#' `bin_var` a binary one. With `n` greater than 1 the declaration is a vector
-#' variable: `x[3]` indexes it, `sum(x)` folds it, arithmetic is elementwise,
-#' and per-element bounds are given as vectors of length `n`. Solutions come
-#' back keyed `"x"` for a scalar and `"x[1]"`, `"x[2]"`, ... for a vector.
+#' A decision variable is a quantity the service chooses. `num_var()`
+#' declares one that can take any value between its bounds, `int_var()` one
+#' that must be a whole number, and `bin_var()` a yes-or-no decision, which is
+#' either 0 or 1.
 #'
-#' The handle is returned and is also retrievable from the model as `m$x`; the
-#' `add_var` variant returns the model instead, for pipes.
+#' Each returns the variable, for use in expressions such as
+#' `50 * tables + 20 * chairs`; `m$tables` retrieves it from the model too.
+#' `add_var()` declares a variable in the same way but returns the model, for
+#' use in a pipe (see [model()]).
+#'
+#' With `n` greater than 1, one call declares `n` variables under one name,
+#' and they behave like an R vector: `x[3]` is the third, arithmetic works
+#' element by element, and `sum(x)` adds them up. `lower`, `upper` and `start`
+#' may then be vectors of length `n`, one value per element. In the answer the
+#' elements are named `"x[1]"`, `"x[2]"`, and so on; a single variable is
+#' named `"x"`.
 #'
 #' @param m A [model()].
-#' @param name The variable's name, unique within the model.
-#' @param lower,upper Bounds; `-Inf` / `Inf` leave a direction unbounded. A
-#'   vector of length `n` sets per-element bounds.
-#' @param n How many elements the variable has.
-#' @param start The initial point handed to the solver.
-#' @return The variable handle (an expression of length `n`).
+#' @param name The variable's name, used for it in the answer. It must be
+#'   unique within the model.
+#' @param lower,upper The smallest and the largest value allowed. `-Inf` and
+#'   `Inf`, the defaults, leave that side open.
+#' @param n How many variables to declare under this name.
+#' @param start The value the service's search starts from (see
+#'   [set_start()]).
+#' @return The variable, an expression of length `n`.
+#' @examples
+#' m <- model()
+#' tables <- int_var(m, "tables", lower = 0)
+#' take   <- bin_var(m, "take", n = 6)                         # six yes-or-no decisions
+#' share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
+#' sum(share)
+#' take[2]
 #' @export
 num_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
   .new_var(m, name, CONTINUOUS, lower, upper, n, start, "num_var")
@@ -146,8 +177,9 @@ bin_var <- function(m, name, n = 1, start = 0)
   .new_var(m, name, BINARY, 0, 1, n, start, "bin_var")
 
 #' @rdname num_var
-#' @param domain For `add_var`: `"num"`, `"int"` or `"bin"`.
-#' @return `add_var` returns the model, invisibly.
+#' @param domain For `add_var()`: `"num"`, `"int"` or `"bin"`, to declare the
+#'   variable as `num_var()`, `int_var()` or `bin_var()` would.
+#' @return `add_var()` returns the model, invisibly.
 #' @export
 add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
                     domain = c("num", "int", "bin")) {
@@ -197,28 +229,36 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
   solution
 }
 
-#' Start the search from a known solution
+#' Start the next search from a known solution
 #'
-#' Sets the start value of every variable named in `values`, so the next
-#' solve begins there. The usual source is a previous result: solve, tighten
-#' a constraint or add a scenario, and solve again from where the last search
-#' ended rather than from scratch. Variables not named keep their start.
+#' The service's search starts from each variable's start value, which is 0
+#' unless set otherwise. When a model is solved again after a small change,
+#' such as a tightened constraint or more scenarios, starting from the
+#' previous answer usually gets to a good solution sooner than starting from
+#' scratch. `set_start()` sets the start values from a result, or from a
+#' named vector of values. Variables it is not given keep their start value.
 #'
-#' An integer or binary variable's start is rounded by the service, and any
-#' start is clamped into the variable's bounds. A result also carries the
-#' order found for every permutation ([perm_var()]), which becomes that
-#' permutation's start.
+#' The service rounds the start of a whole-number variable, and moves a start
+#' that lies outside the variable's bounds to the nearest bound. A result also
+#' holds the order found for each permutation (see [perm_var()]), and that
+#' order becomes the permutation's start.
 #'
 #' @param m A [model()].
-#' @param values A result from [solve()], or a named numeric vector keyed the
-#'   way a solution is: `"x"` for a scalar, `"x[1]"`, `"x[2]"`, ... for a
-#'   vector variable.
+#' @param values A result from [solve()], or a named numeric vector, with
+#'   names as in a solution: `"x"` for a single variable, `"x[1]"`, `"x[2]"`,
+#'   ... for the elements of a vector variable.
 #' @return The model, invisibly.
 #' @examples
 #' \dontrun{
+#' m <- model()
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
 #' res <- solve(m)
-#' add(m, x <= 100)              # a new restriction
-#' set_start(m, res)             # begin where the last search ended
+#'
+#' set_scenarios(m, 1000, seed = 42)    # the same model, more scenarios
+#' set_start(m, res)                    # start where the last search ended
 #' solve(m)
 #' }
 #' @export
@@ -259,17 +299,26 @@ set_start <- function(m, values) {
   invisible(m)
 }
 
-#' State what the model optimizes
+#' Set the objective
 #'
-#' The objective is a single expression; fold a vector with `sum()` first. A
-#' model given no objective is a feasibility problem. In a model under
-#' uncertainty the objective cannot be random: close it over the scenarios
-#' first, with [expectation()], [cvar()] or another aggregator (the
-#' [stochastic] topic lists them).
+#' The objective is the single number that the service makes as small
+#' (`minimize()`) or as large (`maximize()`) as possible. Calling either
+#' function again replaces the objective. An expression with several elements
+#' has to be combined into one first, for example with `sum()`. A model
+#' without an objective asks for any solution that meets the constraints.
+#'
+#' In a model with random variables, the objective has to be one number, not
+#' one per scenario: summarize it first, for example with [expectation()]
+#' (the [stochastic] help page lists all the summaries).
 #'
 #' @param m A [model()].
-#' @param e The objective expression.
+#' @param e The expression to minimize or maximize.
 #' @return The model, invisibly.
+#' @examples
+#' m <- model()
+#' tables <- num_var(m, "tables", lower = 0)
+#' chairs <- num_var(m, "chairs", lower = 0)
+#' maximize(m, 50 * tables + 20 * chairs)    # the profit
 #' @export
 minimize <- function(m, e) .set_objective(m, e, "min", "minimize")
 
@@ -279,52 +328,70 @@ maximize <- function(m, e) .set_objective(m, e, "max", "maximize")
 
 #' Add constraints to a model
 #'
-#' A comparison of model expressions is a constraint, not a logical:
-#' `add(m, x + y <= 5)` requires the row to hold, and `==` states an equality.
-#' A comparison of vector expressions adds one row per element, so
-#' `add(m, x <= cap)` with two length-`n` vectors is `n` rows. `<`, `>` and
-#' `!=` are refused: for a continuous quantity the first two mean `<=` and
-#' `>=`, and the third is no constraint at all (see [holds()] for the 0/1
-#' expression it does make).
+#' A comparison of expressions, written with `<=`, `>=` or `==`, becomes a
+#' requirement that every solution must meet: `add(m, tables + chairs <= 18)`.
+#' Here the comparison is not a test that returns `TRUE` or `FALSE`. A
+#' comparison of two vectors adds one constraint per element, so with `x` and
+#' `cap` of length `n`, `add(m, x <= cap)` adds `n` constraints.
 #'
-#' A constraint cannot be random. In a model under uncertainty, close the
-#' expression with an aggregator first ([expectation()], [cvar()], [prob()]
-#' and the others the [stochastic] topic lists); a chance constraint is
-#' `add(m, prob(demand - x <= 0) >= 0.9)`.
+#' `<` and `>` are not accepted, because for a quantity that can take any
+#' value they mean the same as `<=` and `>=`. `!=` is not accepted either;
+#' [holds()] turns it into a 0/1 expression, which can be used instead.
+#'
+#' In a model with random variables, each side of a constraint has to be one
+#' number, not one per scenario: summarize it first, for example with
+#' [expectation()] or [prob()]. A requirement on a probability, such as
+#' `add(m, prob(demand <= stock) >= 0.9)`, is called a *chance constraint*.
 #'
 #' @section A safety margin on a chance constraint:
-#' The probability in `prob(...) >= 0.9` is estimated from the scenarios, and
-#' an estimate has a standard error: `sqrt(0.9 * 0.1 / n)` for `n` scenarios,
-#' about 0.013 at 512. A solution found with the constraint just satisfied in
-#' sample therefore misses the level on fresh scenarios about half the time
-#' (see [resample()]). `margin = k` asks for the level tightened by `k`
-#' standard errors instead, `0.9 + k * sqrt(0.9 * 0.1 / n)` here, so that the
-#' true probability clears the level with confidence `pnorm(k)`: about 84% at
-#' `k = 1`, 98% at `k = 2`. For an upper bound, `prob(...) <= 0.1`, the level
-#' is lowered instead. The margin applies to a comparison of a [prob()] with
-#' a number strictly between 0 and 1, and is resolved against the scenario
-#' count when the model is sent, so it may be given before [set_scenarios()].
+#' The probability in a chance constraint is estimated from the scenarios, so
+#' it carries sampling error. For a target `p` and `n` scenarios, its standard
+#' error is `sqrt(p * (1 - p) / n)`, about 0.013 for `p = 0.9` and
+#' `n = 512`. A solution chosen to just meet the target on its own scenarios
+#' therefore misses the target on new scenarios about half the time (see
+#' [resample()]).
 #'
-#' @section A constraint that applies only when a switch is on:
-#' `when = b`, with `b` a binary variable, imposes the row only where `b` is
-#' 1: `add(m, x <= 0, when = is_closed)`. `b` is one variable, or a vector
-#' variable with one element per row. In a model with no random variable a
-#' switched row makes the problem combinatorial, and the service then expects
-#' integer variables with finite bounds, as for [holds()].
+#' `margin = k` raises the target by `k` standard errors, so that the true
+#' probability meets the original target with a confidence of about
+#' `pnorm(k)`: 84% for `k = 1`, 98% for `k = 2`. For an upper limit, such as
+#' `prob(...) <= 0.1`, the target is lowered instead. A margin applies only
+#' when one side of the constraint is a [prob()] and the other a number
+#' strictly between 0 and 1. The standard error is computed from the number
+#' of scenarios when the model is solved, so the margin can be given before
+#' [set_scenarios()] is called.
+#'
+#' @section A constraint with an on-off switch:
+#' `when = b`, with `b` a binary variable from [bin_var()], makes the
+#' constraint apply only in solutions in which `b` is 1. For example,
+#' `add(m, output <= 0, when = closed)` forces the output to 0 only if the
+#' plant is closed. `b` is a single variable, or a vector variable with one
+#' element per constraint.
+#'
+#' In a model without random variables, a switch limits the kind of model
+#' the service accepts: every variable must then be an integer or a binary
+#' variable, with finite bounds. The same holds for [holds()], `max()` and
+#' `min()`.
 #'
 #' @param m A [model()].
-#' @param rel A comparison built with `<=`, `>=` or `==`.
-#' @param margin For a chance constraint: how many standard errors to tighten
-#'   the level by (default none).
-#' @param when A binary variable (from [bin_var()]) that switches the row on.
+#' @param rel A comparison of expressions, written with `<=`, `>=` or `==`.
+#' @param margin For a chance constraint: by how many standard errors to
+#'   tighten the target. The default, 0, leaves it as written.
+#' @param when A binary variable that switches the constraint on.
 #' @return The model, invisibly.
 #' @examples
 #' m <- model()
-#' x <- num_var(m, "x", 0, 200)
-#' demand <- rand_var(m, "demand", normal(100, 15))
-#' set_scenarios(m, 512, seed = 42)
-#' add(m, prob(demand - x <= 0) >= 0.9)              # the level as stated
-#' add(m, prob(demand - x <= 0) >= 0.9, margin = 2)  # the level plus 2 SE: 0.927
+#' tables <- num_var(m, "tables", lower = 0)
+#' chairs <- num_var(m, "chairs", lower = 0)
+#' add(m, 3 * tables + chairs <= 41)                      # hours of carpentry
+#' add(m, tables + chairs <= 18)                          # wood
+#'
+#' # a chance constraint, without and with a safety margin
+#' shop   <- model()
+#' stock  <- num_var(shop, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(shop, "demand", normal(100, 15))
+#' set_scenarios(shop, 512, seed = 42)
+#' add(shop, prob(demand <= stock) >= 0.9)                # demand met on 90% of scenarios
+#' add(shop, prob(demand <= stock) >= 0.9, margin = 2)    # the target raised to about 0.927
 #' @export
 add <- function(m, rel, margin = 0, when = NULL) {
   .check_model(m, "add")
@@ -452,14 +519,21 @@ print.quicopt_model <- function(x, ...) {
 
 # ── lowering ────────────────────────────────────────────────────────────────
 
-#' Lower a model to a program
+#' Convert a model to a program
 #'
-#' The program is the model as plain data — what [encode()] serializes and the
-#' service reads. [solve()] does this on the way out; call it directly to
-#' inspect what will be sent.
+#' A program is the model written out as plain R lists: every variable,
+#' expression and constraint, in the form that [encode()] turns into the
+#' bytes sent to the service. [solve()] makes this conversion itself, so you
+#' only need `as_program()` to look at exactly what a model sends, or to work
+#' with the [program()] functions directly.
 #'
 #' @param m A [model()].
 #' @return A [program()].
+#' @examples
+#' m <- model()
+#' x <- num_var(m, "x", lower = 0, upper = 4)
+#' maximize(m, 3 * x)
+#' str(as_program(m)$vars)
 #' @export
 as_program <- function(m) {
   .check_model(m, "as_program")

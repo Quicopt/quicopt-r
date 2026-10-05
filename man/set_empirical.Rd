@@ -2,29 +2,40 @@
 % Please edit documentation in R/stochastic.R
 \name{set_empirical}
 \alias{set_empirical}
-\title{Turn observed history into a model's uncertainty}
+\title{Use observed data as a model's uncertainty}
 \usage{
 set_empirical(m, data, cols = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{data}{A data frame of jointly observed rows.}
+\item{data}{A data frame with one row per observation.}
 
-\item{cols}{Which columns to use (default: all of them).}
+\item{cols}{The names of the columns to use. Left \code{NULL}, all of them.}
 }
 \value{
-The model, invisibly. The handles are retrievable as \verb{m$<column>}.
+The model, invisibly.
 }
 \description{
-Every chosen column of a data frame becomes an \code{\link[=empirical]{empirical()}} random
-variable named after the column, and the number of rows becomes the model's
-scenario count. All columns are read at the same scenario index, so rows
-observed jointly stay jointly distributed — correlation in the data survives
-into the model.
+Turns the columns of a data frame into random variables: each column
+becomes one, named after the column, and each row becomes one scenario.
+The columns are read row by row, so values observed together stay
+together, and any correlation between the columns carries over into the
+model. No distribution has to be chosen or fitted.
 }
 \details{
-A non-numeric column is an error, not a skip: a silently dropped column
-would leave a model that solves fine and answers the wrong question. Select
-with \code{cols} when the frame carries more than its uncertainty.
+The random variables are not returned; retrieve them by name, as
+\code{m$demand}. The number of scenarios is set to the number of rows.
+
+Every column used must be numeric; a column that is not is an error rather
+than being skipped. Use \code{cols} to select the columns that describe the
+uncertainty when the data frame holds others too.
+}
+\examples{
+history <- data.frame(demand = c(96, 104, 121, 88, 110),
+                      price  = c(12.1, 11.8, 11.2, 12.5, 11.6))
+m <- model()
+stock <- num_var(m, "stock", lower = 0, upper = 200)
+set_empirical(m, history)
+maximize(m, expectation(m$price * min(m$demand, stock)) - 3 * stock)
 }

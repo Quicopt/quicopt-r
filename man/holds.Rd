@@ -7,41 +7,48 @@
 holds(rel, tol = 0)
 }
 \arguments{
-\item{rel}{A comparison of model expressions.}
+\item{rel}{A comparison of expressions.}
 
-\item{tol}{A non-negative tolerance, default 0.}
+\item{tol}{How far the comparison may be off and still count as true; a
+number of at least 0.}
 }
 \value{
-An expression with one 0/1 element per compared element.
+An expression with one 0/1 element per element of the comparison.
 }
 \description{
-\code{holds(a <= b)} is 1 where the comparison is true and 0 where it is not,
-as a model expression: a count, a penalty, or an event can be built from
-it with ordinary arithmetic. All six comparisons are allowed, since here
-they are values rather than constraints: \code{holds(x != y)} is 1 where the
-two differ.
+\code{holds(a <= b)} is 1 when the comparison is true and 0 when it is false.
+Unlike a constraint, it does not require anything: it is an expression
+like any other, so it can be added up, multiplied by a cost, or used in
+the objective. \code{sum(holds(x >= 1))}, for example, counts the elements of
+\code{x} that are at least 1. All six comparisons are accepted, including \code{<},
+\code{>} and \code{!=}, which \code{\link[=add]{add()}} refuses.
 }
 \details{
-Across scenarios, \code{holds()} evaluates in each scenario separately, so
-\code{expectation(holds(demand <= x))} is the share of scenarios in which demand
-is met, the same number \code{\link[=prob]{prob()}} gives. The difference is what can be
-done before aggregating: \code{expectation(price * holds(demand <= x))} prices
-the event in each scenario first.
+With random variables, \code{holds()} is evaluated in each scenario
+separately. \code{expectation(holds(demand <= stock))} is then the share of
+scenarios in which demand is met, the same number as
+\code{prob(demand <= stock)}. The difference is that \code{holds()} lets you combine
+the event with other quantities before averaging: for example,
+\code{expectation(200 * holds(demand > stock))} is the expected cost of a fixed
+charge of 200 whenever the stock runs out.
 
-\code{tol} widens the comparison: \code{holds(a == b, tol = 0.01)} is 1 where the two
-are within 0.01 of each other, \code{holds(a <= b, tol = 0.01)} where \code{a} is at
-most \code{b + 0.01}. Without it, \code{==} and \code{!=} compare exactly.
+\code{tol} loosens the comparison. \code{holds(a == b, tol = 0.01)} is 1 when \code{a}
+and \code{b} are within 0.01 of each other, and \code{holds(a <= b, tol = 0.01)} is
+1 when \code{a} is at most \code{b + 0.01}. Without it, \code{==} and \code{!=} compare exactly.
 
-In a model with no random variable, a 0/1 expression makes the problem
-combinatorial, and the service then expects integer variables with finite
-bounds (the same holds for \code{max()} and \code{min()}). With a random variable
-anywhere in the model there is no such restriction.
+In a model without random variables, \code{holds()} limits the kind of model
+the service accepts: every variable must then be an integer or a binary
+variable, with finite bounds. The same holds for \code{max()} and \code{min()}. In a
+model with random variables there is no such limit.
 }
 \examples{
 m <- model()
-x <- num_var(m, "x", 0, 200)
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
 demand <- rand_var(m, "demand", normal(100, 15))
 set_scenarios(m, 512, seed = 42)
-met <- holds(demand <= x)                    # 1 in the scenarios where demand is met
-add(m, expectation(met) >= 0.9)              # the same constraint as prob(demand <= x) >= 0.9
+stockout <- holds(demand > stock)            # 1 in the scenarios where the stock runs out
+minimize(m, 3 * stock + 200 * expectation(stockout))
+
+met <- holds(demand <= stock)
+add(m, expectation(met) >= 0.9)              # the same as prob(demand <= stock) >= 0.9
 }

@@ -10,36 +10,36 @@ variance(x, sample = FALSE)
 std_dev(x, sample = FALSE)
 }
 \arguments{
-\item{x}{A random model expression (see \code{\link[=is_random]{is_random()}}).}
+\item{x}{A random expression (see \code{\link[=is_random]{is_random()}}).}
 
-\item{sample}{\code{FALSE} (the default) divides by the number of scenarios;
+\item{sample}{\code{FALSE}, the default, divides by the number of scenarios;
 \code{TRUE} divides by one less, as \code{var()} and \code{sd()} do.}
 }
 \value{
-An expression of the same length, no longer random.
+An expression of the same length as \code{x}, no longer random.
 }
 \description{
-How much a quantity varies from scenario to scenario, as opposed to what it
-averages to. \code{expectation(cost) + k * std_dev(cost)} is the mean-risk
-objective that penalizes spread, and \code{add(m, variance(ret) <= v)} caps it.
+How much a quantity varies from scenario to scenario, as opposed to what
+it is on average. \code{expectation(cost) + 2 * std_dev(cost)} is an objective
+that trades a low average cost against a steady one, and
+\code{add(m, variance(cost) <= 100)} limits the variation.
 }
 \details{
-By default the scenarios are taken as the whole distribution, each with
-weight \code{1/n}, so \code{variance(x)} is \code{expectation(x^2) - expectation(x)^2}.
-That is not what \code{var()} and \code{sd()} compute: they divide by \code{n - 1}, to
-estimate the variance of a population from a sample of it. \code{sample = TRUE}
-gives that estimate. The two differ by the factor \code{n / (n - 1)}, which
-matters to a reported number and not to which decision minimizes it.
+By default the scenarios count as the whole distribution, each with weight
+\code{1 / n}, so \code{variance(x)} is \code{expectation(x^2) - expectation(x)^2}. R's
+\code{var()} and \code{sd()} divide by \code{n - 1} instead, because they estimate the
+variance of a population from a sample of it; \code{sample = TRUE} does the
+same. The two differ by a factor \code{n / (n - 1)}, which changes the value
+reported but not which decision is best.
 
-Unlike \code{\link[=cvar]{cvar()}}, these measure deviation in both directions: a scenario
-that turns out far better than average raises them as much as one that
-turns out far worse.
+Unlike \code{\link[=cvar]{cvar()}}, these measure variation in both directions: a scenario
+far better than average increases them as much as one far worse.
 }
 \examples{
 m <- model()
-x <- num_var(m, "x", 0, 200)
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
 demand <- rand_var(m, "demand", normal(100, 15))
 set_scenarios(m, 512, seed = 42)
-cost <- 3 * x + 10 * max(demand - x, 0)
+cost <- 3 * stock + 10 * max(demand - stock, 0)
 minimize(m, expectation(cost) + 2 * std_dev(cost))
 }

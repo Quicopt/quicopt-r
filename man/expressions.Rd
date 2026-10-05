@@ -2,38 +2,75 @@
 % Please edit documentation in R/expr.R
 \name{expressions}
 \alias{expressions}
-\title{quicopt expressions — model arithmetic in plain R}
+\title{Expressions: arithmetic on variables}
 \description{
-Arithmetic on a model's variables builds an expression rather than computing
-a number, and comparing two expressions builds a comparison rather than
-answering a logical. The operators are R's own — \verb{+ - * / ^}, \code{sqrt}, \code{exp},
-\code{log}, \code{sin}, \code{cos}, \code{abs}, \code{max}, \code{min}, \code{sum}, \code{prod}, \code{mean} — dispatched
-through the \code{Ops}, \code{Math} and \code{Summary} group generics, so a model reads as
-ordinary R code.
+The values of decision variables and random variables are not known when
+you write a model, so arithmetic on them cannot compute a number. Instead
+it builds an \emph{expression}: a description of a quantity, which the service
+evaluates for every solution it considers. Expressions are written as
+ordinary R code, with these operators and functions:
 }
 \details{
-Expressions are vectors, like everything in R: a variable declared with
-\code{n = 10} has length 10, arithmetic is elementwise, \code{x[3]} indexes, \code{c()}
-concatenates, and \code{sum(x)} folds. So do \code{prod()}, \code{max()}, \code{min()} and \code{mean()}: they fold
-every element of every argument into one, as they do on numeric vectors
-(\code{max(x, 0)} is the largest of all elements of \code{x} and 0; there is no
-elementwise \code{pmax}). \code{mean()} is the mean over the elements; the mean over
-the scenarios is \code{\link[=expectation]{expectation()}}. Lengths must match exactly or be 1 (a
-scalar broadcasts); anything else is an error — a model is no place for
-silent recycling.
+\itemize{
+\item \code{+}, \code{-}, \code{*}, \code{/} and \code{^};
+\item \code{abs()}, \code{sqrt()}, \code{exp()}, \code{log()}, \code{sin()} and \code{cos()};
+\item \code{sum()}, \code{prod()}, \code{max()}, \code{min()} and \code{mean()}.
+}
 
-A comparison goes one of three ways: \code{\link[=add]{add()}} makes it a constraint,
-\code{\link[=prob]{prob()}} measures how often it holds across scenarios, and \code{\link[=holds]{holds()}} makes
-it a 0/1 expression. \code{add()} and \code{prob()} take \code{<=}, \code{>=} and (\code{add()}
-only) \code{==}; \code{holds()} takes all six.
+Expressions need not be linear. Printing an expression shows what was
+built.
+}
+\section{Expressions are vectors}{
 
-An operator the service does not support raises at the point of use
-(\code{round}, \code{\%\%}, \code{log} with a base). In a model with no random variable,
-\code{max()}, \code{min()} and \code{holds()} make the problem combinatorial, and the
-service then expects integer variables with finite bounds; with a random
-variable anywhere in the model there is no such restriction.
+A variable declared with \code{n = 10} is an expression of length 10, and
+expressions behave like numeric vectors in most ways: arithmetic works
+element by element, \code{x[3]} picks one element, \code{c()} combines expressions
+and numbers into a longer expression, and \code{length()} counts the elements.
 
-One caveat comes with \code{==} building a comparison: \code{unique()} still works on
-these objects, but \code{\%in\%} and \code{match()} silently answer as if no two were
-equal — compare identity with \code{identical()} instead.
+There are two differences. First, the two sides of an arithmetic operation
+must have the same length, or one of them length 1. R would recycle the
+shorter vector, which in a model is almost always a mistake, so here it is
+an error. Second, \code{sum()}, \code{prod()}, \code{max()}, \code{min()} and \code{mean()} combine
+all the elements of all their arguments into one, as they do for numbers:
+\code{max(x, 0)} is the largest of all the elements of \code{x} and 0, not an
+element-by-element maximum, and there is no \code{pmax()}. \code{mean(x)} is the mean
+over the elements of \code{x}; the mean over the scenarios is \code{\link[=expectation]{expectation()}}.
+}
+
+\section{Comparisons}{
+
+Comparing two expressions, as in \code{x <= y}, builds a comparison rather than
+returning \code{TRUE} or \code{FALSE}. What the comparison means depends on the
+function it is given to: \code{\link[=add]{add()}} makes it a constraint, \code{\link[=prob]{prob()}} measures
+how often it holds across the scenarios, and \code{\link[=holds]{holds()}} turns it into an
+expression that is 1 where it holds and 0 where it does not. \code{add()} and
+\code{prob()} accept \code{<=} and \code{>=}, and \code{add()} also \code{==}; \code{holds()} accepts
+all six comparisons.
+}
+
+\section{What does not work}{
+
+Functions not listed above, such as \code{round()}, \code{\%\%} and \code{log()} with a
+base, stop with an error. Base R functions that are not written for
+expressions do not work on them either: use \code{\link[=variance]{variance()}} instead of
+\code{var()}, \code{\link[=holds]{holds()}} instead of \code{ifelse()}, and \code{identical()} instead of
+\code{\%in\%} or \code{match()} to check whether two expressions are the same.
+
+In a model without random variables, \code{max()}, \code{min()} and \code{\link[=holds]{holds()}} limit
+the kind of model the service accepts: every variable must then be an
+integer or a binary variable, with finite bounds. In a model with random
+variables there is no such limit.
+}
+
+\examples{
+m <- model()
+tables <- num_var(m, "tables", lower = 0)
+chairs <- num_var(m, "chairs", lower = 0)
+50 * tables + 20 * chairs                 # an expression, not a number
+tables + chairs <= 18                     # a comparison, not TRUE or FALSE
+
+x <- num_var(m, "x", lower = 0, upper = 1, n = 3)
+2 * x                                     # element by element
+sum(x)                                    # one expression
+max(x, 0.5)                               # the largest of all four
 }

@@ -2,22 +2,31 @@
 % Please edit documentation in R/stochastic.R
 \name{expectation}
 \alias{expectation}
-\title{The expected value over the scenarios}
+\title{The average over the scenarios}
 \usage{
 expectation(x)
 }
 \arguments{
-\item{x}{A random model expression (see \code{\link[=is_random]{is_random()}}).}
+\item{x}{A random expression (see \code{\link[=is_random]{is_random()}}).}
 }
 \value{
-An expression of the same length, no longer random.
+An expression of the same length as \code{x}, no longer random.
 }
 \description{
-Minimizing an expectation optimizes the average case and says nothing about
-the bad ones; use \code{\link[=cvar]{cvar()}} when the bad ones are what matter.
+\code{expectation(x)} is the average of \code{x} over the model's scenarios: an
+estimate of its expected value. It turns a random expression into a single
+number, which can be used in the objective or in a constraint.
 }
 \details{
-\code{x} is any expression containing a random variable. The result is
-deterministic, and can be used anywhere a number can. Applied to a vector
-expression, it aggregates each element.
+Minimizing an average makes the typical scenario good, and says little
+about the bad ones; \code{\link[=cvar]{cvar()}} looks at those instead. For a vector \code{x}, each
+element is averaged separately.
+}
+\examples{
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+shortfall <- max(demand - stock, 0)        # units short, in each scenario
+minimize(m, 3 * stock + 10 * expectation(shortfall))
 }

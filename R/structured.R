@@ -1,60 +1,71 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
-#' Sequencing and assignment: a permutation as a decision variable
+#' Declare an order as a decision
 #'
-#' Some decisions are an order or a one-to-one assignment: the sequence of
-#' stops on a round, the order of jobs on a machine, which facility goes to
-#' which location. Written with plain variables, such a decision needs one
-#' binary per (item, slot) pair and a row per item and per slot, and a cost
-#' along the sequence is a product of binaries. A permutation variable says
-#' it directly: `n` items go into `n` slots, one each, and the service keeps
-#' that true by construction while it searches.
+#' Some decisions are an arrangement: the order in which a courier visits its
+#' stops, the order of jobs on a machine, which department moves into which
+#' office. `perm_var()` declares such a decision, a *permutation*.
 #'
-#' There are two fixed numberings, both from 1 to `n`:
+#' @section Items and slots:
+#' A permutation of size `n` arranges `n` things, called *items*, in `n`
+#' numbered places, called *slots*, with exactly one item in each slot. Items
+#' and slots are both numbered from 1 to `n`. What they stand for depends on
+#' the problem:
 #'
-#' * the **items** are the things being arranged, numbered as you listed them
-#'   (the stops, the jobs, the facilities);
-#' * the **slots** are the places they go, numbered in order (the steps of
-#'   the round, the positions in the schedule, the locations).
+#' * for a route, the items are the stops and the slots are the visits: slot
+#'   1 is the first stop visited, slot 2 the second, and so on;
+#' * for a machine, the items are the jobs and the slots are the positions in
+#'   the queue;
+#' * for an office plan, the items are the departments and the slots are the
+#'   offices.
 #'
-#' The permutation links the two, and it is read in both directions.
-#' [item_at()]`(slot, P)` is the item that sits in a slot, and
-#' [slot_of()]`(item, P)` the slot an item sits in; each is an integer
-#' expression that the service decides, usable anywhere a model expression
-#' is. Which one a model reads depends on where its data lives: a distance
-#' between consecutive stops of a round is `dist[item_at(k, P), item_at(k + 1,
-#' P)]`, data on the items read along the slots; the distance between the
-#' locations of two facilities is `dist[slot_of(f, P), slot_of(g, P)]`, data
-#' on the slots read along the items. Both use a [lookup_table()], a table of
-#' numbers indexed by expressions.
+#' [item_at()] gives the item in a slot, and [slot_of()] the slot of an item.
+#' Both are expressions whose values the service chooses, like the value of a
+#' decision variable. Data that depends on the arrangement, such as the
+#' distance between consecutive stops, is read from a [lookup_table()]:
+#' `dist[item_at(1:4, route), item_at(2:5, route)]` is the length of each of
+#' the four legs of a five-stop route.
 #'
-#' [precede()]`(P, a, b)` requires item `a` to sit in an earlier slot than
-#' item `b`, which the search never violates. A solution reports both views
-#' under `res$structures`, and [set_start()], [evaluate()] and [resample()]
-#' carry a permutation along with the plain variables.
+#' [precede()] requires one item to be in an earlier slot than another, such
+#' as a pickup before its delivery.
 #'
-#' A model with a permutation or a lookup is solved by search, like a model
-#' under uncertainty, and the two combine: a round whose travel times are
-#' random is a permutation inside an [expectation()].
+#' @section The answer:
+#' For each permutation, the result of [solve()] holds both directions under
+#' `res$structures$<name>`: `item_at`, the item in each slot (for a route, the
+#' stops in the order they are visited), and `slot_of`, the slot of each item.
+#' [set_start()], [evaluate()] and [resample()] take the arrangement from a
+#' result too.
+#'
+#' A model with a permutation is solved by a search, so its status is
+#' `"heuristic"`. Permutations can be combined with random variables, for
+#' example a route whose travel times are uncertain, minimized in
+#' [expectation()]. `vignette("permutations", package = "quicopt")` works
+#' through two examples.
+#'
+#' `add_perm_var()` declares the permutation in the same way but returns the
+#' model, for use in a pipe; `m$name` then retrieves the permutation.
 #'
 #' @param m A [model()].
 #' @param name The permutation's name, unique within the model.
 #' @param n How many items, and so how many slots; at least 2.
-#' @param start Left `NULL`, item `i` starts in slot `i`. Otherwise
-#'   `start[i]` is the slot item `i` starts in: a permutation of `1:n`.
-#' @return The permutation's handle; `m$<name>` retrieves it too.
+#' @param start The arrangement the service's search starts from: `start[i]`
+#'   is the slot of item `i`, so `start` contains each of the numbers 1 to `n`
+#'   once. Left `NULL`, item `i` starts in slot `i`.
+#' @return The permutation, for use with [item_at()], [slot_of()] and
+#'   [precede()].
 #' @examples
-#' # Five stops on a line, visited along the shortest path, stop 4 before stop 1
+#' # Five stops along a road. Find the shortest route through all of them
+#' # that visits stop 4 before stop 1.
+#' position <- c(0, 3, 1, 4, 2)                      # km along the road, stops 1 to 5
 #' m <- model()
-#' where <- c(0, 3, 1, 4, 2)                          # where each stop lies
-#' dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
-#' tour <- perm_var(m, "tour", 5)                     # item: a stop; slot: a step
-#' precede(tour, 4, 1)
-#' minimize(m, sum(dist[item_at(1:4, tour), item_at(2:5, tour)]))
+#' dist  <- lookup_table(m, "dist", abs(outer(position, position, "-")))
+#' route <- perm_var(m, "route", 5)
+#' precede(route, 4, 1)                              # stop 4 is visited before stop 1
+#' minimize(m, sum(dist[item_at(1:4, route), item_at(2:5, route)]))
 #' \dontrun{
 #' res <- solve(m)
-#' res$structures$tour$item_at                        # the stops in visiting order
+#' res$structures$route$item_at                      # the stops in the order visited
 #' }
 #' @export
 perm_var <- function(m, name, n, start = NULL) {
@@ -87,7 +98,7 @@ perm_var <- function(m, name, n, start = NULL) {
 }
 
 #' @rdname perm_var
-#' @return `add_perm_var` returns the model, invisibly.
+#' @return `add_perm_var()` returns the model, invisibly.
 #' @export
 add_perm_var <- function(m, name, n, start = NULL) {
   perm_var(m, name, n, start)
@@ -109,27 +120,32 @@ add_perm_var <- function(m, name, n, start = NULL) {
   as.integer(k)
 }
 
-#' Read a permutation: the item in a slot, the slot of an item
+#' The item in a slot, and the slot of an item
 #'
-#' `item_at(slot, P)` is the item that sits in `slot`, and `slot_of(item, P)`
-#' the slot that `item` sits in, for a permutation `P` from [perm_var()]. Each
-#' is an integer expression the service decides, and the two always agree.
-#' Both are vectorized over their first argument: `item_at(1:4, P)` is the
-#' items in the first four slots, as an expression of length 4.
+#' For a permutation `P` from [perm_var()], `item_at(slot, P)` is the item in
+#' a slot, and `slot_of(item, P)` is the slot that an item is in. For a route
+#' whose items are stops and whose slots are the visits, `item_at(1, route)`
+#' is the first stop visited, and `slot_of(3, route)` is when stop 3 is
+#' visited.
 #'
-#' The first argument is a plain number, not a decision: it names a position
-#' in one of the two fixed numberings. Data that depends on the result is read
-#' through a [lookup_table()]: `dist[item_at(k, P), item_at(k + 1, P)]`.
+#' The result is an expression whose value the service chooses, like the
+#' value of a decision variable. To use it to read data, such as the distance
+#' between two stops, index a [lookup_table()] with it.
 #'
-#' @param slot,item Positions, whole numbers from 1 to the permutation's size.
+#' The first argument is a plain number, or a vector of numbers, and both
+#' functions return one element per number: `item_at(1:4, P)` is the items in
+#' the first four slots, an expression of length 4.
+#'
+#' @param slot,item Whole numbers from 1 to the size of the permutation.
 #' @param P A permutation from [perm_var()].
-#' @return An integer-valued expression, one element per position.
+#' @return An expression with one element per element of the first argument,
+#'   each a whole number from 1 to the size of the permutation.
 #' @examples
 #' m <- model()
-#' tour <- perm_var(m, "tour", 5)
-#' item_at(1, tour)                    # the first stop of the tour
-#' slot_of(3, tour)                    # when stop 3 is visited
-#' item_at(1:4, tour)                  # the first four stops, as a vector
+#' route <- perm_var(m, "route", 5)
+#' item_at(1, route)                   # the first stop visited
+#' slot_of(3, route)                   # when stop 3 is visited
+#' item_at(1:4, route)                 # the first four stops visited
 #' @export
 item_at <- function(slot, P) {
   .check_perm(P, "item_at")
@@ -145,21 +161,27 @@ slot_of <- function(item, P) {
   .qexpr(lapply(item, function(i) ir_apply("slot_of", list(ir_const(i), ir_struct_ref(P$name)))))
 }
 
-#' Require one item before another
+#' Require one item to come before another
 #'
-#' `precede(P, before, after)` requires item `before` to sit in an earlier
-#' slot than item `after`, in every solution: a pickup before its delivery, a
-#' job before the one that needs its output. The requirement is held by the
-#' search itself, not by a penalty, so it is never violated. The requirements
-#' of a permutation must be consistent: a cycle among them is refused.
+#' `precede(P, before, after)` requires item `before` to be in an earlier
+#' slot of the permutation `P` than item `after`: a pickup before its
+#' delivery, or a job before the job that needs its output. The service only
+#' considers arrangements that meet the requirement, so every solution meets
+#' it.
+#'
+#' `precede()` may be called several times for one permutation. Requirements
+#' that contradict each other, such as 1 before 2 and 2 before 1, are an
+#' error.
 #'
 #' @param P A permutation from [perm_var()].
-#' @param before,after Items, whole numbers from 1 to the permutation's size.
+#' @param before,after Items: whole numbers from 1 to the size of the
+#'   permutation.
 #' @return The permutation, invisibly.
 #' @examples
 #' m <- model()
-#' tour <- perm_var(m, "tour", 5)
-#' precede(tour, 4, 1)                 # stop 4 before stop 1
+#' route <- perm_var(m, "route", 5)
+#' precede(route, 4, 1)                # stop 4 is visited before stop 1
+#' precede(route, 2, 5)                # and stop 2 before stop 5
 #' @export
 precede <- function(P, before, after) {
   .check_perm(P, "precede")
@@ -197,43 +219,53 @@ precede <- function(P, before, after) {
   placed < n
 }
 
-#' A table of numbers read at positions the solver decides
+#' A table of data indexed by decisions
 #'
-#' Data that depends on a decision cannot be indexed with it in plain R:
-#' `dist[item_at(1, tour), item_at(2, tour)]` has to be looked up after the
-#' solver has chosen the order. A lookup table is such data, declared in the
-#' model under a name, and indexing it with model expressions builds the
-#' lookup as an expression: a vector table takes one index, a matrix table
-#' two, and either index may be a number, a vector of numbers, or an
-#' expression such as [item_at()] or an integer variable. The indexing is
-#' vectorized, so `dist[item_at(1:4, P), item_at(2:5, P)]` is the four legs
-#' of a five-stop round.
+#' Sometimes a model needs a number from a table at a position that is not
+#' known yet: the distance between the first and the second stop of a route
+#' whose order the service is still choosing, or the price of an option that
+#' an integer variable picks. An ordinary R vector or matrix cannot be indexed
+#' this way. `lookup_table()` adds the data to the model under a name, and
+#' indexing the result with expressions, such as [item_at()] or an integer
+#' variable, builds an expression whose value is the entry at the positions
+#' the service chooses.
 #'
-#' The lookup is an ordinary expression: multiply it by a cost, sum it, put it
-#' under an [expectation()]. Its value is the table entry at the chosen
-#' positions; an index that is not a whole number in range is rounded and
-#' clamped into the table, so a continuous variable may index a table too.
+#' A table made from a vector takes one index, and a table made from a matrix
+#' two. Each index may be a number, a vector of numbers, or an expression.
 #'
-#' A lookup makes the model one that is solved by search, as a permutation or
-#' a random variable does. The table travels with the model, one entry per
-#' cell, so a very large table makes for a large request.
+#' Unlike indexing an ordinary R matrix, the two indices are paired up
+#' element by element: `km[1:4, 2:5]` is a 4 x 4 block of a matrix `km`, but
+#' for a lookup table `dist`, `dist[1:4, 2:5]` has four elements, the entries
+#' `[1, 2]`, `[2, 3]`, `[3, 4]` and `[4, 5]`. This is what makes
+#' `dist[item_at(1:4, P), item_at(2:5, P)]` the four legs of a five-stop
+#' route.
+#'
+#' The result is an ordinary expression: it can be multiplied by a cost,
+#' added up, or averaged with [expectation()]. An index that is not a whole
+#' number is rounded, and one outside the table is moved to the nearest end,
+#' so a continuous variable can be used as an index too.
+#'
+#' A model with a lookup table is solved by a search, so its status is
+#' `"heuristic"`. The whole table is sent with the model, so a very large
+#' table makes the request large.
 #'
 #' @param m A [model()].
 #' @param name The table's name, unique within the model.
-#' @param values A numeric vector or matrix, with no `NA`.
-#' @return The table's handle; `m$<name>` retrieves it too.
+#' @param values A numeric vector or matrix without `NA`.
+#' @return The table, to be indexed with `[`.
 #' @examples
+#' # the distances between five stops along a road
+#' position <- c(0, 3, 1, 4, 2)
 #' m <- model()
-#' where <- c(0, 3, 1, 4, 2)
-#' dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
-#' tour <- perm_var(m, "tour", 5)
-#' leg <- dist[item_at(1:4, tour), item_at(2:5, tour)]     # the four legs
-#' minimize(m, sum(leg))
+#' dist  <- lookup_table(m, "dist", abs(outer(position, position, "-")))
+#' route <- perm_var(m, "route", 5)
+#' legs  <- dist[item_at(1:4, route), item_at(2:5, route)]    # the four legs of the route
+#' minimize(m, sum(legs))
 #'
-#' # a cost per option, chosen through an integer variable
-#' cost <- lookup_table(m, "cost", c(3, 1, 4, 1.5))
-#' choice <- int_var(m, "choice", 1, 4)
-#' cost[choice]
+#' # the price of one of four options, picked by an integer variable
+#' price  <- lookup_table(m, "price", c(3, 1, 4, 1.5))
+#' choice <- int_var(m, "choice", lower = 1, upper = 4)
+#' price[choice]
 #' @export
 lookup_table <- function(m, name, values) {
   .check_model(m, "lookup_table")
@@ -255,9 +287,10 @@ lookup_table <- function(m, name, values) {
 
 #' @rdname lookup_table
 #' @param x A lookup table.
-#' @param i,j Positions: numbers, or model expressions such as [item_at()];
-#'   `j` only for a matrix table.
-#' @return `x[i]` and `x[i, j]` return an expression, one element per position.
+#' @param i,j Positions in the table: numbers, or expressions such as
+#'   [item_at()]. `j` only for a table made from a matrix.
+#' @return `x[i]` and `x[i, j]` return an expression with one element per
+#'   position.
 #' @export
 `[.quicopt_table` <- function(x, i, j) {
   one <- length(x$dim) == 1L

@@ -3,7 +3,7 @@
 \name{minimize}
 \alias{minimize}
 \alias{maximize}
-\title{State what the model optimizes}
+\title{Set the objective}
 \usage{
 minimize(m, e)
 
@@ -12,15 +12,26 @@ maximize(m, e)
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{e}{The objective expression.}
+\item{e}{The expression to minimize or maximize.}
 }
 \value{
 The model, invisibly.
 }
 \description{
-The objective is a single expression; fold a vector with \code{sum()} first. A
-model given no objective is a feasibility problem. In a model under
-uncertainty the objective cannot be random: close it over the scenarios
-first, with \code{\link[=expectation]{expectation()}}, \code{\link[=cvar]{cvar()}} or another aggregator (the
-\link{stochastic} topic lists them).
+The objective is the single number that the service makes as small
+(\code{minimize()}) or as large (\code{maximize()}) as possible. Calling either
+function again replaces the objective. An expression with several elements
+has to be combined into one first, for example with \code{sum()}. A model
+without an objective asks for any solution that meets the constraints.
+}
+\details{
+In a model with random variables, the objective has to be one number, not
+one per scenario: summarize it first, for example with \code{\link[=expectation]{expectation()}}
+(the \link{stochastic} help page lists all the summaries).
+}
+\examples{
+m <- model()
+tables <- num_var(m, "tables", lower = 0)
+chairs <- num_var(m, "chairs", lower = 0)
+maximize(m, 50 * tables + 20 * chairs)    # the profit
 }

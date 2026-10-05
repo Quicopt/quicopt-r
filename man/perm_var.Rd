@@ -3,7 +3,7 @@
 \name{perm_var}
 \alias{perm_var}
 \alias{add_perm_var}
-\title{Sequencing and assignment: a permutation as a decision variable}
+\title{Declare an order as a decision}
 \usage{
 perm_var(m, name, n, start = NULL)
 
@@ -16,61 +16,76 @@ add_perm_var(m, name, n, start = NULL)
 
 \item{n}{How many items, and so how many slots; at least 2.}
 
-\item{start}{Left \code{NULL}, item \code{i} starts in slot \code{i}. Otherwise
-\code{start[i]} is the slot item \code{i} starts in: a permutation of \code{1:n}.}
+\item{start}{The arrangement the service's search starts from: \code{start[i]}
+is the slot of item \code{i}, so \code{start} contains each of the numbers 1 to \code{n}
+once. Left \code{NULL}, item \code{i} starts in slot \code{i}.}
 }
 \value{
-The permutation's handle; \verb{m$<name>} retrieves it too.
+The permutation, for use with \code{\link[=item_at]{item_at()}}, \code{\link[=slot_of]{slot_of()}} and
+\code{\link[=precede]{precede()}}.
 
-\code{add_perm_var} returns the model, invisibly.
+\code{add_perm_var()} returns the model, invisibly.
 }
 \description{
-Some decisions are an order or a one-to-one assignment: the sequence of
-stops on a round, the order of jobs on a machine, which facility goes to
-which location. Written with plain variables, such a decision needs one
-binary per (item, slot) pair and a row per item and per slot, and a cost
-along the sequence is a product of binaries. A permutation variable says
-it directly: \code{n} items go into \code{n} slots, one each, and the service keeps
-that true by construction while it searches.
+Some decisions are an arrangement: the order in which a courier visits its
+stops, the order of jobs on a machine, which department moves into which
+office. \code{perm_var()} declares such a decision, a \emph{permutation}.
 }
-\details{
-There are two fixed numberings, both from 1 to \code{n}:
+\section{Items and slots}{
+
+A permutation of size \code{n} arranges \code{n} things, called \emph{items}, in \code{n}
+numbered places, called \emph{slots}, with exactly one item in each slot. Items
+and slots are both numbered from 1 to \code{n}. What they stand for depends on
+the problem:
 \itemize{
-\item the \strong{items} are the things being arranged, numbered as you listed them
-(the stops, the jobs, the facilities);
-\item the \strong{slots} are the places they go, numbered in order (the steps of
-the round, the positions in the schedule, the locations).
+\item for a route, the items are the stops and the slots are the visits: slot
+1 is the first stop visited, slot 2 the second, and so on;
+\item for a machine, the items are the jobs and the slots are the positions in
+the queue;
+\item for an office plan, the items are the departments and the slots are the
+offices.
 }
 
-The permutation links the two, and it is read in both directions.
-\code{\link[=item_at]{item_at()}}\verb{(slot, P)} is the item that sits in a slot, and
-\code{\link[=slot_of]{slot_of()}}\verb{(item, P)} the slot an item sits in; each is an integer
-expression that the service decides, usable anywhere a model expression
-is. Which one a model reads depends on where its data lives: a distance
-between consecutive stops of a round is \code{dist[item_at(k, P), item_at(k + 1, P)]}, data on the items read along the slots; the distance between the
-locations of two facilities is \code{dist[slot_of(f, P), slot_of(g, P)]}, data
-on the slots read along the items. Both use a \code{\link[=lookup_table]{lookup_table()}}, a table of
-numbers indexed by expressions.
+\code{\link[=item_at]{item_at()}} gives the item in a slot, and \code{\link[=slot_of]{slot_of()}} the slot of an item.
+Both are expressions whose values the service chooses, like the value of a
+decision variable. Data that depends on the arrangement, such as the
+distance between consecutive stops, is read from a \code{\link[=lookup_table]{lookup_table()}}:
+\code{dist[item_at(1:4, route), item_at(2:5, route)]} is the length of each of
+the four legs of a five-stop route.
 
-\code{\link[=precede]{precede()}}\verb{(P, a, b)} requires item \code{a} to sit in an earlier slot than
-item \code{b}, which the search never violates. A solution reports both views
-under \code{res$structures}, and \code{\link[=set_start]{set_start()}}, \code{\link[=evaluate]{evaluate()}} and \code{\link[=resample]{resample()}}
-carry a permutation along with the plain variables.
-
-A model with a permutation or a lookup is solved by search, like a model
-under uncertainty, and the two combine: a round whose travel times are
-random is a permutation inside an \code{\link[=expectation]{expectation()}}.
+\code{\link[=precede]{precede()}} requires one item to be in an earlier slot than another, such
+as a pickup before its delivery.
 }
+
+\section{The answer}{
+
+For each permutation, the result of \code{\link[=solve]{solve()}} holds both directions under
+\verb{res$structures$<name>}: \code{item_at}, the item in each slot (for a route, the
+stops in the order they are visited), and \code{slot_of}, the slot of each item.
+\code{\link[=set_start]{set_start()}}, \code{\link[=evaluate]{evaluate()}} and \code{\link[=resample]{resample()}} take the arrangement from a
+result too.
+
+A model with a permutation is solved by a search, so its status is
+\code{"heuristic"}. Permutations can be combined with random variables, for
+example a route whose travel times are uncertain, minimized in
+\code{\link[=expectation]{expectation()}}. \code{vignette("permutations", package = "quicopt")} works
+through two examples.
+
+\code{add_perm_var()} declares the permutation in the same way but returns the
+model, for use in a pipe; \code{m$name} then retrieves the permutation.
+}
+
 \examples{
-# Five stops on a line, visited along the shortest path, stop 4 before stop 1
+# Five stops along a road. Find the shortest route through all of them
+# that visits stop 4 before stop 1.
+position <- c(0, 3, 1, 4, 2)                      # km along the road, stops 1 to 5
 m <- model()
-where <- c(0, 3, 1, 4, 2)                          # where each stop lies
-dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
-tour <- perm_var(m, "tour", 5)                     # item: a stop; slot: a step
-precede(tour, 4, 1)
-minimize(m, sum(dist[item_at(1:4, tour), item_at(2:5, tour)]))
+dist  <- lookup_table(m, "dist", abs(outer(position, position, "-")))
+route <- perm_var(m, "route", 5)
+precede(route, 4, 1)                              # stop 4 is visited before stop 1
+minimize(m, sum(dist[item_at(1:4, route), item_at(2:5, route)]))
 \dontrun{
 res <- solve(m)
-res$structures$tour$item_at                        # the stops in visiting order
+res$structures$route$item_at                      # the stops in the order visited
 }
 }

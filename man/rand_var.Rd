@@ -14,31 +14,43 @@ add_rand_var(m, name, dist = NULL, n = NULL)
 
 \item{name}{The random variable's name, unique within the model.}
 
-\item{dist}{A \code{\link[=distribution]{distribution()}} such as \code{normal(100, 15)}, or an
-\code{\link[=empirical]{empirical()}} column holding one observed value per scenario. May be left
-\code{NULL} and supplied later with \code{\link[=set_distribution]{set_distribution()}}.}
+\item{dist}{A distribution such as \code{normal(100, 15)} (see \code{\link[=distribution]{distribution()}}),
+or an \code{\link[=empirical]{empirical()}} sample with one value per scenario. It may be left out
+and given later with \code{\link[=set_distribution]{set_distribution()}}.}
 
-\item{n}{How many elements the random variable has; left \code{NULL}, as many as
-the distribution's parameters say (1 for an empirical column).}
+\item{n}{How many random variables to declare under this name. Left \code{NULL},
+the number follows from the length of the distribution's parameters.}
 }
 \value{
-The random variable's handle (an expression of length \code{n}).
+The random variable, an expression of length \code{n}.
 
-\code{add_rand_var} returns the model, invisibly.
+\code{add_rand_var()} returns the model, invisibly.
 }
 \description{
-The variable is not a decision: the solver is handed its value rather than
-choosing it, and every use of it means the same sample within a scenario.
-Two independent random variables are two declarations under two names.
+A random variable stands for a quantity that is not known when the
+decision is made, such as tomorrow's demand. It can be used in expressions
+like a decision variable, but the service does not choose its value: in
+each scenario, the value is drawn from the variable's distribution. Within
+one scenario, every use of the variable has the same value. Two random
+variables declared separately are drawn independently.
 }
 \details{
-A random variable takes no bounds and no domain; its distribution already
-says what values it takes.
+A random variable has no bounds; its distribution says which values it
+can take.
 
-A distribution with vector parameters declares a vector random variable,
-\code{weight[1]}, ..., \code{weight[n]}, one independent draw per element:
-\code{rand_var(m, "weight", normal(c(6, 5, 4), 1))}. With \code{n} given and scalar
-parameters, the elements are \code{n} independent copies of one distribution.
-Elements of a vector random variable are independent of each other;
-correlated uncertainty is declared from data with \code{\link[=set_empirical]{set_empirical()}}.
+A distribution with vector parameters declares several random variables
+under one name, which behave like an R vector: \code{rand_var(m, "hours", normal(c(6, 5, 4), 1))} declares \code{hours[1]}, \code{hours[2]} and \code{hours[3]}.
+With scalar parameters and \code{n} given, it declares \code{n} variables with the
+same distribution. Either way, the elements are drawn independently of each
+other. Random variables that move together, such as demand and price, are
+best declared from observed data with \code{\link[=set_empirical]{set_empirical()}}.
+
+\code{add_rand_var()} declares the variable in the same way but returns the
+model, for use in a pipe; \code{m$name} then retrieves the variable.
+}
+\examples{
+m <- model()
+demand <- rand_var(m, "demand", normal(100, 15))
+hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
+delay  <- rand_var(m, "delay", uniform(1, 1.5), n = 4)   # four with the same distribution
 }

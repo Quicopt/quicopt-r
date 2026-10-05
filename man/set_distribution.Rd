@@ -9,14 +9,20 @@ set_distribution(m, v, dist)
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{v}{The random variable's handle, from \code{\link[=rand_var]{rand_var()}}.}
+\item{v}{The random variable, as returned by \code{\link[=rand_var]{rand_var()}}.}
 
-\item{dist}{A \code{\link[=distribution]{distribution()}} or an \code{\link[=empirical]{empirical()}} column, of the handle's
-length.}
+\item{dist}{A distribution such as \code{normal(100, 15)}, or an \code{\link[=empirical]{empirical()}}
+sample, of the same length as \code{v}.}
 }
 \value{
 The model, invisibly.
 }
 \description{
-Give a random variable its distribution
+Sets or replaces the distribution of a random variable declared with
+\code{\link[=rand_var]{rand_var()}}, for example one declared without a distribution.
+}
+\examples{
+m <- model()
+demand <- rand_var(m, "demand")
+set_distribution(m, demand, normal(100, 15))
 }

@@ -9,24 +9,32 @@ set_scenarios(m, n, seed = NULL)
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{n}{How many scenarios to draw.}
+\item{n}{How many scenarios to draw, at least 1.}
 
-\item{seed}{The draw seed; left \code{NULL}, the current one is kept.}
+\item{seed}{The seed for the draws, at least 1. Left \code{NULL}, the model
+keeps its current seed.}
 }
 \value{
 The model, invisibly.
 }
 \description{
-More scenarios estimate the true problem more closely and cost more to
-solve. Both settings belong to the model, not to the solve, so the same
-model always faces the same sample and two solves of it are comparable.
-Left unset, a model is solved over one scenario — unless an \code{\link[=empirical]{empirical()}}
-column sets the count by its own length.
+The service draws \code{n} scenarios: \code{n} possible outcomes of the model's
+random variables. More scenarios describe the uncertainty more accurately,
+and take longer to solve. A model whose scenarios are never set is solved
+over a single scenario, unless an \code{\link[=empirical]{empirical()}} sample sets the number by
+its length.
 }
 \details{
-The scenarios are drawn by the service from this seed; R's \code{set.seed()}
-plays no role. \code{n} and \code{seed} are both at least 1. The service caps the
-count: a model over its limit is refused when sent, with the limit named
-in the refusal (the client does not know it in advance, since it is the
-service's to set).
+The number of scenarios and the seed belong to the model, so solving the
+same model again uses the same scenarios, and two solves of it can be
+compared. The scenarios are drawn by the service, so R's \code{set.seed()} has
+no effect on them.
+
+The service limits the number of scenarios. A model above the limit is
+refused when it is solved, with a message that states the limit.
+}
+\examples{
+m <- model()
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
 }

@@ -3,36 +3,41 @@
 \name{item_at}
 \alias{item_at}
 \alias{slot_of}
-\title{Read a permutation: the item in a slot, the slot of an item}
+\title{The item in a slot, and the slot of an item}
 \usage{
 item_at(slot, P)
 
 slot_of(item, P)
 }
 \arguments{
-\item{slot, item}{Positions, whole numbers from 1 to the permutation's size.}
+\item{slot, item}{Whole numbers from 1 to the size of the permutation.}
 
 \item{P}{A permutation from \code{\link[=perm_var]{perm_var()}}.}
 }
 \value{
-An integer-valued expression, one element per position.
+An expression with one element per element of the first argument,
+each a whole number from 1 to the size of the permutation.
 }
 \description{
-\code{item_at(slot, P)} is the item that sits in \code{slot}, and \code{slot_of(item, P)}
-the slot that \code{item} sits in, for a permutation \code{P} from \code{\link[=perm_var]{perm_var()}}. Each
-is an integer expression the service decides, and the two always agree.
-Both are vectorized over their first argument: \code{item_at(1:4, P)} is the
-items in the first four slots, as an expression of length 4.
+For a permutation \code{P} from \code{\link[=perm_var]{perm_var()}}, \code{item_at(slot, P)} is the item in
+a slot, and \code{slot_of(item, P)} is the slot that an item is in. For a route
+whose items are stops and whose slots are the visits, \code{item_at(1, route)}
+is the first stop visited, and \code{slot_of(3, route)} is when stop 3 is
+visited.
 }
 \details{
-The first argument is a plain number, not a decision: it names a position
-in one of the two fixed numberings. Data that depends on the result is read
-through a \code{\link[=lookup_table]{lookup_table()}}: \code{dist[item_at(k, P), item_at(k + 1, P)]}.
+The result is an expression whose value the service chooses, like the
+value of a decision variable. To use it to read data, such as the distance
+between two stops, index a \code{\link[=lookup_table]{lookup_table()}} with it.
+
+The first argument is a plain number, or a vector of numbers, and both
+functions return one element per number: \code{item_at(1:4, P)} is the items in
+the first four slots, an expression of length 4.
 }
 \examples{
 m <- model()
-tour <- perm_var(m, "tour", 5)
-item_at(1, tour)                    # the first stop of the tour
-slot_of(3, tour)                    # when stop 3 is visited
-item_at(1:4, tour)                  # the first four stops, as a vector
+route <- perm_var(m, "route", 5)
+item_at(1, route)                   # the first stop visited
+slot_of(3, route)                   # when stop 3 is visited
+item_at(1:4, route)                 # the first four stops visited
 }

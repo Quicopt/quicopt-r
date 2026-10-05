@@ -13,49 +13,47 @@ scenario_min(x)
 scenario_quantile(x, prob)
 }
 \arguments{
-\item{x}{A random model expression (see \code{\link[=is_random]{is_random()}}).}
+\item{x}{A random expression (see \code{\link[=is_random]{is_random()}}).}
 
-\item{prob}{The level, a plain number above 0 and at most 1; it cannot
-depend on a decision.}
+\item{prob}{A number above 0 and at most 1. It cannot depend on a decision.}
 }
 \value{
-An expression of the same length, no longer random.
+An expression of the same length as \code{x}, no longer random.
 }
 \description{
-The value a quantity takes in one particular scenario: the one where it is
-largest, the one where it is smallest, or the one that a given share of the
-scenarios does not exceed.
+The value a quantity takes in one particular scenario:
 }
 \details{
 \itemize{
-\item \code{scenario_max(x)} is the largest value of \code{x} over the scenarios.
-Minimizing it is the robust reading of a cost: do as well as possible in
-the worst scenario of the sample.
-\item \code{scenario_min(x)} is the smallest. Maximizing it is the same for a
-profit.
-\item \code{scenario_quantile(x, prob)} is the smallest scenario value that at least
-the share \code{prob} of the scenarios is at or below; with \code{n} scenarios, the
-\code{ceiling(prob * n)}-th smallest, which is what \code{quantile(x, prob, type = 1)} returns for a sample. For a cost this is the value at risk at level
-\code{prob}; \code{\link[=cvar]{cvar()}} at the same level is the mean of what lies beyond it.
-\code{scenario_quantile(x, 1)} is \code{scenario_max(x)}.
+\item \code{scenario_max(x)} is the largest value of \code{x} among the scenarios.
+Minimizing it makes the worst scenario as good as possible.
+\item \code{scenario_min(x)} is the smallest. Maximizing it does the same for a
+quantity where large is good, such as a profit.
+\item \code{scenario_quantile(x, prob)} is the value that the share \code{prob} of the
+scenarios stays at or below. With \code{n} scenarios it is the
+\code{ceiling(prob * n)}-th smallest value, which is what
+\code{quantile(x, prob, type = 1)} returns for a sample.
+\code{scenario_quantile(x, 1)} is \code{scenario_max(x)}. For a cost it is also
+known as the \emph{value at risk}; \code{\link[=cvar]{cvar()}} at the same level is the average
+of the values above it.
 }
 
-These are not \code{max()}, \code{min()} and \code{quantile()}. \code{max(a, b)} is the larger
-of two expressions \emph{within} each scenario and stays random;
-\code{scenario_max(x)} compares one expression \emph{across} the scenarios and is a
-number.
+These are different from \code{max()}, \code{min()} and \code{quantile()}. \code{max(a, b)}
+compares two expressions \emph{within} each scenario, and the result is still
+random. \code{scenario_max(x)} compares the values of one expression \emph{across}
+the scenarios, and the result is a single number.
 
-An extreme is set by a single scenario, so it moves more from one sample to
-the next than a mean or a tail mean does, and a larger sample will usually
-hold a more extreme scenario. Check a solution built on one with
-\code{\link[=resample]{resample()}}.
+A single scenario decides the largest or smallest value, so it changes
+more from one sample of scenarios to the next than an average does, and a
+larger sample usually contains a more extreme scenario. Check a solution
+found with these on new scenarios, with \code{\link[=resample]{resample()}}.
 }
 \examples{
 m <- model()
-x <- num_var(m, "x", 0, 200)
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
 demand <- rand_var(m, "demand", normal(100, 15))
 set_scenarios(m, 512, seed = 42)
-cost <- 3 * x + 10 * max(demand - x, 0)
-minimize(m, scenario_max(cost))                   # the worst scenario
-add(m, scenario_quantile(cost, 0.95) <= 500)      # 95\% of scenarios cost at most 500
+cost <- 3 * stock + 10 * max(demand - stock, 0)
+minimize(m, scenario_max(cost))                  # the cost of the worst scenario
+add(m, scenario_quantile(cost, 0.95) <= 500)     # at most 500 in 95\% of scenarios
 }

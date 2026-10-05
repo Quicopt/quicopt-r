@@ -4,50 +4,70 @@
 \alias{stochastic}
 \title{Optimization under uncertainty}
 \description{
-Part of a model's data is often unknown when the decision has to be made:
-demand, prices, yields, arrival times. Declare that data as random variables
-carrying distributions, and the model is solved over a sample of scenarios
-drawn from them.
+Some decisions have to be made before all the data is known: how much
+stock to order before demand is known, which jobs to accept before knowing
+how long they will take. quicopt models such a decision by describing each
+uncertain quantity as a \emph{random variable}. The service draws many possible
+outcomes of the random variables, called \emph{scenarios}, and finds the
+decision that does best across them.
 }
-\details{
-Two rules describe the whole surface:
+\section{Building blocks}{
+
 \itemize{
-\item A variable declared with \code{\link[=rand_var]{rand_var()}} is a random variable, not a decision
-variable. Every use of it references the same sample.
-\item An expression containing a random variable is itself random (see
-\code{\link[=is_random]{is_random()}}), and cannot serve as an objective or a constraint until an
-aggregator reduces it over the scenarios: \code{\link[=expectation]{expectation()}} for the mean,
-\code{\link[=cvar]{cvar()}} for the tail, \code{\link[=prob]{prob()}} for a chance constraint, \code{\link[=variance]{variance()}} and
-\code{\link[=std_dev]{std_dev()}} for the spread, \code{\link[=scenario_max]{scenario_max()}}, \code{\link[=scenario_min]{scenario_min()}} and
-\code{\link[=scenario_quantile]{scenario_quantile()}} for single scenario values. \code{\link[=holds]{holds()}} turns an
-event into a 0/1 value inside a scenario, for arithmetic before the
-aggregation.
+\item \code{\link[=rand_var]{rand_var()}} declares a random variable with a distribution such as
+\code{\link[=normal]{normal()}}; \code{\link[=set_empirical]{set_empirical()}} declares random variables from the columns
+of a data frame instead, one row per scenario.
+\item \code{\link[=set_scenarios]{set_scenarios()}} sets how many scenarios the service draws, and the
+seed it draws them from.
+\item Any expression that contains a random variable has one value per
+scenario; it is called \emph{random} (see \code{\link[=is_random]{is_random()}}). The objective and
+the constraints must each be one number, so a random expression is
+summarized across the scenarios before it is used there.
+}
 }
 
-\code{\link[=set_scenarios]{set_scenarios()}} sets how many scenarios are drawn and from which seed.
-Both belong to the model, so repeated solves see the same sample. The
-drawing happens in the service, from the model's own seed; R's
-\code{set.seed()} plays no role here.
+\section{Summaries across the scenarios}{
 
-A solution is shaped by the scenarios it was found on, so its objective and
-its chance levels are in-sample figures. \code{\link[=resample]{resample()}} and \code{\link[=evaluate]{evaluate()}}
-check a solution on fresh scenarios, and \code{margin} in \code{\link[=add]{add()}} builds the
-expected shortfall of a chance constraint into the model.
+\itemize{
+\item \code{\link[=expectation]{expectation()}}: the average.
+\item \code{\link[=prob]{prob()}}: the share of scenarios in which a comparison holds, for a
+requirement such as "demand is met on 90\% of days".
+\item \code{\link[=cvar]{cvar()}}: the average over the worst scenarios.
+\item \code{\link[=scenario_max]{scenario_max()}}, \code{\link[=scenario_min]{scenario_min()}}, \code{\link[=scenario_quantile]{scenario_quantile()}}: the largest
+value, the smallest, and a quantile.
+\item \code{\link[=variance]{variance()}} and \code{\link[=std_dev]{std_dev()}}: how much the value varies.
 }
+
+\code{\link[=holds]{holds()}} turns a comparison into a 0/1 value in each scenario, which can
+be combined with other quantities before it is summarized.
+}
+
+\section{Checking a solution}{
+
+A solution is chosen to do well on the model's scenarios, so it tends to do
+a little worse on others, and the objective the service reports is
+optimistic. \code{\link[=evaluate]{evaluate()}} and \code{\link[=resample]{resample()}} compute the figures on new
+scenarios, and the \code{margin} argument of \code{\link[=add]{add()}} raises the target of a
+requirement on a probability to allow for this.
+
+\code{vignette("stochastic", package = "quicopt")} introduces all of this with
+a worked example.
+}
+
 \examples{
 \dontrun{
-# Order x units at 3 apiece against a demand learned later, pay 10 per unit
-# of shortfall, and meet demand in at least 90\% of scenarios:
+# Order stock at 3 per unit before demand is known, pay 10 for each unit
+# of demand that cannot be met, and meet demand in at least 90\% of scenarios.
 m <- model()
-x <- num_var(m, "x", 0, 200)
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
 demand <- rand_var(m, "demand", normal(100, 15))
 set_scenarios(m, 512, seed = 42)
-minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
-add(m, prob(demand - x <= 0) >= 0.9)
+minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
+add(m, prob(demand <= stock) >= 0.9)
 res <- solve(m)
 res$solution
 
-# The same order on scenarios it was not optimized for:
-resample(m, res, seed = 7)$feasible
+# Does the requirement still hold on 1000 new scenarios?
+resample(m, res, seed = 7, scenarios = 1000)$feasible
 }
 }

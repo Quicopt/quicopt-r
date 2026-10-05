@@ -7,24 +7,30 @@
 is_random(x)
 }
 \arguments{
-\item{x}{A model expression, or a numeric vector (never random).}
+\item{x}{An expression, or a numeric vector (which is never random).}
 }
 \value{
-A logical vector, one entry per element of \code{x}.
+A logical vector with one element per element of \code{x}.
 }
 \description{
-An expression is random while it contains a random variable that no
-aggregator has closed: \code{demand - x} is random, \code{expectation(demand - x)}
-is not, and neither is \code{3 * x}. Only a non-random expression can be an
-objective or a constraint; only a random one can be aggregated. Both rules
-are checked where the expression is used, so this predicate is for your own
-code: a helper that accepts either kind, or a check before a long build.
+An expression that contains a random variable has a different value in
+each scenario, and is called \emph{random}. Summarizing it across the scenarios,
+for example with \code{\link[=expectation]{expectation()}}, gives a single number again:
+\code{demand - stock} is random, \code{expectation(demand - stock)} is not, and
+neither is \code{3 * stock}.
+}
+\details{
+An objective or a constraint must not be random, and a summary such as
+\code{\link[=expectation]{expectation()}} needs a random expression to summarize. quicopt checks
+both rules itself and stops with an error when one is broken, so you need
+\code{is_random()} only in your own code, for example in a function that
+accepts both kinds of expression.
 }
 \examples{
 m <- model()
-x <- num_var(m, "x", 0, 10)
-d <- rand_var(m, "d", normal(5, 1))
-is_random(d - x)                 # TRUE
-is_random(expectation(d - x))    # FALSE
-is_random(c(x, x^2))             # FALSE FALSE
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+is_random(demand - stock)                  # TRUE
+is_random(expectation(demand - stock))     # FALSE
+is_random(c(stock, stock^2))               # FALSE FALSE
 }

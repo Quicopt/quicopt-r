@@ -26,30 +26,49 @@ add_var(
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{name}{The variable's name, unique within the model.}
+\item{name}{The variable's name, used for it in the answer. It must be
+unique within the model.}
 
-\item{lower, upper}{Bounds; \code{-Inf} / \code{Inf} leave a direction unbounded. A
-vector of length \code{n} sets per-element bounds.}
+\item{lower, upper}{The smallest and the largest value allowed. \code{-Inf} and
+\code{Inf}, the defaults, leave that side open.}
 
-\item{n}{How many elements the variable has.}
+\item{n}{How many variables to declare under this name.}
 
-\item{start}{The initial point handed to the solver.}
+\item{start}{The value the service's search starts from (see
+\code{\link[=set_start]{set_start()}}).}
 
-\item{domain}{For \code{add_var}: \code{"num"}, \code{"int"} or \code{"bin"}.}
+\item{domain}{For \code{add_var()}: \code{"num"}, \code{"int"} or \code{"bin"}, to declare the
+variable as \code{num_var()}, \code{int_var()} or \code{bin_var()} would.}
 }
 \value{
-The variable handle (an expression of length \code{n}).
+The variable, an expression of length \code{n}.
 
-\code{add_var} returns the model, invisibly.
+\code{add_var()} returns the model, invisibly.
 }
 \description{
-\code{num_var} declares a continuous variable, \code{int_var} an integer one, and
-\code{bin_var} a binary one. With \code{n} greater than 1 the declaration is a vector
-variable: \code{x[3]} indexes it, \code{sum(x)} folds it, arithmetic is elementwise,
-and per-element bounds are given as vectors of length \code{n}. Solutions come
-back keyed \code{"x"} for a scalar and \code{"x[1]"}, \code{"x[2]"}, ... for a vector.
+A decision variable is a quantity the service chooses. \code{num_var()}
+declares one that can take any value between its bounds, \code{int_var()} one
+that must be a whole number, and \code{bin_var()} a yes-or-no decision, which is
+either 0 or 1.
 }
 \details{
-The handle is returned and is also retrievable from the model as \code{m$x}; the
-\code{add_var} variant returns the model instead, for pipes.
+Each returns the variable, for use in expressions such as
+\code{50 * tables + 20 * chairs}; \code{m$tables} retrieves it from the model too.
+\code{add_var()} declares a variable in the same way but returns the model, for
+use in a pipe (see \code{\link[=model]{model()}}).
+
+With \code{n} greater than 1, one call declares \code{n} variables under one name,
+and they behave like an R vector: \code{x[3]} is the third, arithmetic works
+element by element, and \code{sum(x)} adds them up. \code{lower}, \code{upper} and \code{start}
+may then be vectors of length \code{n}, one value per element. In the answer the
+elements are named \code{"x[1]"}, \code{"x[2]"}, and so on; a single variable is
+named \code{"x"}.
+}
+\examples{
+m <- model()
+tables <- int_var(m, "tables", lower = 0)
+take   <- bin_var(m, "take", n = 6)                         # six yes-or-no decisions
+share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
+sum(share)
+take[2]
 }
