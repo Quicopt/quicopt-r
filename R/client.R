@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
-#' The public Quicopt endpoint
+#' The address of the public Quicopt service
 #'
-#' [solve()] targets it unless another `base_url` is given.
+#' [solve()] and [submit()] send models to this address unless they are given
+#' another `base_url`.
 #'
-#' @return Not a function but a constant: a character string of length one,
-#'   the URL of the public service that a request is sent to by default.
+#' @return Not a function but a constant: a character string, the address of
+#'   the public service.
+#' @examples
+#' DEFAULT_BASE_URL
 #' @export
 DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 
@@ -19,37 +22,80 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 # filespace.
 .the <- new.env(parent = emptyenv())
 
-#' Solve a model with the Quicopt service
+#' Solve a model
 #'
-#' Encodes the model, sends it, and returns the parsed result. The first
-#' keyless call mints an API key, remembered for the rest of the R session;
-#' pass `api_key` to authenticate with a key you already hold (used as-is,
-#' never remembered).
+#' `solve()` sends a model to the Quicopt service, waits for the answer, and
+#' returns it as a list (see the Value section). `solve_model()` is the same
+#' function under a name that cannot be confused with base R's `solve()`,
+#' which can read better in a pipe.
 #'
-#' `solve(m)` and `solve_model(m)` are the same function — the former extends
-#' the `base::solve` generic (as `solve.qr` does), the latter is the
-#' unambiguous name for pipes and for reading. For a long-running model, or a
-#' first call against a cold worker, [submit()] queues the same request
-#' asynchronously instead of blocking.
+#' `solve()` waits for up to `timeout` seconds. For a model that takes
+#' longer, [submit()] sends it without waiting.
 #'
-#' @param m A [model()], a [program()], or already-encoded bytes.
-#' @param base_url The service to talk to; defaults to [DEFAULT_BASE_URL].
-#' @param api_key A key you hold, or `NULL` to mint and reuse a free-tier key.
-#' @param project A project tag for per-project invoicing, or `NULL`.
-#' @param config Named list of extra query parameters; a `source_language`
-#'   here overrides the automatic tag.
-#' @param gzip Compress the request body.
-#' @param timeout Seconds to wait for the service.
-#' @param transport The HTTP layer, replaceable for testing: a
-#'   `function(req)` taking `list(method, url, headers, body, timeout)` and
-#'   returning `list(status, headers, body)`.
-#' @return The service's answer as a `quicopt_result`: a list with `status`,
-#'   `objective`, `feasible`, `solution` (a named numeric vector, in the order
-#'   the variables were declared),
-#'   `model_class` (the class the service read the model as, e.g. `"milp"`),
-#'   `structures` (for a model with permutations: per name, the integer
-#'   vectors `item_at` and `slot_of`, see [perm_var()]; otherwise `NULL`),
-#'   and the ready-to-print `display`. Printing the result prints `display`.
+#' @section API keys:
+#' The service needs an API key. The first time a model is solved in an R
+#' session without one, the service issues a free key, and quicopt keeps it
+#' in memory until the session ends; it is never written to disk. To use a
+#' key of your own, pass it as `api_key`. It is then used for that call only,
+#' and not kept.
+#'
+#' @section Status:
+#' `status` says what kind of answer the result holds:
+#'
+#' * `"optimal"`: the service has proved that no better solution exists.
+#' * `"heuristic"`: the best solution a search found, without that proof.
+#'   Models with random variables, permutations or lookup tables are solved
+#'   this way. If such a result has `feasible = FALSE`, the search found no
+#'   solution that meets every constraint, which does not prove that none
+#'   exists.
+#'
+#' Other values say why no solution is available.
+#'
+#' @param m A [model()]. A [program()], or the bytes from [encode()], also
+#'   work.
+#' @param base_url The address of the service.
+#' @param api_key Your API key, or `NULL` to use the session's free key (see
+#'   the API keys section).
+#' @param project A project name, for billing by project, or `NULL`.
+#' @param config A named list of further settings, sent to the service as
+#'   query parameters.
+#' @param gzip Whether to compress the model before sending it; worth it for
+#'   a large model.
+#' @param timeout How many seconds to wait for the answer.
+#' @param transport For tests: a function that is called instead of sending
+#'   the request. It takes a list with the elements `method`, `url`,
+#'   `headers`, `body` and `timeout`, and returns a list with the elements
+#'   `status`, `headers` and `body`.
+#' @return A list of class `quicopt_result`, with these elements:
+#'
+#'   * `status`: what kind of answer it is (see the Status section).
+#'   * `feasible`: whether the solution meets every constraint.
+#'   * `objective`: the value of the objective at the solution.
+#'   * `solution`: a named numeric vector with the value of each decision
+#'     variable, in the order they were declared.
+#'   * `structures`: for a model with permutations, one element per
+#'     permutation, holding the integer vectors `item_at` and `slot_of` (see
+#'     [perm_var()]); otherwise `NULL`.
+#'   * `model_class`: the kind of model the service recognized, such as
+#'     `"lp"`, `"milp"` or `"stochastic"`.
+#'   * `solver_data`: further details from the service, such as
+#'     `max_violation`, by how much the worst constraint is missed.
+#'   * `display`: a summary prepared by the service, which is what printing
+#'     the result shows.
+#' @examples
+#' \dontrun{
+#' m <- model()
+#' tables <- int_var(m, "tables", lower = 0)
+#' chairs <- int_var(m, "chairs", lower = 0)
+#' maximize(m, 50 * tables + 20 * chairs)
+#' add(m, 3 * tables + chairs <= 41)
+#' add(m, tables + chairs <= 18)
+#'
+#' res <- solve(m)
+#' res$status
+#' res$solution
+#' res
+#' }
 #' @export
 solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
                         project = NULL, config = NULL, gzip = FALSE,
@@ -73,9 +119,10 @@ solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
 }
 
 #' @rdname solve_model
-#' @param a The model (the argument is named `a` to match the `solve` generic).
-#' @param b Unused; supplying it is an error.
-#' @param ... Passed on to [solve_model()].
+#' @param a The model. The argument is called `a` because base R's `solve()`
+#'   calls it that.
+#' @param b Not used; giving it is an error.
+#' @param ... Further arguments for `solve_model()`, by name.
 #' @export
 solve.quicopt_model <- function(a, b, ...) {
   if (!missing(b))
@@ -85,16 +132,25 @@ solve.quicopt_model <- function(a, b, ...) {
 
 # ── asynchronous jobs ───────────────────────────────────────────────────────
 
-#' Submit a model for asynchronous solving
+#' Solve a model without waiting
 #'
-#' Queues the model and returns immediately with a job handle; the solve runs
-#' on the service while your session goes on. Await it with [job_result()],
-#' peek with [job_status()] or [job_log()], and discard it with [job_delete()].
-#' The arguments are those of [solve_model()]; the handle keeps the connection
-#' settings, so the polling calls need none of them repeated.
+#' `submit()` sends a model to the service like [solve()] does, but returns
+#' at once with a *job*, while the service solves the model in the
+#' background and your R session can go on. [job_result()] collects the
+#' answer when it is ready, and [job_status()] shows how far the job has got.
+#'
+#' The job keeps the address, the key and the other settings it was submitted
+#' with, so the functions that follow it up need only the job.
 #'
 #' @inheritParams solve_model
-#' @return A `quicopt_job` handle.
+#' @return A job, of class `quicopt_job`, for [job_result()], [job_status()],
+#'   [job_log()] and [job_delete()].
+#' @examples
+#' \dontrun{
+#' job <- submit(m)
+#' job_status(job)$status
+#' res <- job_result(job)        # waits until the job is finished
+#' }
 #' @export
 submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
                    project = NULL, config = NULL, gzip = FALSE,
@@ -114,24 +170,35 @@ submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
             class = "quicopt_job")
 }
 
-#' Poll a submitted job
+#' Follow up a submitted job
 #'
-#' `job_status` fetches the job's state (`queued`, `running`, `done`,
-#' `failed`) and its log tail. `job_result` fetches the finished solve,
-#' polling past the service's `not_done` answer until the worker finishes.
-#' `job_log` fetches the plain-text log, and `job_delete` removes the job and
-#' its stored result from the service.
+#' * `job_status()` returns the job's state, `"queued"`, `"running"`,
+#'   `"done"` or `"failed"`, together with the last lines of its log.
+#' * `job_result()` returns the answer of the job, in the same form as
+#'   [solve()]. By default it waits for the job to finish, checking every
+#'   `poll` seconds for up to `timeout` seconds.
+#' * `job_log()` returns the job's log as text.
+#' * `job_delete()` deletes the job and its stored answer from the service.
 #'
-#' @param job A `quicopt_job` from [submit()].
-#' @return `job_status` returns the service's job state as a list.
+#' @param job A job, as returned by [submit()].
+#' @return `job_status()` returns the job's state as a list.
+#' @examples
+#' \dontrun{
+#' job <- submit(m)
+#' job_status(job)
+#' res <- job_result(job)
+#' job_delete(job)
+#' }
 #' @export
 job_status <- function(job) .job_json(job, "GET", "")
 
 #' @rdname job_status
-#' @param wait Poll until the job is done (`TRUE`), or fetch exactly once.
-#' @param timeout Maximum seconds to keep polling before giving up.
-#' @param poll Seconds between polls.
-#' @return `job_result` returns the finished solve as a `quicopt_result`.
+#' @param wait `TRUE` waits until the job is finished. `FALSE` asks once, and
+#'   is an error if the job is not finished yet.
+#' @param timeout How many seconds to wait at most.
+#' @param poll How many seconds to wait between two checks.
+#' @return `job_result()` returns the answer, a list of class
+#'   `quicopt_result` (see [solve()]).
 #' @export
 job_result <- function(job, wait = TRUE, timeout = 120, poll = 0.5) {
   deadline <- Sys.time() + timeout
@@ -146,13 +213,13 @@ job_result <- function(job, wait = TRUE, timeout = 120, poll = 0.5) {
 }
 
 #' @rdname job_status
-#' @return `job_log` returns the log as a single string.
+#' @return `job_log()` returns the log as a single character string.
 #' @export
 job_log <- function(job)
   rawToChar(.job_request(job, "GET", "/log")$body)
 
 #' @rdname job_status
-#' @return `job_delete` returns `NULL`, invisibly.
+#' @return `job_delete()` returns `NULL`, invisibly.
 #' @export
 job_delete <- function(job) {
   .job_request(job, "DELETE", "")

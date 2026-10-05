@@ -5,7 +5,7 @@
 \alias{INTEGER}
 \alias{BINARY}
 \alias{var_decl}
-\title{A variable declaration}
+\title{A decision variable, for building a program by hand}
 \usage{
 CONTINUOUS
 
@@ -23,27 +23,31 @@ var_decl(
 )
 }
 \arguments{
-\item{name}{The variable's name; solutions come back keyed by it.}
+\item{name}{The variable's name, used for it in the answer.}
 
-\item{axes}{Index-set names the variable ranges over (\code{character()} for a scalar).}
+\item{axes}{The names of the index sets the variable is indexed over;
+\code{character()} for a single variable.}
 
-\item{domain}{\link{CONTINUOUS}, \link{INTEGER} or \link{BINARY}.}
+\item{domain}{\code{CONTINUOUS}, \code{INTEGER} or \code{BINARY}.}
 
-\item{lower, upper}{A number (\code{-Inf}/\code{Inf} for an open direction), or the
-name of a parameter table when the bound varies by index.}
+\item{lower, upper}{A number (\code{-Inf} or \code{Inf} for no bound), or the name of
+a parameter table, for a bound that differs from index to index.}
 
-\item{start}{The initial point handed to the solver.}
+\item{start}{The value the search starts from.}
 }
 \value{
-\code{var_decl()} returns a plain list, with no class attribute, with the
-fields \code{name}, \code{axes}, \code{domain} (the integer domain code), \code{lower},
-\code{upper} and \code{start} (numeric). It declares one variable of the model, and
-is an entry of the list a \code{\link[=program]{program()}} takes as \code{vars}.
+\code{var_decl()} returns a plain list without a class, with the fields
+\code{name}, \code{axes}, \code{domain}, \code{lower}, \code{upper} and \code{start}. It is an element
+of the list a \code{\link[=program]{program()}} takes as \code{vars}.
 
-\code{CONTINUOUS}, \code{INTEGER} and \code{BINARY} are not functions but integer
-constants (\code{1L}, \code{2L} and \code{3L}): the codes the service uses for a
-variable's domain, to be passed as \code{domain}.
+\code{CONTINUOUS}, \code{INTEGER} and \code{BINARY} are not functions but constants: the
+whole numbers 1, 2 and 3, which stand for the three kinds of variable in
+\code{domain}.
 }
 \description{
-A variable declaration
+Declares one decision variable of a \code{\link[=program]{program()}}. \code{\link[=num_var]{num_var()}}, \code{\link[=int_var]{int_var()}}
+and \code{\link[=bin_var]{bin_var()}} build these for you.
+}
+\examples{
+var_decl("tables", domain = INTEGER, lower = 0)
 }

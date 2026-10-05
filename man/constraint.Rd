@@ -2,24 +2,32 @@
 % Please edit documentation in R/ir.R
 \name{constraint}
 \alias{constraint}
-\title{A constraint row}
+\title{A constraint, for building a program by hand}
 \usage{
 constraint(f, set, over = list())
 }
 \arguments{
-\item{f}{The constrained expression node.}
+\item{f}{The expression node.}
 
-\item{set}{The constraint set \code{f} must lie in (\code{\link[=zero]{zero()}}, \code{\link[=nonneg]{nonneg()}}, \code{\link[=indicator]{indicator()}}).}
+\item{set}{The set \code{f} must lie in: \code{\link[=zero]{zero()}}, \code{\link[=nonneg]{nonneg()}} or \code{\link[=indicator]{indicator()}}.}
 
-\item{over}{Quantifier bindings, a list of \code{list(idx, set_ref)} pairs
-(\code{list()} for a single scalar row).}
+\item{over}{A list of \code{list(idx, set_ref)} pairs, each repeating the
+constraint for every element of the set \code{set_ref} (from \code{\link[=ir_set_ref]{ir_set_ref()}}),
+with the index named \code{idx} standing for the element in \code{f}. \code{list()} for a
+single constraint.}
 }
 \value{
-A plain list, with no class attribute, with the fields \code{f}, \code{set}
-and \code{over} as given. It states that \code{f} lies in \code{set}, once for every
-binding of the indices in \code{over}, and is an entry of the list a
-\code{\link[=program]{program()}} takes as \code{constraints}.
+A plain list without a class, with the fields \code{f}, \code{set} and
+\code{over}. It is an element of the list a \code{\link[=program]{program()}} takes as
+\code{constraints}.
 }
 \description{
-A constraint row
+States that the expression \code{f} lies in \code{set} (see \code{\link[=zero]{zero()}} and the other
+constraint sets). With \code{over}, the constraint is repeated for every element
+of one or more index sets, like a constraint written "for all \code{i} in \code{S}".
+\code{\link[=add]{add()}} builds these for you.
+}
+\examples{
+# x <= 4, written as 4 - x >= 0
+constraint(ir_apply("-", list(ir_const(4), ir_var("x"))), nonneg())
 }

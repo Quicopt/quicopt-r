@@ -5,7 +5,7 @@
 \alias{zero}
 \alias{nonneg}
 \alias{indicator}
-\title{Constraint sets}
+\title{Constraint sets, for building a program by hand}
 \usage{
 zero()
 
@@ -14,21 +14,36 @@ nonneg()
 indicator(bin, inner)
 }
 \arguments{
-\item{bin}{The binary \code{\link[=ir_var]{ir_var()}} whose activity implies the inner set.}
+\item{bin}{The binary variable that switches the constraint on, as an
+\code{\link[=ir_var]{ir_var()}} node.}
 
-\item{inner}{The constraint set that holds when \code{bin} is active.}
+\item{inner}{The set the expression must lie in when \code{bin} is 1: \code{zero()}
+or \code{nonneg()}.}
 }
 \value{
-A plain list, with no class attribute, naming the set a constrained
-expression must lie in; it is what \code{\link[=constraint]{constraint()}} takes as \code{set}. \code{zero()}
-returns \code{list(kind = "zero")}, meaning the expression equals 0. \code{nonneg()}
-returns \code{list(kind = "nonneg")}, meaning the expression is at least 0.
-\code{indicator()} returns a list with \code{kind = "indicator"} and the fields
-\code{bin} and \code{inner} as given, meaning \code{inner} is imposed only where \code{bin}
-is active.
+A plain list without a class, to be passed as the \code{set} of a
+\code{\link[=constraint]{constraint()}}: \code{list(kind = "zero")}, \code{list(kind = "nonneg")}, or for
+\code{indicator()} a list with \code{kind = "indicator"} and the fields \code{bin} and
+\code{inner}.
 }
 \description{
-A constraint is a set membership: the expression \code{f} must land in the set,
-so \code{x + 2*y <= 5} is written as \code{5 - (x + 2*y)} in \code{\link[=nonneg]{nonneg()}} — one sign
-convention rather than two.
+In a \code{\link[=program]{program()}}, a constraint states that an expression lies in a set:
+}
+\details{
+\itemize{
+\item \code{zero()}: the expression equals 0;
+\item \code{nonneg()}: the expression is at least 0;
+\item \code{indicator(bin, inner)}: the expression lies in the set \code{inner} whenever
+the binary variable \code{bin} is 1, and is unrestricted when it is 0.
+}
+
+So \code{x + 2 * y <= 5} is written as \code{5 - (x + 2 * y)} in \code{nonneg()}, and
+\code{x == 3} as \code{x - 3} in \code{zero()}. \code{\link[=add]{add()}} makes this conversion for you.
+}
+\examples{
+# x + 2 * y <= 5
+constraint(ir_apply("-", list(ir_const(5),
+                              ir_apply("+", list(ir_var("x"),
+                                                 ir_apply("*", list(ir_const(2), ir_var("y"))))))),
+           nonneg())
 }

@@ -2,18 +2,24 @@
 % Please edit documentation in R/wire.R
 \name{encode_params}
 \alias{encode_params}
-\title{Encode parameter tables alone, for rebinding data}
+\title{Encode parameter tables on their own}
 \usage{
 encode_params(params)
 }
 \arguments{
-\item{params}{Named parameter tables, as in \code{\link[=program]{program()}}.}
+\item{params}{Parameter tables, as for \code{\link[=program]{program()}}.}
 }
 \value{
-A raw vector: the encoded tables.
+A raw vector.
 }
 \description{
-Send the program once, then one of these per instance to re-solve the same
-structure on new data without re-sending the model. Tables are written in
-sorted order, so the same data always encodes to the same bytes.
+Encodes the parameter tables of a \code{\link[=program]{program()}} without the rest of it. The
+format has this message so that a program can be given new data without
+sending the whole program again; no function in this package sends it.
+Tables are written in a fixed order, so the same data always gives the
+same bytes.
+}
+\examples{
+cost <- list(list(key = list(1L), value = 3), list(key = list(2L), value = 1.5))
+encode_params(list(cost = cost))
 }

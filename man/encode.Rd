@@ -2,25 +2,26 @@
 % Please edit documentation in R/wire.R
 \name{encode}
 \alias{encode}
-\title{Encode a program to the bytes the service reads}
+\title{Encode a model as the bytes the service reads}
 \usage{
 encode(prog)
 }
 \arguments{
-\item{prog}{A \code{\link[=program]{program()}}, or a model built with \code{\link[=model]{model()}} (which is lowered
-first).}
+\item{prog}{A \code{\link[=model]{model()}} or a \code{\link[=program]{program()}}.}
 }
 \value{
-A raw vector: the encoded program.
+A raw vector.
 }
 \description{
-Two equal programs always encode to equal bytes, whichever order their
-tables happened to be built in. A model that declares no uncertainty and no
-permutation encodes to exactly the bytes it would have before those layers
-existed, so declaring none costs an ordinary model nothing.
+Turns a model or a program into the bytes that \code{\link[=solve]{solve()}} sends. The same
+program always gives the same bytes, in whatever order its parts were
+built. \code{\link[=solve]{solve()}} also accepts the bytes directly.
 }
-\details{
-Encoding is normally invisible: \code{\link[=solve_model]{solve_model()}} does it for you, and what it
-sends is exactly these bytes. Reach for \code{encode} to send them yourself,
-store them, or check them.
+\examples{
+m <- model()
+x <- num_var(m, "x", lower = 0, upper = 4)
+maximize(m, 3 * x)
+bytes <- encode(m)
+length(bytes)
+identical(bytes, encode(as_program(m)))   # TRUE
 }

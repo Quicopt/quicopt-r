@@ -2,51 +2,53 @@
 % Please edit documentation in R/evaluate.R
 \name{resample}
 \alias{resample}
-\title{Check a solution on scenarios it was not optimized for}
+\title{Check a solution on new scenarios}
 \usage{
 resample(m, solution, seed, scenarios = NULL, ...)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{solution}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector giving
-every decision variable's value.}
+\item{solution}{A result from \code{\link[=solve]{solve()}}, or a named numeric vector with a
+value for every decision variable (see \code{\link[=evaluate]{evaluate()}}).}
 
-\item{seed}{The seed for the fresh scenarios, different from the model's.}
+\item{seed}{The seed for the new scenarios, different from the model's
+own.}
 
-\item{scenarios}{How many to draw; left \code{NULL}, as many as the model has.
-More scenarios give a sharper out-of-sample estimate.}
+\item{scenarios}{How many new scenarios to draw. Left \code{NULL}, as many as
+the model has. More scenarios give a more precise check.}
 
-\item{...}{Connection settings, passed on to \code{\link[=solve_model]{solve_model()}}.}
+\item{...}{Settings for the request, as for \code{\link[=solve_model]{solve_model()}}.}
 }
 \value{
-A \code{quicopt_result} for the pinned solution on the fresh scenarios:
-\code{objective} is the out-of-sample objective, \code{feasible} says whether every
-constraint still holds, and \code{solver_data$max_violation} is the largest
-amount by which one is missed (for a chance constraint, in units of
-probability).
+A result in the same form as from \code{\link[=solve]{solve()}}, for the fixed solution
+on the new scenarios. \code{objective} is the objective on them, \code{feasible}
+says whether every constraint still holds, and
+\code{solver_data$max_violation} is by how much the worst constraint is
+missed; for a chance constraint, as a probability.
 }
 \description{
-The objective and the chance levels a solve reports are measured on the
-scenarios the solve saw, the ones that shaped the solution. On fresh
-scenarios a solution does worse, and a chance constraint that was just
-satisfied is missed about half the time. \code{resample()} draws fresh scenarios
-from a new seed, holds the solution fixed, and evaluates the model's
-objective and constraints on them: the out-of-sample check.
+A solution is chosen to do well on the model's scenarios, so the objective
+and the probabilities reported for it are measured on the very scenarios
+that shaped it. On new scenarios it usually does a little worse, and a
+chance constraint that was only just met is missed about half the time.
+\code{resample()} draws new scenarios from \code{seed}, keeps the solution fixed,
+and computes the model's objective and constraints on them.
 }
 \details{
-Only the random variables with a distribution are redrawn. An
-\code{\link[=empirical]{empirical()}} column is data and stays as it is, so a model whose
-uncertainty is entirely empirical has nothing to resample, and the scenario
-count cannot change while any such column is present. Each call is one
-request to the service.
+Only random variables with a distribution are drawn again. A random
+variable made from an \code{\link[=empirical]{empirical()}} sample or by \code{\link[=set_empirical]{set_empirical()}} is data
+and stays as it is. A model whose random variables are all of that kind has
+nothing to draw again, which is an error, and while a model has any of
+them, the number of scenarios cannot change. Each call is one request to
+the service.
 }
 \examples{
 \dontrun{
-res <- solve(m)                    # in sample: objective, feasible = TRUE
-chk <- resample(m, res, seed = 7)  # out of sample, same solution
-chk$objective
-chk$feasible                       # does the chance constraint still hold?
-chk$solver_data$max_violation      # if not, by how much
+res <- solve(m)                                        # m as in ?evaluate
+chk <- resample(m, res, seed = 7, scenarios = 1000)
+chk$feasible                                           # does every constraint still hold?
+chk$solver_data$max_violation                          # if not, by how much
+chk$objective                                          # the objective on the new scenarios
 }
 }

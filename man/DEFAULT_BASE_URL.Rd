@@ -2,14 +2,18 @@
 % Please edit documentation in R/client.R
 \name{DEFAULT_BASE_URL}
 \alias{DEFAULT_BASE_URL}
-\title{The public Quicopt endpoint}
+\title{The address of the public Quicopt service}
 \usage{
 DEFAULT_BASE_URL
 }
 \value{
-Not a function but a constant: a character string of length one,
-the URL of the public service that a request is sent to by default.
+Not a function but a constant: a character string, the address of
+the public service.
 }
 \description{
-\code{\link[=solve]{solve()}} targets it unless another \code{base_url} is given.
+\code{\link[=solve]{solve()}} and \code{\link[=submit]{submit()}} send models to this address unless they are given
+another \code{base_url}.
+}
+\examples{
+DEFAULT_BASE_URL
 }

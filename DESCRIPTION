@@ -3,16 +3,15 @@ Title: Client for the 'Quicopt' Optimization Service
 Version: 0.4.0
 Authors@R: person("Tim", "Bode", email = "t.bode@fz-juelich.de",
                   role = c("aut", "cre", "cph"))
-Description: Author an optimization model — including a model under
-    uncertainty, with random variables, expectations, conditional value at
-    risk and chance constraints — in a native R interface, and solve it with
-    the 'Quicopt' service <https://quicopt.com>. Models are encoded to the
-    service's wire format and solved remotely; no solver is installed
-    locally. Random variables carry distributions or empirical scenario
-    columns taken directly from a data frame, so observed history becomes a
-    stochastic program in one call. A permutation variable states an order or
-    a one-to-one assignment directly, with lookup tables for the data along
-    it.
+Description: Write an optimization model in R and solve it with the
+    'Quicopt' service <https://quicopt.com>: state the decisions, the
+    objective and the constraints, and the service finds the best decision.
+    The model is sent to the service, so no solver needs to be installed.
+    Uncertain data, such as demand or prices, is described by probability
+    distributions or taken from the rows of a data frame, and the model can
+    then minimize an expected cost, guard against bad outcomes, or require a
+    condition to hold with a given probability. Decisions that are an order
+    or an assignment, such as a delivery route, can be stated directly.
 License: Apache License (== 2.0)
 Encoding: UTF-8
 Imports: curl, jsonlite, utils

@@ -2,20 +2,24 @@
 % Please edit documentation in R/ir.R
 \name{index_set}
 \alias{index_set}
-\title{A named index set with concrete elements}
+\title{An index set, for building a program by hand}
 \usage{
 index_set(name, elements)
 }
 \arguments{
 \item{name}{The set's name.}
 
-\item{elements}{A list of integers and strings.}
+\item{elements}{A list of whole numbers and strings.}
 }
 \value{
-A plain list, with no class attribute, with the fields \code{name} and
-\code{elements} as given. It defines one index set of the model, and is an
-entry of the list a \code{\link[=program]{program()}} takes as \code{sets}.
+A plain list without a class, with the fields \code{name} and
+\code{elements}. It is an element of the list a \code{\link[=program]{program()}} takes as \code{sets}.
 }
 \description{
-A named index set with concrete elements
+A named set of elements, for indexing variables (the \code{axes} of
+\code{\link[=var_decl]{var_decl()}}), for reductions such as sums (\code{\link[=ir_reduce]{ir_reduce()}}), and for
+repeating a constraint over its elements (the \code{over} of \code{\link[=constraint]{constraint()}}).
+}
+\examples{
+index_set("items", list(1L, 2L, 3L))
 }

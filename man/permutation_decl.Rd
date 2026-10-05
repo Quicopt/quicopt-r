@@ -2,31 +2,35 @@
 % Please edit documentation in R/ir.R
 \name{permutation_decl}
 \alias{permutation_decl}
-\title{A permutation declaration}
+\title{A permutation, for building a program by hand}
 \usage{
 permutation_decl(size, start = integer(), fixed = FALSE, precede = list())
 }
 \arguments{
 \item{size}{How many items, at least 2.}
 
-\item{start}{The starting slot of each item, or \code{integer()}.}
+\item{start}{The arrangement the search starts from: \code{start[i]} is the
+slot of item \code{i}, so \code{start} contains each of the numbers 1 to \code{size}
+once. \code{integer()} starts with item \code{i} in slot \code{i}.}
 
-\item{fixed}{Whether the permutation is pinned at \code{start}.}
+\item{fixed}{Whether the permutation is fixed at \code{start}, which must then
+be given. This is how \code{\link[=evaluate]{evaluate()}} and \code{\link[=resample]{resample()}} keep the arrangement
+of a solution.}
 
-\item{precede}{A list of \code{c(before, after)} pairs.}
+\item{precede}{A list of pairs \code{c(before, after)}, each requiring item
+\code{before} to be in an earlier slot than item \code{after}.}
 }
 \value{
-A plain list, with no class attribute, with the fields
-\code{kind = "permutation"}, \code{size}, \code{start}, \code{fixed} and \code{precede}. It
-declares one permutation, and is an entry of the named list a
-\code{\link[=program]{program()}} takes as \code{structures}; the entry's name is the name
-\code{\link[=ir_struct_ref]{ir_struct_ref()}} refers to.
+A plain list without a class, with the fields
+\code{kind = "permutation"}, \code{size}, \code{start}, \code{fixed} and \code{precede}. It is an
+element of the named list a \code{\link[=program]{program()}} takes as \code{structures}, and the
+element's name is the name \code{\link[=ir_struct_ref]{ir_struct_ref()}} refers to.
 }
 \description{
-\code{size} items in \code{size} slots, one each. \code{start[i]} is the slot item \code{i}
-starts in (a permutation of \code{1:size}; empty for the default, item \code{i} in
-slot \code{i}). \code{fixed} pins the permutation at \code{start}, which must then be
-given: how a solution is re-evaluated. Each entry of \code{precede} is a pair
-\code{c(before, after)} of items, requiring \code{before} in an earlier slot than
-\code{after}.
+Declares one permutation of a \code{\link[=program]{program()}}: \code{size} items in \code{size} slots,
+one item per slot (see \code{\link[=perm_var]{perm_var()}}). \code{\link[=perm_var]{perm_var()}} builds these for you.
+}
+\examples{
+# five stops, stop 4 before stop 1
+structures <- list(route = permutation_decl(5, precede = list(c(4, 1))))
 }

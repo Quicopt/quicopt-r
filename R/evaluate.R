@@ -39,38 +39,50 @@
   config
 }
 
-#' The value of an expression at a solution
+#' Compute a quantity at a given solution
 #'
-#' A solve returns the values of the variables and of the objective. For any
-#' other quantity of the model, the shortfall the solution leaves, a
-#' probability it reaches, a cost it incurs, `evaluate()` computes the value
-#' at that solution on the model's own scenarios.
+#' A solve reports the values of the decision variables and of the
+#' objective. `evaluate()` computes any other quantity of the model at a
+#' given solution: the share of scenarios in which demand is met, the average
+#' shortfall, the cost of a plan written out by hand. It sends the model to
+#' the service with every decision variable fixed at the solution's value, so
+#' each call is one request.
 #'
-#' The expression cannot be random: close it over the scenarios first, as for
-#' an objective. With a `seed`, the value is computed on fresh scenarios
-#' instead of the model's own, which is how a probability or an expected cost
-#' is checked out of sample (see [resample()] for the rules on fresh
-#' scenarios). Each call is one request to the service.
+#' The quantity must be a single number, so a random expression is summarized
+#' first, for example with [prob()] or [expectation()], as for an objective.
+#'
+#' Without a `seed`, the value is computed on the model's own scenarios. With
+#' a `seed`, it is computed on new scenarios drawn from that seed, which shows
+#' how the solution does on scenarios it was not chosen for. [resample()]
+#' explains which random variables are drawn again.
 #'
 #' @param m A [model()].
-#' @param solution A result from [solve()], or a named numeric vector giving
-#'   every decision variable's value (`"x"`, or `"x[1]"`, `"x[2]"`, ... for a
-#'   vector variable). A model with a permutation ([perm_var()]) takes a
-#'   result, which carries the order found.
-#' @param expr A single non-random model expression.
-#' @param seed Left `NULL`, the model's own scenarios; given, a seed for fresh
-#'   ones.
-#' @param scenarios With `seed`: how many fresh scenarios to draw (default: as
-#'   many as the model has).
-#' @param ... Connection settings, passed on to [solve_model()]: `base_url`,
-#'   `api_key`, `project`, `config`, `gzip`, `timeout`, `transport`.
-#' @return The expression's value, a number.
+#' @param solution A result from [solve()], or a named numeric vector with a
+#'   value for every decision variable, named as in a solution: `"x"`, or
+#'   `"x[1]"`, `"x[2]"`, ... for a vector variable. A model with a permutation
+#'   needs a result, because only a result holds the arrangement.
+#' @param expr The quantity to compute: one expression that is not random.
+#' @param seed Left `NULL`, the model's own scenarios are used. Otherwise, the
+#'   seed for new scenarios, different from the model's own.
+#' @param scenarios With `seed`: how many new scenarios to draw. Left `NULL`,
+#'   as many as the model has. More scenarios give a more precise value.
+#' @param ... Settings for the request, as for [solve_model()]: `base_url`,
+#'   `api_key`, `project`, `config`, `gzip`, `timeout` and `transport`.
+#' @return The value of `expr`, a number.
 #' @examples
 #' \dontrun{
+#' m <- model()
+#' stock  <- num_var(m, "stock", lower = 0, upper = 200)
+#' demand <- rand_var(m, "demand", normal(100, 15))
+#' set_scenarios(m, 512, seed = 42)
+#' minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
+#' add(m, prob(demand <= stock) >= 0.9)
 #' res <- solve(m)
-#' evaluate(m, res, prob(demand - x <= 0))              # the service level reached
-#' evaluate(m, res, prob(demand - x <= 0), seed = 2)    # and on fresh scenarios
-#' evaluate(m, res, expectation(max(demand - x, 0)))    # the expected shortfall
+#'
+#' met <- prob(demand <= stock)
+#' evaluate(m, res, met)                                  # on the model's scenarios
+#' evaluate(m, res, met, seed = 7, scenarios = 1000)      # on 1000 new ones
+#' evaluate(m, c(stock = 110), met)                       # for a stock of 110
 #' }
 #' @export
 evaluate <- function(m, solution, expr, seed = NULL, scenarios = NULL, ...) {
@@ -85,40 +97,42 @@ evaluate <- function(m, solution, expr, seed = NULL, scenarios = NULL, ...) {
   .solve_tagged(prog, ...)$objective
 }
 
-#' Check a solution on scenarios it was not optimized for
+#' Check a solution on new scenarios
 #'
-#' The objective and the chance levels a solve reports are measured on the
-#' scenarios the solve saw, the ones that shaped the solution. On fresh
-#' scenarios a solution does worse, and a chance constraint that was just
-#' satisfied is missed about half the time. `resample()` draws fresh scenarios
-#' from a new seed, holds the solution fixed, and evaluates the model's
-#' objective and constraints on them: the out-of-sample check.
+#' A solution is chosen to do well on the model's scenarios, so the objective
+#' and the probabilities reported for it are measured on the very scenarios
+#' that shaped it. On new scenarios it usually does a little worse, and a
+#' chance constraint that was only just met is missed about half the time.
+#' `resample()` draws new scenarios from `seed`, keeps the solution fixed,
+#' and computes the model's objective and constraints on them.
 #'
-#' Only the random variables with a distribution are redrawn. An
-#' [empirical()] column is data and stays as it is, so a model whose
-#' uncertainty is entirely empirical has nothing to resample, and the scenario
-#' count cannot change while any such column is present. Each call is one
-#' request to the service.
+#' Only random variables with a distribution are drawn again. A random
+#' variable made from an [empirical()] sample or by [set_empirical()] is data
+#' and stays as it is. A model whose random variables are all of that kind has
+#' nothing to draw again, which is an error, and while a model has any of
+#' them, the number of scenarios cannot change. Each call is one request to
+#' the service.
 #'
 #' @param m A [model()].
-#' @param solution A result from [solve()], or a named numeric vector giving
-#'   every decision variable's value.
-#' @param seed The seed for the fresh scenarios, different from the model's.
-#' @param scenarios How many to draw; left `NULL`, as many as the model has.
-#'   More scenarios give a sharper out-of-sample estimate.
-#' @param ... Connection settings, passed on to [solve_model()].
-#' @return A `quicopt_result` for the pinned solution on the fresh scenarios:
-#'   `objective` is the out-of-sample objective, `feasible` says whether every
-#'   constraint still holds, and `solver_data$max_violation` is the largest
-#'   amount by which one is missed (for a chance constraint, in units of
-#'   probability).
+#' @param solution A result from [solve()], or a named numeric vector with a
+#'   value for every decision variable (see [evaluate()]).
+#' @param seed The seed for the new scenarios, different from the model's
+#'   own.
+#' @param scenarios How many new scenarios to draw. Left `NULL`, as many as
+#'   the model has. More scenarios give a more precise check.
+#' @param ... Settings for the request, as for [solve_model()].
+#' @return A result in the same form as from [solve()], for the fixed solution
+#'   on the new scenarios. `objective` is the objective on them, `feasible`
+#'   says whether every constraint still holds, and
+#'   `solver_data$max_violation` is by how much the worst constraint is
+#'   missed; for a chance constraint, as a probability.
 #' @examples
 #' \dontrun{
-#' res <- solve(m)                    # in sample: objective, feasible = TRUE
-#' chk <- resample(m, res, seed = 7)  # out of sample, same solution
-#' chk$objective
-#' chk$feasible                       # does the chance constraint still hold?
-#' chk$solver_data$max_violation      # if not, by how much
+#' res <- solve(m)                                        # m as in ?evaluate
+#' chk <- resample(m, res, seed = 7, scenarios = 1000)
+#' chk$feasible                                           # does every constraint still hold?
+#' chk$solver_data$max_violation                          # if not, by how much
+#' chk$objective                                          # the objective on the new scenarios
 #' }
 #' @export
 resample <- function(m, solution, seed, scenarios = NULL, ...) {

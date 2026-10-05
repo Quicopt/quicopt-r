@@ -2,21 +2,38 @@
 % Please edit documentation in R/ir.R
 \name{empirical}
 \alias{empirical}
-\title{A random variable given as a fixed scenario column}
+\title{A random variable given by a sample}
 \usage{
 empirical(data)
 }
 \arguments{
-\item{data}{A numeric vector, one value per scenario.}
+\item{data}{The sample: a numeric vector without \code{NA}, one value per
+scenario.}
 }
 \value{
-An object of class \code{quicopt_empirical}: a list with the fields
-\code{kind = "empirical"} and \code{data}, the column as a numeric vector. It
-declares one random variable by its observed values, and is an entry of
-the named list a \code{\link[=program]{program()}} takes as \code{sources}.
+An object of class \code{quicopt_empirical}, for \code{\link[=rand_var]{rand_var()}} or
+\code{\link[=set_distribution]{set_distribution()}}. It can also be an element of the \code{sources} of a
+\code{\link[=program]{program()}}.
 }
 \description{
-Exactly \code{scenarios} values, one per scenario. Several empirical columns are
-read at the same scenario index, so columns observed jointly stay correlated —
-which is how a joint distribution is expressed.
+\code{empirical(x)} describes a random variable by a sample of its values, one
+per scenario, instead of by a distribution. Pass it to \code{\link[=rand_var]{rand_var()}}, as in
+\code{rand_var(m, "demand", empirical(x))}. The length of the sample sets the
+number of scenarios.
+}
+\details{
+This is how to use a distribution the package has no function for: draw a
+sample in R, for example with \code{rlnorm()}, and pass it to \code{empirical()}.
+
+The samples of a model are read side by side, the \code{i}-th value of each in
+scenario \code{i}, so values observed together stay together. \code{\link[=set_empirical]{set_empirical()}}
+does this for every column of a data frame.
+
+A sample is fixed data. If it was drawn in R, R's \code{set.seed()} determines
+it, not the model's seed, and \code{\link[=resample]{resample()}} does not draw it again.
+}
+\examples{
+set.seed(1)
+m <- model()
+demand <- rand_var(m, "demand", empirical(rlnorm(500, log(100), 0.3)))   # lognormal
 }
