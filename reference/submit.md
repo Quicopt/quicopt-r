@@ -1,18 +1,13 @@
-# Submit a model for asynchronous solving
+# Solve a model without waiting
 
-Queues the model and returns immediately with a job handle; the solve
-runs on the service while your session goes on. Await it with
-[`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md),
-peek with
+`submit()` sends a model to the service like
+[`solve()`](https://rdrr.io/r/base/solve.html) does, but returns at once
+with a *job*, while the service solves the model in the background and
+your R session can go on.
+[`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+collects the answer when it is ready, and
 [`job_status()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
-or
-[`job_log()`](https://quicopt.github.io/quicopt-r/reference/job_status.md),
-and discard it with
-[`job_delete()`](https://quicopt.github.io/quicopt-r/reference/job_status.md).
-The arguments are those of
-[`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md);
-the handle keeps the connection settings, so the polling calls need none
-of them repeated.
+shows how far the job has got.
 
 ## Usage
 
@@ -33,43 +28,67 @@ submit(
 
 - m:
 
-  A [`model()`](https://quicopt.github.io/quicopt-r/reference/model.md),
-  a
+  A [`model()`](https://quicopt.github.io/quicopt-r/reference/model.md).
+  A
   [`program()`](https://quicopt.github.io/quicopt-r/reference/program.md),
-  or already-encoded bytes.
+  or the bytes from
+  [`encode()`](https://quicopt.github.io/quicopt-r/reference/encode.md),
+  also work.
 
 - base_url:
 
-  The service to talk to; defaults to
-  [DEFAULT_BASE_URL](https://quicopt.github.io/quicopt-r/reference/DEFAULT_BASE_URL.md).
+  The address of the service.
 
 - api_key:
 
-  A key you hold, or `NULL` to mint and reuse a free-tier key.
+  Your API key, or `NULL` to use the session's free key (see the API
+  keys section).
 
 - project:
 
-  A project tag for per-project invoicing, or `NULL`.
+  A project name, for billing by project, or `NULL`.
 
 - config:
 
-  Named list of extra query parameters; a `source_language` here
-  overrides the automatic tag.
+  A named list of further settings, sent to the service as query
+  parameters.
 
 - gzip:
 
-  Compress the request body.
+  Whether to compress the model before sending it; worth it for a large
+  model.
 
 - timeout:
 
-  Seconds to wait for the service.
+  How many seconds to wait for the answer.
 
 - transport:
 
-  The HTTP layer, replaceable for testing: a `function(req)` taking
-  `list(method, url, headers, body, timeout)` and returning
-  `list(status, headers, body)`.
+  For tests: a function that is called instead of sending the request.
+  It takes a list with the elements `method`, `url`, `headers`, `body`
+  and `timeout`, and returns a list with the elements `status`,
+  `headers` and `body`.
 
 ## Value
 
-A `quicopt_job` handle.
+A job, of class `quicopt_job`, for
+[`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md),
+[`job_status()`](https://quicopt.github.io/quicopt-r/reference/job_status.md),
+[`job_log()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+and
+[`job_delete()`](https://quicopt.github.io/quicopt-r/reference/job_status.md).
+
+## Details
+
+The job keeps the address, the key and the other settings it was
+submitted with, so the functions that follow it up need only the job.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+job <- submit(m)
+job_status(job)$status
+res <- job_result(job)        # waits until the job is finished
+} # }
+```

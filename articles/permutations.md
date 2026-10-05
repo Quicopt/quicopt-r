@@ -1,0 +1,252 @@
+# Choosing an order
+
+Some decisions are not amounts but arrangements: the order in which a
+courier visits its stops, the order of jobs on a machine, which
+department moves into which office. quicopt has a decision variable for
+this, the *permutation*. This article introduces it with two examples, a
+delivery route and an office plan. It assumes you have read
+[`vignette("quicopt")`](https://quicopt.github.io/quicopt-r/articles/quicopt.md).
+
+## A delivery route
+
+A courier has five stops to make along one road. The courier can start
+at any stop and ends at the last one, with no return trip. Stop 4 must
+be visited before stop 1, because a parcel collected at stop 4 is
+delivered to stop 1. In which order should the stops be visited to keep
+the route as short as possible?
+
+The stops lie at these distances along the road, so the distance between
+two stops is the difference of their positions:
+
+``` r
+
+position <- c(0, 3, 1, 4, 2)                     # km along the road, stops 1 to 5
+km <- abs(outer(position, position, "-"))        # km[i, j]: distance from stop i to stop j
+km
+#>      [,1] [,2] [,3] [,4] [,5]
+#> [1,]    0    3    1    4    2
+#> [2,]    3    0    2    1    1
+#> [3,]    1    2    0    3    1
+#> [4,]    4    1    3    0    2
+#> [5,]    2    1    1    2    0
+```
+
+## Items and slots
+
+A permutation arranges *n* things, called **items**, in *n* numbered
+places, called **slots**, with exactly one item in each slot. Items and
+slots are both numbered from 1 to *n*. What they stand for depends on
+the problem:
+
+| Problem | Items | Slots |
+|----|----|----|
+| a route | the stops | the visits: slot 1 is the first stop visited, slot 2 the second, … |
+| a machine | the jobs | the positions in the queue |
+| an office plan | the departments | the offices |
+
+For the route, the items are the five stops and the slots are the five
+visits.
+[`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
+declares the permutation, and
+[`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)
+requires one item to be in an earlier slot than another:
+
+``` r
+
+m <- model()
+route <- perm_var(m, "route", 5)
+precede(route, 4, 1)                 # stop 4 is visited before stop 1
+```
+
+Two functions read a permutation, one in each direction:
+
+- `item_at(s, route)` is the item in slot `s`: the stop visited `s`-th.
+- `slot_of(i, route)` is the slot of item `i`: when stop `i` is visited.
+
+Neither is known before the solve. Like a decision variable, each is an
+expression whose value the service chooses.
+
+## The length of the route
+
+The route goes from the first stop visited to the second, from the
+second to the third, and so on: four legs in all. The length of leg `s`
+is the distance from `item_at(s, route)` to `item_at(s + 1, route)`,
+which has to be looked up in `km`.
+
+That lookup cannot be written as
+`km[item_at(1, route), item_at(2, route)]`, because `km` is an ordinary
+R matrix and the stops are not known yet. Instead,
+[`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
+adds the matrix to the model, under a name, and indexing it with
+expressions builds a lookup that the service carries out for whatever
+order it is considering:
+
+``` r
+
+dist <- lookup_table(m, "dist", km)
+legs <- dist[item_at(1:4, route), item_at(2:5, route)]
+minimize(m, sum(legs))
+```
+
+Indexing a lookup table pairs up its indices, which is different from an
+ordinary R matrix. `km[1:4, 2:5]` is a 4 × 4 block of `km`, but `legs`
+has four elements: the distance from the 1st stop to the 2nd, from the
+2nd to the 3rd, from the 3rd to the 4th and from the 4th to the 5th.
+
+## Reading the answer
+
+``` r
+
+res <- solve(m)
+res$objective
+#> [1] 4
+res$structures$route$item_at
+#> [1] 4 2 5 3 1
+```
+
+For each permutation in the model, `res$structures` holds both
+directions as integer vectors. `item_at` lists the item in each slot,
+which for a route is the stops in the order they are visited:
+
+| slot      | 1   | 2   | 3   | 4   | 5   |
+|-----------|-----|-----|-----|-----|-----|
+| `item_at` | 4   | 2   | 5   | 3   | 1   |
+
+`slot_of` lists the slot of each item, which is when each stop is
+visited:
+
+``` r
+
+res$structures$route$slot_of
+#> [1] 5 2 4 1 3
+```
+
+Stop 1 is visited 5th, stop 2 2nd, and so on. The route runs from the
+far end of the road at kilometre 4 back to kilometre 0, a length of 4,
+and it is the only shortest route that visits stop 4 before stop 1.
+
+## Uncertain travel times
+
+Permutations combine with random variables (see
+[`vignette("stochastic", package = "quicopt")`](https://quicopt.github.io/quicopt-r/articles/stochastic.md)).
+Suppose traffic makes each leg take between 1 and 1.5 times as long as
+it would on an empty road. The expected time of the route is then the
+objective:
+
+``` r
+
+m <- model()
+dist  <- lookup_table(m, "dist", km)
+route <- perm_var(m, "route", 5)
+precede(route, 4, 1)
+traffic <- rand_var(m, "traffic", uniform(1, 1.5), n = 4)    # slowdown on each leg
+set_scenarios(m, 256, seed = 3)
+
+legs <- dist[item_at(1:4, route), item_at(2:5, route)]
+minimize(m, expectation(sum(legs * traffic)))
+
+res <- solve(m)
+res$structures$route$item_at
+#> [1] 4 2 5 3 1
+res$objective
+#> [1] 5.012369
+```
+
+The route is the same, and its expected time is about 4 × 1.25 = 5,
+since the average slowdown is 1.25. To check the figure on new
+scenarios,
+[`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+keeps the order fixed and redraws the traffic:
+
+``` r
+
+resample(m, res, seed = 4)$objective
+#> [1] 5.003491
+```
+
+## An office plan
+
+The second example reads a permutation the other way round. Four
+departments move into four offices along a corridor, and the staff walk
+between departments several times a day. Which department should go into
+which office so that the total walking is as short as possible?
+
+``` r
+
+office <- c(0, 10, 20, 40)                       # metres along the corridor, offices 1 to 4
+
+# departments: 1 production, 2 sales, 3 shipping, 4 design
+from  <- c(1, 1, 1, 2)
+to    <- c(2, 3, 4, 4)
+trips <- c(5, 20, 10, 30)                        # walks per day between `from` and `to`
+```
+
+Here the items are the four departments and the slots are the four
+offices. The distance between two departments depends on the offices
+they are in, which is what
+[`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+gives:
+
+``` r
+
+m <- model()
+walk  <- lookup_table(m, "walk", abs(outer(office, office, "-")))   # metres between offices
+place <- perm_var(m, "place", 4)
+
+metres <- walk[slot_of(from, place), slot_of(to, place)]          # one per pair of departments
+minimize(m, sum(trips * metres))
+
+res <- solve(m)
+res$structures$place$slot_of
+#> [1] 3 1 4 2
+res$objective
+#> [1] 900
+```
+
+Production goes into office 3, sales into office 1, shipping into office
+4 and design into office 2. Sales and design, the pair with the most
+walks, end up next to each other.
+
+As a rule of thumb,
+[`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+fits data that belongs to the slots and is read in slot order, such as
+the legs of a route.
+[`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+fits data that belongs to the items, such as the walks between
+departments.
+
+## A lookup on its own
+
+A lookup table is useful without a permutation, too. Indexed with an
+integer variable, it picks one entry out of a list. Here, the cheapest
+of four options:
+
+``` r
+
+m <- model()
+price  <- lookup_table(m, "price", c(3, 1, 4, 1.5))
+choice <- int_var(m, "choice", lower = 1, upper = 4)
+minimize(m, price[choice])
+solve(m)$solution
+#> choice 
+#>      2
+```
+
+## More about permutations
+
+- `perm_var(m, "route", 5, start = ...)` sets the order the search
+  starts from, and
+  [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md)
+  takes the order from an earlier result.
+- [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  keep a permutation fixed at the order in a result, as with
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  above.
+- [`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)
+  can be called several times on one permutation. A set of requirements
+  that contradicts itself, such as 1 before 2 and 2 before 1, is an
+  error.
+- A model with a permutation is solved by a search, so its status is
+  `"heuristic"`.

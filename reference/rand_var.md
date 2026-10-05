@@ -1,9 +1,12 @@
 # Declare a random variable
 
-The variable is not a decision: the solver is handed its value rather
-than choosing it, and every use of it means the same sample within a
-scenario. Two independent random variables are two declarations under
-two names.
+A random variable stands for a quantity that is not known when the
+decision is made, such as tomorrow's demand. It can be used in
+expressions like a decision variable, but the service does not choose
+its value: in each scenario, the value is drawn from the variable's
+distribution. Within one scenario, every use of the variable has the
+same value. Two random variables declared separately are drawn
+independently.
 
 ## Usage
 
@@ -25,34 +28,48 @@ add_rand_var(m, name, dist = NULL, n = NULL)
 
 - dist:
 
-  A
-  [`distribution()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
-  such as `normal(100, 15)`, or an
+  A distribution such as `normal(100, 15)` (see
+  [`distribution()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)),
+  or an
   [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
-  column holding one observed value per scenario. May be left `NULL` and
-  supplied later with
+  sample with one value per scenario. It may be left out and given later
+  with
   [`set_distribution()`](https://quicopt.github.io/quicopt-r/reference/set_distribution.md).
 
 - n:
 
-  How many elements the random variable has; left `NULL`, as many as the
-  distribution's parameters say (1 for an empirical column).
+  How many random variables to declare under this name. Left `NULL`, the
+  number follows from the length of the distribution's parameters.
 
 ## Value
 
-The random variable's handle (an expression of length `n`).
+The random variable, an expression of length `n`.
 
-`add_rand_var` returns the model, invisibly.
+`add_rand_var()` returns the model, invisibly.
 
 ## Details
 
-A random variable takes no bounds and no domain; its distribution
-already says what values it takes.
+A random variable has no bounds; its distribution says which values it
+can take.
 
-A distribution with vector parameters declares a vector random variable,
-`weight[1]`, ..., `weight[n]`, one independent draw per element:
-`rand_var(m, "weight", normal(c(6, 5, 4), 1))`. With `n` given and
-scalar parameters, the elements are `n` independent copies of one
-distribution. Elements of a vector random variable are independent of
-each other; correlated uncertainty is declared from data with
+A distribution with vector parameters declares several random variables
+under one name, which behave like an R vector:
+`rand_var(m, "hours", normal(c(6, 5, 4), 1))` declares `hours[1]`,
+`hours[2]` and `hours[3]`. With scalar parameters and `n` given, it
+declares `n` variables with the same distribution. Either way, the
+elements are drawn independently of each other. Random variables that
+move together, such as demand and price, are best declared from observed
+data with
 [`set_empirical()`](https://quicopt.github.io/quicopt-r/reference/set_empirical.md).
+
+`add_rand_var()` declares the variable in the same way but returns the
+model, for use in a pipe; `m$name` then retrieves the variable.
+
+## Examples
+
+``` r
+m <- model()
+demand <- rand_var(m, "demand", normal(100, 15))
+hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
+delay  <- rand_var(m, "delay", uniform(1, 1.5), n = 4)   # four with the same distribution
+```

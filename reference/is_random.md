@@ -1,12 +1,11 @@
 # Does an expression vary across scenarios?
 
-An expression is random while it contains a random variable that no
-aggregator has closed: `demand - x` is random, `expectation(demand - x)`
-is not, and neither is `3 * x`. Only a non-random expression can be an
-objective or a constraint; only a random one can be aggregated. Both
-rules are checked where the expression is used, so this predicate is for
-your own code: a helper that accepts either kind, or a check before a
-long build.
+An expression that contains a random variable has a different value in
+each scenario, and is called *random*. Summarizing it across the
+scenarios, for example with
+[`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md),
+gives a single number again: `demand - stock` is random,
+`expectation(demand - stock)` is not, and neither is `3 * stock`.
 
 ## Usage
 
@@ -18,22 +17,31 @@ is_random(x)
 
 - x:
 
-  A model expression, or a numeric vector (never random).
+  An expression, or a numeric vector (which is never random).
 
 ## Value
 
-A logical vector, one entry per element of `x`.
+A logical vector with one element per element of `x`.
+
+## Details
+
+An objective or a constraint must not be random, and a summary such as
+[`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md)
+needs a random expression to summarize. quicopt checks both rules itself
+and stops with an error when one is broken, so you need `is_random()`
+only in your own code, for example in a function that accepts both kinds
+of expression.
 
 ## Examples
 
 ``` r
 m <- model()
-x <- num_var(m, "x", 0, 10)
-d <- rand_var(m, "d", normal(5, 1))
-is_random(d - x)                 # TRUE
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+is_random(demand - stock)                  # TRUE
 #> [1] TRUE
-is_random(expectation(d - x))    # FALSE
+is_random(expectation(demand - stock))     # FALSE
 #> [1] FALSE
-is_random(c(x, x^2))             # FALSE FALSE
+is_random(c(stock, stock^2))               # FALSE FALSE
 #> [1] FALSE FALSE
 ```

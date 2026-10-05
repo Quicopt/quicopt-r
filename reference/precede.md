@@ -1,11 +1,10 @@
-# Require one item before another
+# Require one item to come before another
 
-`precede(P, before, after)` requires item `before` to sit in an earlier
-slot than item `after`, in every solution: a pickup before its delivery,
-a job before the one that needs its output. The requirement is held by
-the search itself, not by a penalty, so it is never violated. The
-requirements of a permutation must be consistent: a cycle among them is
-refused.
+`precede(P, before, after)` requires item `before` to be in an earlier
+slot of the permutation `P` than item `after`: a pickup before its
+delivery, or a job before the job that needs its output. The service
+only considers arrangements that meet the requirement, so every solution
+meets it.
 
 ## Usage
 
@@ -22,16 +21,23 @@ precede(P, before, after)
 
 - before, after:
 
-  Items, whole numbers from 1 to the permutation's size.
+  Items: whole numbers from 1 to the size of the permutation.
 
 ## Value
 
 The permutation, invisibly.
 
+## Details
+
+`precede()` may be called several times for one permutation.
+Requirements that contradict each other, such as 1 before 2 and 2 before
+1, are an error.
+
 ## Examples
 
 ``` r
 m <- model()
-tour <- perm_var(m, "tour", 5)
-precede(tour, 4, 1)                 # stop 4 before stop 1
+route <- perm_var(m, "route", 5)
+precede(route, 4, 1)                # stop 4 is visited before stop 1
+precede(route, 2, 5)                # and stop 2 before stop 5
 ```

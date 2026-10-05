@@ -1,11 +1,19 @@
-# A complete optimization model as plain data
+# A model as plain data
 
-The tables keyed by index tuples are lists of entries rather than named
-lists, because an index tuple is not a string: `params` maps a table
-name to a list of `list(key = <index tuple>, value = <number>)` entries,
-`indexed_sets` maps a name to `list(key = ..., value = <element list>)`
-fibres, and `fix` is a list of `list(var = , index = , value = )` pins.
-Entry order does not matter; encoding sorts them canonically.
+A program holds a complete model as plain R lists, in the form the
+service reads:
+[`encode()`](https://quicopt.github.io/quicopt-r/reference/encode.md)
+turns it into bytes, and [`solve()`](https://rdrr.io/r/base/solve.html)
+and
+[`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+accept it directly.
+[`as_program()`](https://quicopt.github.io/quicopt-r/reference/as_program.md)
+converts a
+[`model()`](https://quicopt.github.io/quicopt-r/reference/model.md) into
+a program. Building one by hand, with this function and the ones it
+links to, is for parts of the format that a
+[`model()`](https://quicopt.github.io/quicopt-r/reference/model.md) does
+not offer, such as index sets and parameter tables.
 
 ## Usage
 
@@ -35,11 +43,11 @@ program(
 
 - indexed_sets:
 
-  Dependent sets carried as data (see above).
+  Sets that differ from position to position (see above).
 
 - params:
 
-  Named parameter tables (see above).
+  Parameter tables (see above).
 
 - vars:
 
@@ -48,7 +56,8 @@ program(
 
 - objective:
 
-  The objective expression node.
+  The objective, an expression node (see
+  [ir](https://quicopt.github.io/quicopt-r/reference/ir.md)).
 
 - sense:
 
@@ -61,57 +70,52 @@ program(
 
 - fix:
 
-  Per-index variable pins (see above).
+  Variables fixed at a value (see above).
 
 - scenarios:
 
-  How many scenarios are drawn (at least 1).
+  How many scenarios to draw, at least 1.
 
 - scenario_seed:
 
-  The seed they are drawn from (at least 1).
+  The seed to draw them from, at least 1.
 
 - sources:
 
-  Named
+  The random variables: a named list of
   [`parametric()`](https://quicopt.github.io/quicopt-r/reference/parametric.md)
-  /
+  and
   [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
   declarations.
 
 - structures:
 
-  Named
+  The permutations: a named list of
   [`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
   declarations.
 
 ## Value
 
-An object of class `quicopt_program`: a list with one field per
-argument, under the argument's name (`scenarios` and `scenario_seed`
-coerced to numeric). It is the complete model in the form the service
-reads, with nothing left to resolve:
-[`encode()`](https://quicopt.github.io/quicopt-r/reference/encode.md)
-turns it into bytes, and
-[`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md)
-and
-[`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
-accept it directly.
+An object of class `quicopt_program`: a list with one element per
+argument, under the argument's name.
 
 ## Details
 
-A model under uncertainty adds three more: the random variables it draws
-(`sources`, a named list of
-[`parametric()`](https://quicopt.github.io/quicopt-r/reference/parametric.md)
-/
-[`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
-declarations), how many scenarios are drawn and the seed they are drawn
-from. The last two are model data — they pin the sampled instance, so
-the same program always sees the same draws. Left at their defaults they
-say nothing, and the encoded bytes are those of a deterministic model.
+Data indexed by positions is given as lists of entries, because a
+position (a list of numbers and strings) cannot be a name:
 
-A model with a permutation adds `structures`, a named list of
-[`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
-declarations that
-[`ir_struct_ref()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
-nodes refer to. Left empty it says nothing, as `sources` does.
+- `params` maps the name of a parameter table to a list of entries
+  `list(key = <position>, value = <number>)`;
+
+- `indexed_sets` maps a name to a list of entries
+  `list(key = <position>, value = <list of elements>)`, a set that
+  differs from position to position;
+
+- `fix` is a list of entries `list(var = , index = , value = )`, each
+  fixing one variable at a value.
+
+The order of the entries does not matter.
+
+A model with random variables also needs `sources`, which declares them,
+and `scenarios` and `scenario_seed`, which say how many scenarios are
+drawn and from which seed. A model with permutations needs `structures`.

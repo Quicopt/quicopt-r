@@ -1,7 +1,8 @@
-# The public Quicopt endpoint
+# The address of the public Quicopt service
 
-[`solve()`](https://rdrr.io/r/base/solve.html) targets it unless another
-`base_url` is given.
+[`solve()`](https://rdrr.io/r/base/solve.html) and
+[`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+send models to this address unless they are given another `base_url`.
 
 ## Usage
 
@@ -11,5 +12,12 @@ DEFAULT_BASE_URL
 
 ## Value
 
-Not a function but a constant: a character string of length one, the URL
-of the public service that a request is sent to by default.
+Not a function but a constant: a character string, the address of the
+public service.
+
+## Examples
+
+``` r
+DEFAULT_BASE_URL
+#> [1] "https://try.quicoptapi.pgi.fz-juelich.de"
+```

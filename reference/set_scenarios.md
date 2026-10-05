@@ -1,11 +1,11 @@
 # Set how many scenarios are drawn, and from which seed
 
-More scenarios estimate the true problem more closely and cost more to
-solve. Both settings belong to the model, not to the solve, so the same
-model always faces the same sample and two solves of it are comparable.
-Left unset, a model is solved over one scenario — unless an
+The service draws `n` scenarios: `n` possible outcomes of the model's
+random variables. More scenarios describe the uncertainty more
+accurately, and take longer to solve. A model whose scenarios are never
+set is solved over a single scenario, unless an
 [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
-column sets the count by its own length.
+sample sets the number by its length.
 
 ## Usage
 
@@ -21,11 +21,12 @@ set_scenarios(m, n, seed = NULL)
 
 - n:
 
-  How many scenarios to draw.
+  How many scenarios to draw, at least 1.
 
 - seed:
 
-  The draw seed; left `NULL`, the current one is kept.
+  The seed for the draws, at least 1. Left `NULL`, the model keeps its
+  current seed.
 
 ## Value
 
@@ -33,8 +34,19 @@ The model, invisibly.
 
 ## Details
 
-The scenarios are drawn by the service from this seed; R's
-[`set.seed()`](https://rdrr.io/r/base/Random.html) plays no role. `n`
-and `seed` are both at least 1. The service caps the count: a model over
-its limit is refused when sent, with the limit named in the refusal (the
-client does not know it in advance, since it is the service's to set).
+The number of scenarios and the seed belong to the model, so solving the
+same model again uses the same scenarios, and two solves of it can be
+compared. The scenarios are drawn by the service, so R's
+[`set.seed()`](https://rdrr.io/r/base/Random.html) has no effect on
+them.
+
+The service limits the number of scenarios. A model above the limit is
+refused when it is solved, with a message that states the limit.
+
+## Examples
+
+``` r
+m <- model()
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+```

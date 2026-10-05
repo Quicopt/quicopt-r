@@ -1,6 +1,8 @@
 # Give a random variable its distribution
 
-Give a random variable its distribution
+Sets or replaces the distribution of a random variable declared with
+[`rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md),
+for example one declared without a distribution.
 
 ## Usage
 
@@ -16,17 +18,23 @@ set_distribution(m, v, dist)
 
 - v:
 
-  The random variable's handle, from
+  The random variable, as returned by
   [`rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md).
 
 - dist:
 
-  A
-  [`distribution()`](https://quicopt.github.io/quicopt-r/reference/distribution.md)
-  or an
+  A distribution such as `normal(100, 15)`, or an
   [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
-  column, of the handle's length.
+  sample, of the same length as `v`.
 
 ## Value
 
 The model, invisibly.
+
+## Examples
+
+``` r
+m <- model()
+demand <- rand_var(m, "demand")
+set_distribution(m, demand, normal(100, 15))
+```

@@ -1,10 +1,16 @@
-# Poll a submitted job
+# Follow up a submitted job
 
-`job_status` fetches the job's state (`queued`, `running`, `done`,
-`failed`) and its log tail. `job_result` fetches the finished solve,
-polling past the service's `not_done` answer until the worker finishes.
-`job_log` fetches the plain-text log, and `job_delete` removes the job
-and its stored result from the service.
+- `job_status()` returns the job's state, `"queued"`, `"running"`,
+  `"done"` or `"failed"`, together with the last lines of its log.
+
+- `job_result()` returns the answer of the job, in the same form as
+  [`solve()`](https://rdrr.io/r/base/solve.html). By default it waits
+  for the job to finish, checking every `poll` seconds for up to
+  `timeout` seconds.
+
+- `job_log()` returns the job's log as text.
+
+- `job_delete()` deletes the job and its stored answer from the service.
 
 ## Usage
 
@@ -22,27 +28,40 @@ job_delete(job)
 
 - job:
 
-  A `quicopt_job` from
+  A job, as returned by
   [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md).
 
 - wait:
 
-  Poll until the job is done (`TRUE`), or fetch exactly once.
+  `TRUE` waits until the job is finished. `FALSE` asks once, and is an
+  error if the job is not finished yet.
 
 - timeout:
 
-  Maximum seconds to keep polling before giving up.
+  How many seconds to wait at most.
 
 - poll:
 
-  Seconds between polls.
+  How many seconds to wait between two checks.
 
 ## Value
 
-`job_status` returns the service's job state as a list.
+`job_status()` returns the job's state as a list.
 
-`job_result` returns the finished solve as a `quicopt_result`.
+`job_result()` returns the answer, a list of class `quicopt_result` (see
+[`solve()`](https://rdrr.io/r/base/solve.html)).
 
-`job_log` returns the log as a single string.
+`job_log()` returns the log as a single character string.
 
-`job_delete` returns `NULL`, invisibly.
+`job_delete()` returns `NULL`, invisibly.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+job <- submit(m)
+job_status(job)
+res <- job_result(job)
+job_delete(job)
+} # }
+```

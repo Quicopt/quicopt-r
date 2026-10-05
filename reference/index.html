@@ -15,7 +15,8 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/quicopt.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/Quicopt/quicopt-r/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
@@ -30,7 +31,7 @@
     </div>
 
     <div class="section level2">
-      <h2 id="authoring-a-model">Authoring a model<a class="anchor" aria-label="anchor" href="#authoring-a-model"></a></h2>
+      <h2 id="building-a-model">Building a model<a class="anchor" aria-label="anchor" href="#building-a-model"></a></h2>
 
 
 
@@ -44,7 +45,7 @@
           <code><a href="model.html">model()</a></code>
 
         </dt>
-        <dd>Create an empty optimization model</dd>
+        <dd>Create an empty model</dd>
 
         <dt>
 
@@ -58,14 +59,14 @@
           <code><a href="set_start.html">set_start()</a></code>
 
         </dt>
-        <dd>Start the search from a known solution</dd>
+        <dd>Start the next search from a known solution</dd>
 
         <dt>
 
           <code><a href="minimize.html">minimize()</a></code> <code><a href="minimize.html">maximize()</a></code>
 
         </dt>
-        <dd>State what the model optimizes</dd>
+        <dd>Set the objective</dd>
 
         <dt>
 
@@ -79,7 +80,7 @@
           <code><a href="expressions.html">expressions</a></code>
 
         </dt>
-        <dd>quicopt expressions — model arithmetic in plain R</dd>
+        <dd>Expressions: arithmetic on variables</dd>
 
         <dt>
 
@@ -88,7 +89,7 @@
         </dt>
         <dd>A comparison as a 0/1 expression</dd>
       </dl></div><div class="section level2">
-      <h2 id="uncertainty">Uncertainty<a class="anchor" aria-label="anchor" href="#uncertainty"></a></h2>
+      <h2 id="uncertain-data">Uncertain data<a class="anchor" aria-label="anchor" href="#uncertain-data"></a></h2>
 
 
 
@@ -130,7 +131,7 @@
           <code><a href="set_empirical.html">set_empirical()</a></code>
 
         </dt>
-        <dd>Turn observed history into a model's uncertainty</dd>
+        <dd>Use observed data as a model's uncertainty</dd>
 
         <dt>
 
@@ -144,21 +145,21 @@
           <code><a href="empirical.html">empirical()</a></code>
 
         </dt>
-        <dd>A random variable given as a fixed scenario column</dd>
+        <dd>A random variable given by a sample</dd>
 
         <dt>
 
           <code><a href="expectation.html">expectation()</a></code>
 
         </dt>
-        <dd>The expected value over the scenarios</dd>
+        <dd>The average over the scenarios</dd>
 
         <dt>
 
           <code><a href="cvar.html">cvar()</a></code>
 
         </dt>
-        <dd>The conditional value at risk at level <code>alpha</code></dd>
+        <dd>The average over the worst scenarios</dd>
 
         <dt>
 
@@ -188,7 +189,7 @@
         </dt>
         <dd>Does an expression vary across scenarios?</dd>
       </dl></div><div class="section level2">
-      <h2 id="sequencing-and-assignment">Sequencing and assignment<a class="anchor" aria-label="anchor" href="#sequencing-and-assignment"></a></h2>
+      <h2 id="orders-and-assignments">Orders and assignments<a class="anchor" aria-label="anchor" href="#orders-and-assignments"></a></h2>
 
 
 
@@ -202,30 +203,30 @@
           <code><a href="perm_var.html">perm_var()</a></code> <code><a href="perm_var.html">add_perm_var()</a></code>
 
         </dt>
-        <dd>Sequencing and assignment: a permutation as a decision variable</dd>
+        <dd>Declare an order as a decision</dd>
 
         <dt>
 
           <code><a href="item_at.html">item_at()</a></code> <code><a href="item_at.html">slot_of()</a></code>
 
         </dt>
-        <dd>Read a permutation: the item in a slot, the slot of an item</dd>
+        <dd>The item in a slot, and the slot of an item</dd>
 
         <dt>
 
           <code><a href="precede.html">precede()</a></code>
 
         </dt>
-        <dd>Require one item before another</dd>
+        <dd>Require one item to come before another</dd>
 
         <dt>
 
           <code><a href="lookup_table.html">lookup_table()</a></code> <code><a href="lookup_table.html">`[`(<i>&lt;quicopt_table&gt;</i>)</a></code>
 
         </dt>
-        <dd>A table of numbers read at positions the solver decides</dd>
+        <dd>A table of data indexed by decisions</dd>
       </dl></div><div class="section level2">
-      <h2 id="solving-and-checking-a-solution">Solving, and checking a solution<a class="anchor" aria-label="anchor" href="#solving-and-checking-a-solution"></a></h2>
+      <h2 id="solving-and-checking-a-solution">Solving and checking a solution<a class="anchor" aria-label="anchor" href="#solving-and-checking-a-solution"></a></h2>
 
 
 
@@ -239,44 +240,44 @@
           <code><a href="solve_model.html">solve_model()</a></code> <code><a href="solve_model.html">solve(<i>&lt;quicopt_model&gt;</i>)</a></code>
 
         </dt>
-        <dd>Solve a model with the Quicopt service</dd>
+        <dd>Solve a model</dd>
 
         <dt>
 
           <code><a href="submit.html">submit()</a></code>
 
         </dt>
-        <dd>Submit a model for asynchronous solving</dd>
+        <dd>Solve a model without waiting</dd>
 
         <dt>
 
           <code><a href="job_status.html">job_status()</a></code> <code><a href="job_status.html">job_result()</a></code> <code><a href="job_status.html">job_log()</a></code> <code><a href="job_status.html">job_delete()</a></code>
 
         </dt>
-        <dd>Poll a submitted job</dd>
+        <dd>Follow up a submitted job</dd>
 
         <dt>
 
           <code><a href="evaluate.html">evaluate()</a></code>
 
         </dt>
-        <dd>The value of an expression at a solution</dd>
+        <dd>Compute a quantity at a given solution</dd>
 
         <dt>
 
           <code><a href="resample.html">resample()</a></code>
 
         </dt>
-        <dd>Check a solution on scenarios it was not optimized for</dd>
+        <dd>Check a solution on new scenarios</dd>
 
         <dt>
 
           <code><a href="DEFAULT_BASE_URL.html">DEFAULT_BASE_URL</a></code>
 
         </dt>
-        <dd>The public Quicopt endpoint</dd>
+        <dd>The address of the public Quicopt service</dd>
       </dl></div><div class="section level2">
-      <h2 id="the-program-and-its-bytes">The program and its bytes<a class="anchor" aria-label="anchor" href="#the-program-and-its-bytes"></a></h2>
+      <h2 id="building-a-program-by-hand">Building a program by hand<a class="anchor" aria-label="anchor" href="#building-a-program-by-hand"></a></h2>
 
 
 
@@ -290,84 +291,84 @@
           <code><a href="program.html">program()</a></code>
 
         </dt>
-        <dd>A complete optimization model as plain data</dd>
+        <dd>A model as plain data</dd>
 
         <dt>
 
           <code><a href="var_decl.html">CONTINUOUS</a></code> <code><a href="var_decl.html">INTEGER</a></code> <code><a href="var_decl.html">BINARY</a></code> <code><a href="var_decl.html">var_decl()</a></code>
 
         </dt>
-        <dd>A variable declaration</dd>
+        <dd>A decision variable, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="index_set.html">index_set()</a></code>
 
         </dt>
-        <dd>A named index set with concrete elements</dd>
+        <dd>An index set, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="constraint.html">constraint()</a></code>
 
         </dt>
-        <dd>A constraint row</dd>
+        <dd>A constraint, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="consets.html">zero()</a></code> <code><a href="consets.html">nonneg()</a></code> <code><a href="consets.html">indicator()</a></code>
 
         </dt>
-        <dd>Constraint sets</dd>
+        <dd>Constraint sets, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="parametric.html">parametric()</a></code>
 
         </dt>
-        <dd>A random variable drawn from a distribution</dd>
+        <dd>A random variable with a distribution, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="permutation_decl.html">permutation_decl()</a></code>
 
         </dt>
-        <dd>A permutation declaration</dd>
+        <dd>A permutation, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="ir.html">ir_const()</a></code> <code><a href="ir.html">ir_param()</a></code> <code><a href="ir.html">ir_var()</a></code> <code><a href="ir.html">ir_apply()</a></code> <code><a href="ir.html">ir_reduce()</a></code> <code><a href="ir.html">ir_source_ref()</a></code> <code><a href="ir.html">ir_struct_ref()</a></code> <code><a href="ir.html">ir_table_ref()</a></code> <code><a href="ir.html">ir_set_ref()</a></code>
 
         </dt>
-        <dd>quicopt IR — a model as plain data</dd>
+        <dd>Expression nodes, for building a program by hand</dd>
 
         <dt>
 
           <code><a href="wire.html">wire</a></code>
 
         </dt>
-        <dd>quicopt wire — a program's bytes</dd>
+        <dd>The bytes sent to the service</dd>
 
         <dt>
 
           <code><a href="encode.html">encode()</a></code>
 
         </dt>
-        <dd>Encode a program to the bytes the service reads</dd>
+        <dd>Encode a model as the bytes the service reads</dd>
 
         <dt>
 
           <code><a href="encode_params.html">encode_params()</a></code>
 
         </dt>
-        <dd>Encode parameter tables alone, for rebinding data</dd>
+        <dd>Encode parameter tables on their own</dd>
 
         <dt>
 
           <code><a href="as_program.html">as_program()</a></code>
 
         </dt>
-        <dd>Lower a model to a program</dd>
+        <dd>Convert a model to a program</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

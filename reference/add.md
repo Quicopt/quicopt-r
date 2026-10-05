@@ -1,13 +1,11 @@
 # Add constraints to a model
 
-A comparison of model expressions is a constraint, not a logical:
-`add(m, x + y <= 5)` requires the row to hold, and `==` states an
-equality. A comparison of vector expressions adds one row per element,
-so `add(m, x <= cap)` with two length-`n` vectors is `n` rows. `<`, `>`
-and `!=` are refused: for a continuous quantity the first two mean `<=`
-and `>=`, and the third is no constraint at all (see
-[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) for
-the 0/1 expression it does make).
+A comparison of expressions, written with `<=`, `>=` or `==`, becomes a
+requirement that every solution must meet:
+`add(m, tables + chairs <= 18)`. Here the comparison is not a test that
+returns `TRUE` or `FALSE`. A comparison of two vectors adds one
+constraint per element, so with `x` and `cap` of length `n`,
+`add(m, x <= cap)` adds `n` constraints.
 
 ## Usage
 
@@ -23,18 +21,16 @@ add(m, rel, margin = 0, when = NULL)
 
 - rel:
 
-  A comparison built with `<=`, `>=` or `==`.
+  A comparison of expressions, written with `<=`, `>=` or `==`.
 
 - margin:
 
-  For a chance constraint: how many standard errors to tighten the level
-  by (default none).
+  For a chance constraint: by how many standard errors to tighten the
+  target. The default, 0, leaves it as written.
 
 - when:
 
-  A binary variable (from
-  [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md))
-  that switches the row on.
+  A binary variable that switches the constraint on.
 
 ## Value
 
@@ -42,50 +38,70 @@ The model, invisibly.
 
 ## Details
 
-A constraint cannot be random. In a model under uncertainty, close the
-expression with an aggregator first
-([`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md),
-[`cvar()`](https://quicopt.github.io/quicopt-r/reference/cvar.md),
-[`prob()`](https://quicopt.github.io/quicopt-r/reference/prob.md) and
-the others the
-[stochastic](https://quicopt.github.io/quicopt-r/reference/stochastic.md)
-topic lists); a chance constraint is
-`add(m, prob(demand - x <= 0) >= 0.9)`.
+`<` and `>` are not accepted, because for a quantity that can take any
+value they mean the same as `<=` and `>=`. `!=` is not accepted either;
+[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md)
+turns it into a 0/1 expression, which can be used instead.
+
+In a model with random variables, each side of a constraint has to be
+one number, not one per scenario: summarize it first, for example with
+[`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md)
+or [`prob()`](https://quicopt.github.io/quicopt-r/reference/prob.md). A
+requirement on a probability, such as
+`add(m, prob(demand <= stock) >= 0.9)`, is called a *chance constraint*.
 
 ## A safety margin on a chance constraint
 
-The probability in `prob(...) >= 0.9` is estimated from the scenarios,
-and an estimate has a standard error: `sqrt(0.9 * 0.1 / n)` for `n`
-scenarios, about 0.013 at 512. A solution found with the constraint just
-satisfied in sample therefore misses the level on fresh scenarios about
-half the time (see
+The probability in a chance constraint is estimated from the scenarios,
+so it carries sampling error. For a target `p` and `n` scenarios, its
+standard error is `sqrt(p * (1 - p) / n)`, about 0.013 for `p = 0.9` and
+`n = 512`. A solution chosen to just meet the target on its own
+scenarios therefore misses the target on new scenarios about half the
+time (see
 [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)).
-`margin = k` asks for the level tightened by `k` standard errors
-instead, `0.9 + k * sqrt(0.9 * 0.1 / n)` here, so that the true
-probability clears the level with confidence `pnorm(k)`: about 84% at
-`k = 1`, 98% at `k = 2`. For an upper bound, `prob(...) <= 0.1`, the
-level is lowered instead. The margin applies to a comparison of a
-[`prob()`](https://quicopt.github.io/quicopt-r/reference/prob.md) with a
-number strictly between 0 and 1, and is resolved against the scenario
-count when the model is sent, so it may be given before
-[`set_scenarios()`](https://quicopt.github.io/quicopt-r/reference/set_scenarios.md).
 
-## A constraint that applies only when a switch is on
+`margin = k` raises the target by `k` standard errors, so that the true
+probability meets the original target with a confidence of about
+`pnorm(k)`: 84% for `k = 1`, 98% for `k = 2`. For an upper limit, such
+as `prob(...) <= 0.1`, the target is lowered instead. A margin applies
+only when one side of the constraint is a
+[`prob()`](https://quicopt.github.io/quicopt-r/reference/prob.md) and
+the other a number strictly between 0 and 1. The standard error is
+computed from the number of scenarios when the model is solved, so the
+margin can be given before
+[`set_scenarios()`](https://quicopt.github.io/quicopt-r/reference/set_scenarios.md)
+is called.
 
-`when = b`, with `b` a binary variable, imposes the row only where `b`
-is 1: `add(m, x <= 0, when = is_closed)`. `b` is one variable, or a
-vector variable with one element per row. In a model with no random
-variable a switched row makes the problem combinatorial, and the service
-then expects integer variables with finite bounds, as for
-[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md).
+## A constraint with an on-off switch
+
+`when = b`, with `b` a binary variable from
+[`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
+makes the constraint apply only in solutions in which `b` is 1. For
+example, `add(m, output <= 0, when = closed)` forces the output to 0
+only if the plant is closed. `b` is a single variable, or a vector
+variable with one element per constraint.
+
+In a model without random variables, a switch limits the kind of model
+the service accepts: every variable must then be an integer or a binary
+variable, with finite bounds. The same holds for
+[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md),
+[`max()`](https://rdrr.io/r/base/Extremes.html) and
+[`min()`](https://rdrr.io/r/base/Extremes.html).
 
 ## Examples
 
 ``` r
 m <- model()
-x <- num_var(m, "x", 0, 200)
-demand <- rand_var(m, "demand", normal(100, 15))
-set_scenarios(m, 512, seed = 42)
-add(m, prob(demand - x <= 0) >= 0.9)              # the level as stated
-add(m, prob(demand - x <= 0) >= 0.9, margin = 2)  # the level plus 2 SE: 0.927
+tables <- num_var(m, "tables", lower = 0)
+chairs <- num_var(m, "chairs", lower = 0)
+add(m, 3 * tables + chairs <= 41)                      # hours of carpentry
+add(m, tables + chairs <= 18)                          # wood
+
+# a chance constraint, without and with a safety margin
+shop   <- model()
+stock  <- num_var(shop, "stock", lower = 0, upper = 200)
+demand <- rand_var(shop, "demand", normal(100, 15))
+set_scenarios(shop, 512, seed = 42)
+add(shop, prob(demand <= stock) >= 0.9)                # demand met on 90% of scenarios
+add(shop, prob(demand <= stock) >= 0.9, margin = 2)    # the target raised to about 0.927
 ```

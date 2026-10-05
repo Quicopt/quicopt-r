@@ -1,12 +1,8 @@
-# Sequencing and assignment: a permutation as a decision variable
+# Declare an order as a decision
 
-Some decisions are an order or a one-to-one assignment: the sequence of
-stops on a round, the order of jobs on a machine, which facility goes to
-which location. Written with plain variables, such a decision needs one
-binary per (item, slot) pair and a row per item and per slot, and a cost
-along the sequence is a product of binaries. A permutation variable says
-it directly: `n` items go into `n` slots, one each, and the service
-keeps that true by construction while it searches.
+Some decisions are an arrangement: the order in which a courier visits
+its stops, the order of jobs on a machine, which department moves into
+which office. `perm_var()` declares such a decision, a *permutation*.
 
 ## Usage
 
@@ -32,66 +28,87 @@ add_perm_var(m, name, n, start = NULL)
 
 - start:
 
-  Left `NULL`, item `i` starts in slot `i`. Otherwise `start[i]` is the
-  slot item `i` starts in: a permutation of `1:n`.
+  The arrangement the service's search starts from: `start[i]` is the
+  slot of item `i`, so `start` contains each of the numbers 1 to `n`
+  once. Left `NULL`, item `i` starts in slot `i`.
 
 ## Value
 
-The permutation's handle; `m$<name>` retrieves it too.
+The permutation, for use with
+[`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md),
+[`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+and
+[`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md).
 
-`add_perm_var` returns the model, invisibly.
+`add_perm_var()` returns the model, invisibly.
 
-## Details
+## Items and slots
 
-There are two fixed numberings, both from 1 to `n`:
+A permutation of size `n` arranges `n` things, called *items*, in `n`
+numbered places, called *slots*, with exactly one item in each slot.
+Items and slots are both numbered from 1 to `n`. What they stand for
+depends on the problem:
 
-- the **items** are the things being arranged, numbered as you listed
-  them (the stops, the jobs, the facilities);
+- for a route, the items are the stops and the slots are the visits:
+  slot 1 is the first stop visited, slot 2 the second, and so on;
 
-- the **slots** are the places they go, numbered in order (the steps of
-  the round, the positions in the schedule, the locations).
+- for a machine, the items are the jobs and the slots are the positions
+  in the queue;
 
-The permutation links the two, and it is read in both directions.
-[`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)`(slot, P)`
-is the item that sits in a slot, and
-[`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)`(item, P)`
-the slot an item sits in; each is an integer expression that the service
-decides, usable anywhere a model expression is. Which one a model reads
-depends on where its data lives: a distance between consecutive stops of
-a round is `dist[item_at(k, P), item_at(k + 1, P)]`, data on the items
-read along the slots; the distance between the locations of two
-facilities is `dist[slot_of(f, P), slot_of(g, P)]`, data on the slots
-read along the items. Both use a
-[`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md),
-a table of numbers indexed by expressions.
+- for an office plan, the items are the departments and the slots are
+  the offices.
 
-[`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)`(P, a, b)`
-requires item `a` to sit in an earlier slot than item `b`, which the
-search never violates. A solution reports both views under
-`res$structures`, and
+[`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+gives the item in a slot, and
+[`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+the slot of an item. Both are expressions whose values the service
+chooses, like the value of a decision variable. Data that depends on the
+arrangement, such as the distance between consecutive stops, is read
+from a
+[`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md):
+`dist[item_at(1:4, route), item_at(2:5, route)]` is the length of each
+of the four legs of a five-stop route.
+
+[`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)
+requires one item to be in an earlier slot than another, such as a
+pickup before its delivery.
+
+## The answer
+
+For each permutation, the result of
+[`solve()`](https://rdrr.io/r/base/solve.html) holds both directions
+under `res$structures$<name>`: `item_at`, the item in each slot (for a
+route, the stops in the order they are visited), and `slot_of`, the slot
+of each item.
 [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md),
 [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
 and
 [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
-carry a permutation along with the plain variables.
+take the arrangement from a result too.
 
-A model with a permutation or a lookup is solved by search, like a model
-under uncertainty, and the two combine: a round whose travel times are
-random is a permutation inside an
+A model with a permutation is solved by a search, so its status is
+`"heuristic"`. Permutations can be combined with random variables, for
+example a route whose travel times are uncertain, minimized in
 [`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md).
+[`vignette("permutations", package = "quicopt")`](https://quicopt.github.io/quicopt-r/articles/permutations.md)
+works through two examples.
+
+`add_perm_var()` declares the permutation in the same way but returns
+the model, for use in a pipe; `m$name` then retrieves the permutation.
 
 ## Examples
 
 ``` r
-# Five stops on a line, visited along the shortest path, stop 4 before stop 1
+# Five stops along a road. Find the shortest route through all of them
+# that visits stop 4 before stop 1.
+position <- c(0, 3, 1, 4, 2)                      # km along the road, stops 1 to 5
 m <- model()
-where <- c(0, 3, 1, 4, 2)                          # where each stop lies
-dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
-tour <- perm_var(m, "tour", 5)                     # item: a stop; slot: a step
-precede(tour, 4, 1)
-minimize(m, sum(dist[item_at(1:4, tour), item_at(2:5, tour)]))
+dist  <- lookup_table(m, "dist", abs(outer(position, position, "-")))
+route <- perm_var(m, "route", 5)
+precede(route, 4, 1)                              # stop 4 is visited before stop 1
+minimize(m, sum(dist[item_at(1:4, route), item_at(2:5, route)]))
 if (FALSE) { # \dontrun{
 res <- solve(m)
-res$structures$tour$item_at                        # the stops in visiting order
+res$structures$route$item_at                      # the stops in the order visited
 } # }
 ```

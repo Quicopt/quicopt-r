@@ -1,16 +1,14 @@
-# A table of numbers read at positions the solver decides
+# A table of data indexed by decisions
 
-Data that depends on a decision cannot be indexed with it in plain R:
-`dist[item_at(1, tour), item_at(2, tour)]` has to be looked up after the
-solver has chosen the order. A lookup table is such data, declared in
-the model under a name, and indexing it with model expressions builds
-the lookup as an expression: a vector table takes one index, a matrix
-table two, and either index may be a number, a vector of numbers, or an
-expression such as
+Sometimes a model needs a number from a table at a position that is not
+known yet: the distance between the first and the second stop of a route
+whose order the service is still choosing, or the price of an option
+that an integer variable picks. An ordinary R vector or matrix cannot be
+indexed this way. `lookup_table()` adds the data to the model under a
+name, and indexing the result with expressions, such as
 [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
-or an integer variable. The indexing is vectorized, so
-`dist[item_at(1:4, P), item_at(2:5, P)]` is the four legs of a five-stop
-round.
+or an integer variable, builds an expression whose value is the entry at
+the positions the service chooses.
 
 ## Usage
 
@@ -33,7 +31,7 @@ x[i, j]
 
 - values:
 
-  A numeric vector or matrix, with no `NA`.
+  A numeric vector or matrix without `NA`.
 
 - x:
 
@@ -41,42 +39,54 @@ x[i, j]
 
 - i, j:
 
-  Positions: numbers, or model expressions such as
-  [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md);
-  `j` only for a matrix table.
+  Positions in the table: numbers, or expressions such as
+  [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md).
+  `j` only for a table made from a matrix.
 
 ## Value
 
-The table's handle; `m$<name>` retrieves it too.
+The table, to be indexed with `[`.
 
-`x[i]` and `x[i, j]` return an expression, one element per position.
+`x[i]` and `x[i, j]` return an expression with one element per position.
 
 ## Details
 
-The lookup is an ordinary expression: multiply it by a cost, sum it, put
-it under an
-[`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md).
-Its value is the table entry at the chosen positions; an index that is
-not a whole number in range is rounded and clamped into the table, so a
-continuous variable may index a table too.
+A table made from a vector takes one index, and a table made from a
+matrix two. Each index may be a number, a vector of numbers, or an
+expression.
 
-A lookup makes the model one that is solved by search, as a permutation
-or a random variable does. The table travels with the model, one entry
-per cell, so a very large table makes for a large request.
+Unlike indexing an ordinary R matrix, the two indices are paired up
+element by element: `km[1:4, 2:5]` is a 4 x 4 block of a matrix `km`,
+but for a lookup table `dist`, `dist[1:4, 2:5]` has four elements, the
+entries `[1, 2]`, `[2, 3]`, `[3, 4]` and `[4, 5]`. This is what makes
+`dist[item_at(1:4, P), item_at(2:5, P)]` the four legs of a five-stop
+route.
+
+The result is an ordinary expression: it can be multiplied by a cost,
+added up, or averaged with
+[`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md).
+An index that is not a whole number is rounded, and one outside the
+table is moved to the nearest end, so a continuous variable can be used
+as an index too.
+
+A model with a lookup table is solved by a search, so its status is
+`"heuristic"`. The whole table is sent with the model, so a very large
+table makes the request large.
 
 ## Examples
 
 ``` r
+# the distances between five stops along a road
+position <- c(0, 3, 1, 4, 2)
 m <- model()
-where <- c(0, 3, 1, 4, 2)
-dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
-tour <- perm_var(m, "tour", 5)
-leg <- dist[item_at(1:4, tour), item_at(2:5, tour)]     # the four legs
-minimize(m, sum(leg))
+dist  <- lookup_table(m, "dist", abs(outer(position, position, "-")))
+route <- perm_var(m, "route", 5)
+legs  <- dist[item_at(1:4, route), item_at(2:5, route)]    # the four legs of the route
+minimize(m, sum(legs))
 
-# a cost per option, chosen through an integer variable
-cost <- lookup_table(m, "cost", c(3, 1, 4, 1.5))
-choice <- int_var(m, "choice", 1, 4)
-cost[choice]
-#> cost[choice]
+# the price of one of four options, picked by an integer variable
+price  <- lookup_table(m, "price", c(3, 1, 4, 1.5))
+choice <- int_var(m, "choice", lower = 1, upper = 4)
+price[choice]
+#> price[choice]
 ```

@@ -1,7 +1,9 @@
 # The probability that a comparison holds
 
-The fraction of scenarios in which it does. This is what a chance
-constraint is built from:
+`prob(a <= b)` is the share of the scenarios in which `a <= b` holds: an
+estimate of its probability. It is a single number, so it can be used in
+a constraint. A requirement on a probability is called a *chance
+constraint*:
 
 ## Usage
 
@@ -13,26 +15,42 @@ prob(rel)
 
 - rel:
 
-  A comparison built with `<=` or `>=`.
+  A comparison of expressions, written with `<=` or `>=`.
 
 ## Value
 
-An expression: a probability between 0 and 1 per compared element.
+An expression with one probability, between 0 and 1, per element of the
+comparison.
 
 ## Details
 
-    add(m, prob(demand - x <= 0) >= 0.9)
+    add(m, prob(demand <= stock) >= 0.9)
 
-which reads as *demand is met in at least 90% of scenarios*. The line
-holds two comparisons, both meaningful: the one inside `prob` is the
-event being measured, the outer one is the service level demanded of it.
+reads as "demand is met in at least 90% of the scenarios". The line
+holds two comparisons, which do different jobs: the inner one,
+`demand <= stock`, is the event checked in each scenario, and the outer
+one, `>= 0.9`, is the requirement on how often it happens. The `margin`
+argument of
+[`add()`](https://quicopt.github.io/quicopt-r/reference/add.md) allows
+for the sampling error of the estimate.
 
-`rel` is a comparison, `a <= b` or `a >= b`, with at least one side
-containing a random variable. An equality is refused: for a continuous
-quantity its probability is zero. So are `<` and `>`, which for a
-continuous quantity mean the same as `<=` and `>=`. Elementwise over
-vector comparisons.
+The comparison is written with `<=` or `>=`, and at least one side must
+contain a random variable. `==` is not accepted, since the probability
+that a quantity which can take any value equals one particular value is
+0. `<` and `>` are not accepted either, since for such a quantity they
+mean the same as `<=` and `>=`. For vector expressions, each element
+gets its own probability.
 
-The same event as a 0/1 expression, scenario by scenario, is
-[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md):
-`expectation(holds(rel))` is `prob(rel)`.
+[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md)
+turns the same comparison into a 0/1 value in each scenario, and
+`expectation(holds(a <= b))` is the same number as `prob(a <= b)`.
+
+## Examples
+
+``` r
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+add(m, prob(demand <= stock) >= 0.9)       # demand met in at least 90% of scenarios
+```

@@ -1,9 +1,8 @@
-# The expected value over the scenarios
+# The average over the scenarios
 
-Minimizing an expectation optimizes the average case and says nothing
-about the bad ones; use
-[`cvar()`](https://quicopt.github.io/quicopt-r/reference/cvar.md) when
-the bad ones are what matter.
+`expectation(x)` is the average of `x` over the model's scenarios: an
+estimate of its expected value. It turns a random expression into a
+single number, which can be used in the objective or in a constraint.
 
 ## Usage
 
@@ -15,15 +14,27 @@ expectation(x)
 
 - x:
 
-  A random model expression (see
+  A random expression (see
   [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)).
 
 ## Value
 
-An expression of the same length, no longer random.
+An expression of the same length as `x`, no longer random.
 
 ## Details
 
-`x` is any expression containing a random variable. The result is
-deterministic, and can be used anywhere a number can. Applied to a
-vector expression, it aggregates each element.
+Minimizing an average makes the typical scenario good, and says little
+about the bad ones;
+[`cvar()`](https://quicopt.github.io/quicopt-r/reference/cvar.md) looks
+at those instead. For a vector `x`, each element is averaged separately.
+
+## Examples
+
+``` r
+m <- model()
+stock  <- num_var(m, "stock", lower = 0, upper = 200)
+demand <- rand_var(m, "demand", normal(100, 15))
+set_scenarios(m, 512, seed = 42)
+shortfall <- max(demand - stock, 0)        # units short, in each scenario
+minimize(m, 3 * stock + 10 * expectation(shortfall))
+```

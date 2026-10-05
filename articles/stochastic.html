@@ -29,6 +29,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/quicopt.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul>
@@ -60,367 +61,482 @@
      tools/precompute-vignette.R, which runs the solves against the live
      service and bakes their output into stochastic.Rmd. The shipped .Rmd
      executes nothing, so package checks need no network. -->
-<p>Part of most decisions is data you will only learn afterwards: how
-much is demanded, at what price, with what yield. A model under
-uncertainty is ordinary R arithmetic over decision variables and random
-quantities. The service solves it over a sample of scenarios, and this
-vignette shows the whole loop: build, solve, and then check the answer
-on scenarios the search never saw, which is the step that separates a
-solution from a lucky one.</p>
+<p>Many decisions have to be made before all the data is in. A shop
+orders stock before it knows how much will sell. A contractor plans a
+day of jobs before knowing how long each will really take. This article
+shows how to model such a decision with quicopt, solve it, and check
+whether the answer can be trusted. It assumes you have read
+<code><a href="../articles/quicopt.html">vignette("quicopt")</a></code>.</p>
+<p>The idea in brief: you describe each uncertain quantity by a
+probability distribution. The service draws many possible outcomes from
+it, called <strong>scenarios</strong>, and looks for the decision that
+does best across all of them. You decide what “best across the
+scenarios” means: best on average, best on the bad days, or good enough
+on at least 90% of them.</p>
 <div class="section level2">
-<h2 id="a-session-end-to-end">A session, end to end<a class="anchor" aria-label="anchor" href="#a-session-end-to-end"></a>
+<h2 id="how-much-to-stock">How much to stock<a class="anchor" aria-label="anchor" href="#how-much-to-stock"></a>
 </h2>
-<p>Six items with known profits and uncertain weights, to be packed into
-a capacity of 12. Each weight is roughly normal around its mean, and the
-packing must fit in at least 90% of scenarios:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">profit</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9</span>, <span class="fl">7</span>, <span class="fl">6</span>, <span class="fl">5</span>, <span class="fl">4</span>, <span class="fl">3</span><span class="op">)</span>                 <span class="co"># of each item</span></span>
-<span><span class="va">mean_weight</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">5</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">capacity</span>    <span class="op">&lt;-</span> <span class="fl">12</span></span>
-<span></span>
-<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">packed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"packed"</span>, n <span class="op">=</span> <span class="fl">6</span><span class="op">)</span>                      <span class="co"># packed[item]: 1 if the item goes in</span></span>
-<span><span class="va">weight</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"weight"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="va">mean_weight</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span>    <span class="co"># the uncertain weights, one per item</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">load</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">packed</span> <span class="op">*</span> <span class="va">weight</span><span class="op">)</span>                             <span class="co"># one value per scenario</span></span>
-<span><span class="va">p_fits</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="va">load</span> <span class="op">&lt;=</span> <span class="va">capacity</span><span class="op">)</span>                           <span class="co"># P(load &lt;= capacity), one number</span></span>
-<span><span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">p_fits</span> <span class="op">&gt;=</span> <span class="fl">0.9</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">profit</span> <span class="op">*</span> <span class="va">packed</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">solution</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span>                                   <span class="co"># the items packed</span></span>
-<span><span class="co">#&gt; packed[1] packed[3] </span></span>
-<span><span class="co">#&gt;         1         3</span></span>
-<span><span class="va">res</span><span class="op">$</span><span class="va">objective</span>                                              <span class="co"># their profit</span></span>
-<span><span class="co">#&gt; [1] 15</span></span></code></pre></div>
-<p>Everything here is plain R. <code>packed * weight</code> is
-elementwise, <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> folds the six products into one load,
-and that load is a different number in every scenario: it is
-<em>random</em>, in the package’s vocabulary. <code><a href="../reference/prob.html">prob()</a></code> closes
-it over the scenarios into one number, the share of scenarios in which
-the load fits, and that number is what the constraint is placed on.</p>
-<p>The packing was chosen on 500 scenarios and is judged on the same
-500. A solution found that way leans on the sample that shaped it, so
-the first thing to do with it is to look at it on fresh scenarios.
-<code><a href="../reference/evaluate.html">evaluate()</a></code> gives the value of any closed expression at a
-solution, on the model’s own scenarios or, with a seed, on new ones:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">p_fits</span><span class="op">)</span>                 <span class="co"># in sample: at least 0.9, by construction</span></span>
-<span><span class="co">#&gt; [1] 0.904</span></span>
-<span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">p_fits</span>, seed <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>       <span class="co"># out of sample: fresh draws, same packing</span></span>
-<span><span class="co">#&gt; [1] 0.922</span></span></code></pre></div>
-<p><code><a href="../reference/resample.html">resample()</a></code> does the same for the model as a whole,
-holding the solution fixed and reporting whether every constraint still
-holds:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">chk</span><span class="op">$</span><span class="va">feasible</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="va">chk</span><span class="op">$</span><span class="va">solver_data</span><span class="op">$</span><span class="va">max_violation</span>            <span class="co"># if not: by how much, in units of probability</span></span>
-<span><span class="co">#&gt; [1] 0</span></span></code></pre></div>
-<p>With six binary decisions the feasible packings are few and far
-apart, so the chosen one has slack: it fits more often than the
-constraint demanded, in sample and out. A continuous decision has no
-such luck. It lands exactly on the level, and then misses it on fresh
-draws about half the time, which the newsvendor below shows, together
-with the remedy.</p>
+<p>A shop orders a product once a day, at 3 per unit, before it knows
+how many customers will come. Demand varies from day to day, roughly
+normally, around 100 units with a standard deviation of 15. Every unit a
+customer asks for that the shop does not have costs it 10 in lost profit
+and goodwill. Order too little and the shop loses sales; order too much
+and it pays for stock nobody buys. How much should it order?</p>
+<p>This is a classic problem in operations research, known as the
+<em>newsvendor problem</em>, after a newspaper seller deciding how many
+papers to buy each morning.</p>
 </div>
 <div class="section level2">
-<h2 id="the-newsvendor">The newsvendor<a class="anchor" aria-label="anchor" href="#the-newsvendor"></a>
+<h2 id="random-variables-and-scenarios">Random variables and scenarios<a class="anchor" aria-label="anchor" href="#random-variables-and-scenarios"></a>
 </h2>
-<p>Order <code>x</code> units at 3 apiece. Demand turns out to be
-roughly normal around 100. Every unit short costs 10 in expectation, and
-the service level requires demand to be met in at least 90% of
-scenarios. The model is wrapped in a function here, because the next
-section builds it twice:</p>
+<p>The model has one decision, the stock, and one uncertain quantity,
+the demand:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span>   <span class="co"># decided now</span></span>
+<span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span>       <span class="co"># learned later</span></span>
+<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/rand_var.html">rand_var()</a></code> declares a <strong>random variable</strong>.
+It appears in expressions just like a decision variable, but the service
+does not choose its value: the value is drawn from the distribution.
+<code>normal(100, 15)</code> takes the mean and the standard deviation,
+in the same order as <code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm()</a></code>.</p>
+<p><code><a href="../reference/set_scenarios.html">set_scenarios()</a></code> says how many draws to make: here, 512
+possible days, each with its own demand. From now on, every expression
+that contains <code>demand</code> has 512 values, one per scenario. The
+seed belongs to the model, so solving the model again uses the same 512
+days. The draws are made by the service, which means R’s
+<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> has no effect on them.</p>
+</div>
+<div class="section level2">
+<h2 id="planning-for-the-average-day">Planning for the average day<a class="anchor" aria-label="anchor" href="#planning-for-the-average-day"></a>
+</h2>
+<p>On a given day, the shortfall is the demand the shop cannot meet:
+<code>max(demand - stock, 0)</code>, which is zero whenever the stock
+covers demand. The day’s cost is
+<code>3 * stock + 10 * shortfall</code>. That cost is a different number
+in each of the 512 scenarios, but an objective has to be a single
+number. So the 512 values are summarized first, here by their average,
+with <code><a href="../reference/expectation.html">expectation()</a></code>:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">shortfall</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span>          <span class="co"># units short, in each scenario</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="va">shortfall</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 107.642</span></span></code></pre></div>
+<p>The cost of buying, <code>3 * stock</code>, is the same in every
+scenario, so only the shortfall needs averaging.</p>
+<p>The answer has a simple explanation. Stocking one more unit costs 3,
+and saves 10 on each day on which demand exceeds the stock. That is
+worth it as long as demand exceeds the stock on more than 3 days out of
+10. So the best stock is the level that demand stays below on 70% of
+days, the 70th percentile of demand. For a normal distribution with mean
+100 and standard deviation 15, that is <code>qnorm(0.7, 100, 15)</code>,
+about 107.9. The service worked from 512 sampled days rather than from
+the distribution itself, so its answer is close to that value but not
+equal to it.</p>
+<p>An expression that contains a random variable is called
+<em>random</em>: it has one value per scenario. The objective and the
+constraints of a model must not be random, so they always contain a
+summary such as <code><a href="../reference/expectation.html">expectation()</a></code>. quicopt stops with an error
+if one is missing, and <code><a href="../reference/is_random.html">is_random()</a></code> tells you which kind of
+expression you have:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/is_random.html">is_random</a></span><span class="op">(</span><span class="va">shortfall</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="fu"><a href="../reference/is_random.html">is_random</a></span><span class="op">(</span><span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="va">shortfall</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<p>As mentioned in <code><a href="../articles/quicopt.html">vignette("quicopt")</a></code>, a model with random
+variables is solved by a search, so its status is
+<code>"heuristic"</code> rather than <code>"optimal"</code>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">newsvendor</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">margin</span> <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span>                     <span class="co"># decide now</span></span>
-<span>  <span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span> <span class="co"># learn later</span></span>
-<span>  <span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">x</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">x</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">x</span> <span class="op">&lt;=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">0.9</span>, margin <span class="op">=</span> <span class="va">margin</span><span class="op">)</span></span>
-<span>  <span class="va">m</span></span>
-<span><span class="op">}</span></span>
-<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu">newsvendor</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">m</span></span>
-<span><span class="co">#&gt; quicopt model: 1 variable, 1 random (512 scenarios), 1 constraint row(s)</span></span>
-<span><span class="co">#&gt;   min ((3 * x) + (10 * smean(max((~demand - x), 0))))</span></span></code></pre></div>
-<p><code>max(demand - x, 0)</code> is the shortfall, the kinked
-expression that prices recourse, and <code><a href="../reference/expectation.html">expectation()</a></code> closes
-it over the scenarios. <code><a href="../reference/prob.html">prob()</a></code> measures the event
-<code>demand - x &lt;= 0</code> across scenarios, and the outer
-<code>&gt;= 0.9</code> is the service level demanded of that
-probability.</p>
-<p>Two things are worth saying out loud. A variable declared with
-<code><a href="../reference/rand_var.html">rand_var()</a></code> is a random variable, not a decision variable:
-the solver is handed its value rather than choosing it, and every
-mention of <code>demand</code> refers to the same sample. And the
-scenarios are drawn <em>by the service</em> from the model’s own seed
-(<code>set_scenarios</code>), so R’s <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> plays no
-role in the solve.</p>
+<code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">status</span></span>
+<span><span class="co">#&gt; [1] "heuristic"</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="meeting-demand-on-90-of-days">Meeting demand on 90% of days<a class="anchor" aria-label="anchor" href="#meeting-demand-on-90-of-days"></a>
+</h2>
+<p>With a stock of about 108, the shop runs out on roughly 3 days in 10.
+Suppose it wants to do better and meet demand on at least 90% of days.
+That is a requirement on a probability:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
-<span><span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">&lt;=</span> <span class="va">stock</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 118.7283</span></span></code></pre></div>
-<p>The answer is the 90% service level binding: <code>x</code> lands on
-the sample’s 90th percentile of demand (the population value is
-<code>qnorm(0.9, 100, 15)</code>, about 119.2). Without the chance
-constraint the order quantity would fall to the critical fractile
-<code>(10 - 3) / 10 = 0.7</code>, about <code>qnorm(0.7, 100, 15)</code>
-or 107.9. The constraint is what pushes the order up.</p>
+<p><code>prob(demand &lt;= stock)</code> is the share of scenarios in
+which demand is at most the stock. The share is a single number, so it
+can appear in a constraint. A requirement like this is called a
+<em>chance constraint</em>.</p>
+<p>The line holds two comparisons, and they do different jobs. The inner
+one, <code>demand &lt;= stock</code>, is the event that is checked in
+each scenario. The outer one, <code>&gt;= 0.9</code>, is the requirement
+on how often that event happens.</p>
+<p><code><a href="../reference/add.html">add()</a></code> changed the model from the previous section, which
+kept its objective, so solving it again answers the new question. The
+stock rises to 118.7, the smallest stock that covers demand on 90% of
+the 512 sampled days. For the normal distribution itself, the answer
+would be <code>qnorm(0.9, 100, 15)</code>, about 119.2.</p>
+</div>
+<div class="section level2">
+<h2 id="checking-the-answer-on-new-scenarios">Checking the answer on new scenarios<a class="anchor" aria-label="anchor" href="#checking-the-answer-on-new-scenarios"></a>
+</h2>
+<p>The service chose the stock by looking at 512 particular days. On
+those days the constraint holds, as it should. <code><a href="../reference/evaluate.html">evaluate()</a></code>
+computes any summary at a given solution, so it can show the share of
+days on which demand is met:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">met</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">&lt;=</span> <span class="va">stock</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">met</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.9003906</span></span></code></pre></div>
+<p>But will it hold on days the search never saw? Given a seed,
+<code><a href="../reference/evaluate.html">evaluate()</a></code> draws new scenarios and computes the summary on
+those instead. A larger sample than the original gives a more precise
+check:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">met</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.896</span></span></code></pre></div>
+<p>On new days the stock meets demand only 89.6% of the time. In this
+example we can also compute the exact answer, because demand is
+normal:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.8940854</span></span></code></pre></div>
+<p>The true probability is 0.894, short of the 90% the stock was chosen
+to meet. Nothing went wrong in the solve. The service found the smallest
+stock that met the target on its 512 days, so that stock is just enough
+for those particular days, and on other days it falls short about half
+the time. It is the same effect as a statistical model that fits its
+training data better than new data.</p>
+<p><code><a href="../reference/resample.html">resample()</a></code> runs this check for every constraint at once.
+It keeps the solution fixed, draws new scenarios, and reports whether
+the model’s constraints still hold:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="va">chk</span><span class="op">$</span><span class="va">feasible</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="va">chk</span><span class="op">$</span><span class="va">solver_data</span><span class="op">$</span><span class="va">max_violation</span></span>
+<span><span class="co">#&gt; [1] 0.004</span></span></code></pre></div>
+<p>The constraint fails, and <code>max_violation</code> says by how
+much: the share of days on which demand is met falls short of 0.9 by
+0.004.</p>
 </div>
 <div class="section level2">
 <h2 id="a-safety-margin">A safety margin<a class="anchor" aria-label="anchor" href="#a-safety-margin"></a>
 </h2>
-<p>The probability in <code>prob(demand - x &lt;= 0) &gt;= 0.9</code> is
-an estimate from 512 scenarios, and an estimate has a standard error:
-<code>sqrt(0.9 * 0.1 / 512)</code>, about 0.013. The search stops as
-soon as the estimate reaches 0.9, so the true probability is as likely
-to lie below 0.9 as above it. A check on fresh scenarios says which. The
-check is an estimate too, so it gets a larger sample than the search
-had:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">p_met</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">demand</span> <span class="op">-</span> <span class="va">m</span><span class="op">$</span><span class="va">x</span> <span class="op">&lt;=</span> <span class="fl">0</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">p_met</span><span class="op">)</span>                                <span class="co"># in sample: on the level</span></span>
-<span><span class="co">#&gt; [1] 0.9003906</span></span>
-<span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">p_met</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>    <span class="co"># out of sample</span></span>
-<span><span class="co">#&gt; [1] 0.896</span></span></code></pre></div>
-<p>This model is simple enough that the truth is known as well. Demand
-is normal, so the probability of meeting it with an order of
-<code>x</code> is <code>pnorm(x, 100, 15)</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.8940854</span></span></code></pre></div>
-<p>The order quantity falls short of the level it was optimized to meet.
-Nothing went wrong in the search: it met the constraint it was given, on
-the sample it was given.</p>
-<p><code>margin = k</code> asks for the level tightened by
-<code>k</code> standard errors, here <code>0.9 + 2 * 0.013</code>, so
-that the true probability clears 0.9 with about 98% confidence. The
-price is a larger order:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu">newsvendor</span><span class="op">(</span>margin <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">res2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m2</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>as_stated <span class="op">=</span> <span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span>, with_margin <span class="op">=</span> <span class="va">res2</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   as_stated with_margin </span></span>
-<span><span class="co">#&gt;    118.7283    121.0360</span></span></code></pre></div>
-<p>The check is the same as before, against the level as originally
-stated. The margin solution is evaluated on the plain model, since the
-question is whether it meets 0.9, not 0.927:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res2</span>, <span class="va">p_met</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.924</span></span>
-<span><span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res2</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">$</span><span class="va">feasible</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="va">res2</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.9196016</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="optimizing-the-tail-instead-of-the-average">Optimizing the tail instead of the average<a class="anchor" aria-label="anchor" href="#optimizing-the-tail-instead-of-the-average"></a>
-</h2>
-<p>An expectation optimizes the average case and says nothing about the
-bad ones. <code>cvar(cost, 0.95)</code> is the mean of the worst 5% of
-scenarios, and minimizing it asks for a decision that holds up when
-things go badly:</p>
+<p>The share computed from 512 scenarios is an estimate, and its
+uncertainty can be quantified. Its standard error is
+<code>sqrt(0.9 * 0.1 / 512)</code>, about 0.013. <code><a href="../reference/add.html">add()</a></code>
+takes a <code>margin</code> argument for this: with
+<code>margin = 2</code>, the service must meet the target plus two
+standard errors, about 0.927, on its sample. Then the true probability
+is at least 0.9 with a confidence of about 98%.</p>
+<p>To compare the two versions, here is the model as a function with the
+margin as its argument:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">x3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m3</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span></span>
-<span><span class="va">d3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m3</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m3</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m3</span>, <span class="fu"><a href="../reference/cvar.html">cvar</a></span><span class="op">(</span><span class="fl">3</span> <span class="op">*</span> <span class="va">x3</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">d3</span> <span class="op">-</span> <span class="va">x3</span>, <span class="fl">0</span><span class="op">)</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m3</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] 132.5795</span></span></code></pre></div>
-<p>The tail-averse order is larger than the expectation-optimal one, as
-it should be: the worst scenarios are the high-demand ones, and stocking
-more is what protects against them.</p>
-<p>The limit of that idea is the single worst scenario.
-<code>scenario_max(cost)</code> is the largest cost over the scenarios,
-and minimizing it orders up to the largest demand the sample holds:</p>
+<code class="sourceCode R"><span><span class="va">newsvendor</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">margin</span> <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span>
+<span>  <span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">&lt;=</span> <span class="va">stock</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">0.9</span>, margin <span class="op">=</span> <span class="va">margin</span><span class="op">)</span></span>
+<span>  <span class="va">m</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">res_safe</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="fu">newsvendor</span><span class="op">(</span>margin <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">res_safe</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 121.036</span></span></code></pre></div>
+<p>The safer stock is 121.0, about 2.3 units more. To check it, evaluate
+it in the original model <code>m</code>, since the question is whether
+it meets the original target of 90%, on the same 1000 new days as
+before:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m3w</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">x3w</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m3w</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span></span>
-<span><span class="va">d3w</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m3w</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m3w</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m3w</span>, <span class="fu"><a href="../reference/scenario_max.html">scenario_max</a></span><span class="op">(</span><span class="fl">3</span> <span class="op">*</span> <span class="va">x3w</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">d3w</span> <span class="op">-</span> <span class="va">x3w</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m3w</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] 143.4227</span></span></code></pre></div>
-<p>An extreme is set by one scenario, so it depends on the sample far
-more than a tail mean does: a larger sample will hold a larger demand,
-and the order grows with it. The other statistics over the scenarios sit
-between the two. <code>scenario_quantile(cost, 0.95)</code> is the cost
-that 95% of scenarios stay at or below, <code><a href="../reference/variance.html">variance()</a></code> and
-<code><a href="../reference/variance.html">std_dev()</a></code> measure the spread in both directions, and each
-can be an objective term or the left side of a constraint.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res_safe</span>, <span class="va">met</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.924</span></span>
+<span><span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res_safe</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">$</span><span class="va">feasible</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="va">res_safe</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.9196016</span></span></code></pre></div>
+<p>This time the target holds on new days, and the exact probability is
+0.920.</p>
 </div>
 <div class="section level2">
-<h2 id="events-as-numbers">Events as numbers<a class="anchor" aria-label="anchor" href="#events-as-numbers"></a>
+<h2 id="several-uncertain-quantities">Several uncertain quantities<a class="anchor" aria-label="anchor" href="#several-uncertain-quantities"></a>
 </h2>
-<p><code><a href="../reference/prob.html">prob()</a></code> measures an event. <code><a href="../reference/holds.html">holds()</a></code> is the
-event itself, as a 0/1 value in each scenario, for arithmetic
-<em>before</em> the aggregation. Suppose a stockout costs 200 whenever
-it happens, on top of the 10 per unit short: a lost customer, an
-emergency order. That is <code>200 * holds(demand &gt; x)</code> in each
-scenario, and its expected value joins the objective:</p>
+<p>In <code><a href="../articles/quicopt.html">vignette("quicopt")</a></code>, a contractor chose which of six
+jobs to accept for a 12-hour day, knowing how long each job takes. In
+practice the lengths are estimates. Suppose each job takes its estimated
+time give or take an hour, normally distributed with a standard
+deviation of 1, and the contractor wants the day to end on time in at
+least 90% of scenarios:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">x4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m4</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span></span>
-<span><span class="va">d4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m4</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m4</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m4</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">x4</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">d4</span> <span class="op">-</span> <span class="va">x4</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fl">200</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="../reference/holds.html">holds</a></span><span class="op">(</span><span class="va">d4</span> <span class="op">&gt;</span> <span class="va">x4</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m4</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] 121.0856</span></span></code></pre></div>
-<p>The fixed cost does what the chance constraint did, but by price
-rather than by decree: the order rises until a stockout is rare enough
-to be worth its cost. <code>expectation(holds(rel))</code> and
-<code>prob(rel)</code> are the same number; the difference is what
-<code><a href="../reference/holds.html">holds()</a></code> lets you multiply it by first.</p>
+<code class="sourceCode R"><span><span class="va">pay</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9</span>, <span class="fl">6</span>, <span class="fl">7</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>     <span class="co"># what each job pays</span></span>
+<span><span class="va">estimate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">5</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>     <span class="co"># how long each job is expected to take</span></span>
+<span></span>
+<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">take</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"take"</span>, n <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="va">hours</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"hours"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="va">estimate</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">on_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prob.html">prob</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">hours</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">12</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">pay</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">on_time</span> <span class="op">&gt;=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">solution</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; take[1] take[3] </span></span>
+<span><span class="co">#&gt;       1       3</span></span>
+<span><span class="va">res</span><span class="op">$</span><span class="va">objective</span></span>
+<span><span class="co">#&gt; [1] 16</span></span></code></pre></div>
+<p>Because <code>estimate</code> is a vector of six means,
+<code>normal(estimate, 1)</code> declares six random variables at once,
+one per job, each drawn independently. <code>sum(hours * take)</code> is
+the length of the day, which differs from scenario to scenario, and
+<code>on_time</code> is the share of scenarios in which it fits into 12
+hours.</p>
+<p>The answer is not the plan from <code><a href="../articles/quicopt.html">vignette("quicopt")</a></code>,
+jobs 1, 3 and 6. That plan was expected to take exactly 12 hours, so it
+runs late whenever the jobs together take longer than estimated, which
+happens on about half the days. <code><a href="../reference/evaluate.html">evaluate()</a></code> accepts a
+solution written out by hand too, as a named vector:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">old_plan</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"take[1]"</span> <span class="op">=</span> <span class="fl">1</span>, <span class="st">"take[2]"</span> <span class="op">=</span> <span class="fl">0</span>, <span class="st">"take[3]"</span> <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>              <span class="st">"take[4]"</span> <span class="op">=</span> <span class="fl">0</span>, <span class="st">"take[5]"</span> <span class="op">=</span> <span class="fl">0</span>, <span class="st">"take[6]"</span> <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">old_plan</span>, <span class="va">on_time</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.522</span></span></code></pre></div>
+<p>Dropping job 6 gives up a pay of 2, and the day then ends on time in
+more than 90% of the scenarios, both those of the model and new
+ones:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">on_time</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.922</span></span>
+<span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">on_time</span>, seed <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.92</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="fl">12</span>, mean <span class="op">=</span> <span class="fl">6</span> <span class="op">+</span> <span class="fl">4</span>, sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>     <span class="co"># the exact probability</span></span>
+<span><span class="co">#&gt; [1] 0.9213504</span></span></code></pre></div>
+<p>Unlike the stock, which could be set to any number, a set of jobs
+either fits or does not. There is usually no plan that meets 90%
+exactly, and the best one keeps some room to spare: here its true
+probability is 0.921.</p>
 </div>
 <div class="section level2">
-<h2 id="from-observed-history">From observed history<a class="anchor" aria-label="anchor" href="#from-observed-history"></a>
+<h2 id="planning-for-bad-days">Planning for bad days<a class="anchor" aria-label="anchor" href="#planning-for-bad-days"></a>
 </h2>
-<p>Usually the uncertainty is not an assumed distribution but rows you
-have already observed. <code><a href="../reference/set_empirical.html">set_empirical()</a></code> turns a data frame
-into the model’s uncertainty in one call: every column becomes a random
-variable named after it, the number of rows becomes the scenario count,
-and because all columns are read at the same scenario index, the
-correlation in your data survives into the model.</p>
-<p>Here, 200 jointly observed days of demand and price (built with
-<code>set.seed</code>, which governs this <em>data</em>, not the
-solve):</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>An average says little about the bad days. A shop that can absorb an
+ordinary day but not a disastrous one may care more about its worst
+scenarios. <code>cvar(cost, 0.95)</code> is the average cost over the
+worst 5% of scenarios, a summary known in finance as the <em>conditional
+value at risk</em>. Minimizing it asks for the stock that keeps those
+bad days as cheap as possible:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span>
+<span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">cost</span> <span class="op">&lt;-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span>     <span class="co"># the day's cost, in each scenario</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/cvar.html">cvar</a></span><span class="op">(</span><span class="va">cost</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 132.5795</span></span></code></pre></div>
+<p>The stock is higher than the 107.6 that minimizes the average cost,
+because the worst days are the days of high demand, and more stock is
+what makes them cheaper.</p>
+<p>The most cautious summary is the single worst scenario.
+<code>scenario_max(cost)</code> is the highest cost among the 512
+scenarios. Calling <code><a href="../reference/minimize.html">minimize()</a></code> again replaces the
+objective:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/scenario_max.html">scenario_max</a></span><span class="op">(</span><span class="va">cost</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 143.4227</span></span></code></pre></div>
+<p>This stocks for the highest demand among the 512 sampled days. Be
+careful with it: a single scenario decides the answer, so it depends on
+the sample much more than an average does. A larger sample will usually
+contain a higher demand, and the stock will grow with it.</p>
+<p>Between these two extremes are
+<code>scenario_quantile(cost, 0.95)</code>, the cost that 95% of
+scenarios stay at or below, and <code><a href="../reference/variance.html">variance()</a></code> and
+<code><a href="../reference/variance.html">std_dev()</a></code>, which measure how much the cost varies from
+scenario to scenario. Each of them can be used in the objective or in a
+constraint. The table at the end of this article lists all the
+summaries.</p>
+</div>
+<div class="section level2">
+<h2 id="putting-a-price-on-an-event">Putting a price on an event<a class="anchor" aria-label="anchor" href="#putting-a-price-on-an-event"></a>
+</h2>
+<p><code><a href="../reference/prob.html">prob()</a></code> counts how often something happens. Sometimes you
+want to use the event inside the cost instead.
+<code>holds(demand &gt; stock)</code> is 1 in the scenarios in which the
+shop runs out and 0 in the others. Suppose that running out costs an
+extra 200 each time it happens, for an emergency delivery, on top of the
+10 per missing unit:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span>
+<span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">shortfall</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="va">stockout</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/holds.html">holds</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">&gt;</span> <span class="va">stock</span><span class="op">)</span>          <span class="co"># 1 when the shop runs out, else 0</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="va">shortfall</span><span class="op">)</span> <span class="op">+</span> <span class="fl">200</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="va">stockout</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 121.0856</span></span></code></pre></div>
+<p>The fixed cost of running out does what the 90% requirement did, but
+through the price instead of a rule: the stock rises until running out
+is rare enough not to be worth avoiding further.
+<code>expectation(holds(x))</code> is the same number as
+<code>prob(x)</code>; <code><a href="../reference/holds.html">holds()</a></code> is useful because you can
+multiply the event by a cost first.</p>
+</div>
+<div class="section level2">
+<h2 id="uncertainty-from-data">Uncertainty from data<a class="anchor" aria-label="anchor" href="#uncertainty-from-data"></a>
+</h2>
+<p>Often the uncertainty is not a distribution you assume but data you
+have observed. <code><a href="../reference/set_empirical.html">set_empirical()</a></code> turns the columns of a data
+frame into random variables: each column becomes one, named after the
+column, and each row becomes one scenario. Because all the columns are
+read row by row, values observed on the same day stay together, and any
+correlation between the columns carries over into the model.</p>
+<p>Here are 200 days of demand and price, simulated in R so that the
+example is self-contained (so <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> matters here: it
+fixes this data, not the service’s draws):</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">z</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span></span>
 <span><span class="va">history</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>demand <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">+</span> <span class="fl">15</span> <span class="op">*</span> <span class="va">z</span> <span class="op">+</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                      price  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">12</span> <span class="op">-</span> <span class="fl">0.03</span> <span class="op">*</span> <span class="op">(</span><span class="fl">15</span> <span class="op">*</span> <span class="va">z</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">200</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">history</span><span class="op">$</span><span class="va">demand</span>, <span class="va">history</span><span class="op">$</span><span class="va">price</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] -0.2968849</span></span></code></pre></div>
-<p>Demand and price move against each other, and that relationship is
-exactly what a stochastic program should see. Sell
-<code>min(demand, stock)</code> at the scenario’s price, pay 3 per unit
-stocked:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">stock</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m5</span>, <span class="st">"stock"</span>, <span class="fl">0</span>, <span class="fl">200</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/set_empirical.html">set_empirical</a></span><span class="op">(</span><span class="va">m5</span>, <span class="va">history</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m5</span>, <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="va">m5</span><span class="op">$</span><span class="va">price</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">m5</span><span class="op">$</span><span class="va">demand</span>, <span class="va">stock</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span><span class="op">)</span></span>
+<p>On days of high demand the price tends to be lower. The shop sells
+<code>min(demand, stock)</code> units at the day’s price and pays 3 per
+unit stocked:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">stock</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_empirical.html">set_empirical</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">history</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">price</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">demand</span>, <span class="va">stock</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">res5</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m5</span><span class="op">)</span></span>
-<span><span class="va">res5</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="va">res</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 109</span></span></code></pre></div>
-<p>No distribution was fitted and none had to be: the 200 rows
-<em>are</em> the scenarios. That is the shortest path from data to
-decision this package has.</p>
+<p><code><a href="../reference/set_empirical.html">set_empirical()</a></code> declares the random variables without
+returning them, so they are retrieved from the model by name, as
+<code>m$price</code> and <code>m$demand</code>.</p>
+<p>No distribution had to be chosen or fitted: the 200 observed days are
+the scenarios.</p>
 </div>
 <div class="section level2">
 <h2 id="other-distributions">Other distributions<a class="anchor" aria-label="anchor" href="#other-distributions"></a>
 </h2>
-<p>The service draws from four distributions, each parameterized like
-R’s own sampler: <code>normal(mean, sd)</code>,
-<code>uniform(min, max)</code>, <code>exponential(rate)</code> and
-<code>bernoulli(prob)</code>. The newsvendor against a demand that is
-exponential with mean 100 rather than normal:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">x6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m6</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">600</span><span class="op">)</span></span>
-<span><span class="va">d6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m6</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">exponential</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m6</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m6</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">x6</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">d6</span> <span class="op">-</span> <span class="va">x6</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m6</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
+<p>Besides <code><a href="../reference/distribution.html">normal()</a></code>, the service draws from three
+distributions, each with the same parameters as R’s corresponding random
+number function: <code>uniform(min, max)</code> as <code><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif()</a></code>,
+<code>exponential(rate)</code> as <code><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">rexp()</a></code>, and
+<code>bernoulli(prob)</code>, which is 1 with probability
+<code>prob</code> and 0 otherwise. Here is the shop again, with a demand
+that is exponential with mean 100:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">600</span><span class="op">)</span></span>
+<span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/distribution.html">exponential</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 120.7402</span></span></code></pre></div>
-<p>With no chance constraint the best order for the true distribution is
-its 70% quantile (ordering one unit more costs 3 and saves 10 whenever
-demand exceeds the order), which is <code>qexp(0.7, 1 / 100)</code>,
-about 120.4. The answer on 512 scenarios lands near it.</p>
-<p>As with <code><a href="../reference/distribution.html">normal()</a></code>, a parameter may be an expression,
-which is how a decision changes the odds it is judged by:
-<code>bernoulli(0.2 - 0.015 * spend)</code> is a breakdown that money
-spent on maintenance makes less likely.</p>
-<p>Every other distribution is one line away, because a column you draw
-in R is a random variable too. A demand that is lognormal:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<p>The reasoning from “Planning for the average day” applies to any
+distribution: the best stock is the 70th percentile of demand, which
+here is <code>qexp(0.7, 1 / 100)</code>, about 120.4.</p>
+<p>A parameter can also depend on a decision.
+<code>bernoulli(0.2 - 0.015 * spend)</code> is a machine breakdown that
+becomes less likely the more is spent on maintenance, so the model can
+weigh the cost of maintenance against the cost of breakdowns.</p>
+<p>Any other distribution can be used by drawing a sample in R and
+passing it to <code><a href="../reference/empirical.html">empirical()</a></code>. Here, a demand with a lognormal
+distribution:</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">m7</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">x7</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m7</span>, <span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">400</span><span class="op">)</span></span>
-<span><span class="va">d7</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m7</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/empirical.html">empirical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">512</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, <span class="fl">0.3</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m7</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">x7</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">d7</span> <span class="op">-</span> <span class="va">x7</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m7</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">400</span><span class="op">)</span></span>
+<span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="../reference/empirical.html">empirical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">512</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">100</span><span class="op">)</span>, <span class="fl">0.3</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 121.5136</span></span></code></pre></div>
-<p>Three things change with a sampled column. R’s seed governs it, not
-the model’s. It is data, so <code><a href="../reference/resample.html">resample()</a></code> has nothing to
-redraw for it: an out-of-sample check of such a model is a second
-column, drawn with another seed. And its parameters are fixed when it is
-drawn, so a distribution whose parameters depend on a decision needs one
-of the four named ones.</p>
+<p>The sample’s length sets the number of scenarios, so
+<code><a href="../reference/set_scenarios.html">set_scenarios()</a></code> is not needed. Such a sample is fixed data,
+which has three consequences. <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> determines it, not
+the model’s seed. <code><a href="../reference/resample.html">resample()</a></code> cannot draw new values for it,
+so to check a solution on new data, draw a second sample in R. And its
+parameters cannot depend on a decision, so a distribution like the
+maintenance example above needs one of the four built-in
+distributions.</p>
 </div>
 <div class="section level2">
-<h2 id="starting-from-a-previous-solution">Starting from a previous solution<a class="anchor" aria-label="anchor" href="#starting-from-a-previous-solution"></a>
+<h2 id="solving-again-from-an-earlier-answer">Solving again from an earlier answer<a class="anchor" aria-label="anchor" href="#solving-again-from-an-earlier-answer"></a>
 </h2>
-<p>A model is often solved more than once: a constraint tightened, a
-cost updated, a scenario count raised. <code><a href="../reference/set_start.html">set_start()</a></code> hands
-the previous solution to the next search as its starting point, so it
-begins where the last one ended rather than from scratch:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m8</span> <span class="op">&lt;-</span> <span class="fu">newsvendor</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">res8</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m8</span><span class="op">)</span>                       <span class="co"># 512 scenarios</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m8</span>, <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span>      <span class="co"># the same model on a larger sample</span></span>
-<span><span class="fu"><a href="../reference/set_start.html">set_start</a></span><span class="op">(</span><span class="va">m8</span>, <span class="va">res8</span><span class="op">)</span>                     <span class="co"># start from where the first solve ended</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m8</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"x"</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] 117.6807</span></span></code></pre></div>
+<p>A model is often solved several times, with a constraint tightened, a
+cost updated, or more scenarios. <code><a href="../reference/set_start.html">set_start()</a></code> gives the
+previous answer to the next solve as its starting point, so the search
+does not start from scratch:</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu">newsvendor</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span>                          <span class="co"># 512 scenarios</span></span>
+<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span>        <span class="co"># the same model, more scenarios</span></span>
+<span><span class="fu"><a href="../reference/set_start.html">set_start</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span><span class="op">)</span>                        <span class="co"># start where the last solve ended</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 117.6806</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="an-order-to-decide-a-delivery-round">An order to decide: a delivery round<a class="anchor" aria-label="anchor" href="#an-order-to-decide-a-delivery-round"></a>
+<h2 id="summaries-at-a-glance">Summaries at a glance<a class="anchor" aria-label="anchor" href="#summaries-at-a-glance"></a>
 </h2>
-<p>Some decisions are not amounts but orders: the sequence of stops on a
-round, of jobs on a machine. <code><a href="../reference/perm_var.html">perm_var()</a></code> declares such a
-decision as a permutation, <code>n</code> items in <code>n</code> slots,
-one each, and the search keeps it that way. The items here are five
-stops on a line and the slots are the steps of the round; the distance
-between two stops is read from a <code><a href="../reference/lookup_table.html">lookup_table()</a></code> at the
-stops the round visits, which only the solver knows. The travel time of
-each step is uncertain, so the objective is the expected length of the
-round, and stop 4 must come before stop 1:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m9</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">stop_x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">3</span>, <span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">2</span><span class="op">)</span>                                    <span class="co"># where each stop lies</span></span>
-<span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lookup_table.html">lookup_table</a></span><span class="op">(</span><span class="va">m9</span>, <span class="st">"dist"</span>, <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/outer.html" class="external-link">outer</a></span><span class="op">(</span><span class="va">stop_x</span>, <span class="va">stop_x</span>, <span class="st">"-"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">tour</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/perm_var.html">perm_var</a></span><span class="op">(</span><span class="va">m9</span>, <span class="st">"tour"</span>, <span class="fl">5</span><span class="op">)</span>                               <span class="co"># item: a stop; slot: a step</span></span>
-<span><span class="fu"><a href="../reference/precede.html">precede</a></span><span class="op">(</span><span class="va">tour</span>, <span class="fl">4</span>, <span class="fl">1</span><span class="op">)</span>                                           <span class="co"># stop 4 before stop 1</span></span>
-<span><span class="va">delay</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m9</span>, <span class="st">"delay"</span>, <span class="fu"><a href="../reference/distribution.html">uniform</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span><span class="op">)</span>, n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>        <span class="co"># one factor per step</span></span>
-<span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m9</span>, <span class="fl">256</span>, seed <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m9</span>, <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">dist</span><span class="op">[</span><span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">tour</span><span class="op">)</span>, <span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">2</span><span class="op">:</span><span class="fl">5</span>, <span class="va">tour</span><span class="op">)</span><span class="op">]</span> <span class="op">*</span> <span class="va">delay</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">res9</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m9</span><span class="op">)</span></span>
-<span><span class="va">res9</span><span class="op">$</span><span class="va">structures</span><span class="op">$</span><span class="va">tour</span><span class="op">$</span><span class="va">item_at</span>                                  <span class="co"># the stops, in visiting order</span></span>
-<span><span class="co">#&gt; [1] 4 2 5 3 1</span></span>
-<span><span class="va">res9</span><span class="op">$</span><span class="va">objective</span></span>
-<span><span class="co">#&gt; [1] 5.000605</span></span></code></pre></div>
-<p><code>item_at(k, tour)</code> is the stop visited at step
-<code>k</code> and <code>slot_of(i, tour)</code> the step at which stop
-<code>i</code> is visited; both come back under
-<code>res9$structures</code>. The shortest round over these stops is 4
-long, so the expected length is 4 times the mean delay.
-<code>resample(m9, res9, seed = 4)</code> checks it on fresh delays,
-with the round held fixed.</p>
-</div>
-<div class="section level2">
-<h2 id="what-comes-back">What comes back<a class="anchor" aria-label="anchor" href="#what-comes-back"></a>
-</h2>
-<p><code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> returns the parsed answer: <code>status</code>,
-<code>objective</code>, a named <code>solution</code> vector, and the
-service’s own ready-to-print summary:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">res5</span><span class="op">$</span><span class="va">status</span></span>
-<span><span class="co">#&gt; [1] "heuristic"</span></span>
-<span><span class="va">res5</span><span class="op">$</span><span class="va">objective</span></span>
-<span><span class="co">#&gt; [1] 840.211</span></span></code></pre></div>
-<p>The objective of a model under uncertainty is an in-sample figure,
-measured on the scenarios the solution was found on.
-<code><a href="../reference/resample.html">resample()</a></code> is how to read it on others. For a long-running
-model, <code><a href="../reference/submit.html">submit()</a></code> queues the same request and returns a
-handle immediately; <code><a href="../reference/job_status.html">job_result()</a></code> collects the answer when
-it is ready.</p>
+<p>Each of these turns a random expression <code>x</code> into a single
+number that can be used in an objective or a constraint.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="66%">
+</colgroup>
+<thead><tr class="header">
+<th>Summary</th>
+<th>What it measures</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>expectation(x)</code></td>
+<td>the average over the scenarios</td>
+</tr>
+<tr class="even">
+<td><code>prob(a &lt;= b)</code></td>
+<td>the share of scenarios in which the comparison holds</td>
+</tr>
+<tr class="odd">
+<td><code>cvar(x, 0.95)</code></td>
+<td>the average over the worst 5% of scenarios</td>
+</tr>
+<tr class="even">
+<td><code>scenario_quantile(x, 0.95)</code></td>
+<td>the value that 95% of scenarios stay at or below</td>
+</tr>
+<tr class="odd">
+<td>
+<code>scenario_max(x)</code>, <code>scenario_min(x)</code>
+</td>
+<td>the largest and the smallest value</td>
+</tr>
+<tr class="even">
+<td>
+<code>variance(x)</code>, <code>std_dev(x)</code>
+</td>
+<td>how much <code>x</code> varies from scenario to scenario</td>
+</tr>
+</tbody>
+</table>
+<p>The reported objective of a model with random variables is computed
+on the scenarios the solution was found on, and so tends to look better
+than the solution will do on new data. <code><a href="../reference/evaluate.html">evaluate()</a></code> and
+<code><a href="../reference/resample.html">resample()</a></code> give the figures on new scenarios.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

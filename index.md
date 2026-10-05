@@ -10,21 +10,18 @@ checks](https://quicopt.r-universe.dev/quicopt/badges/checks)](https://quicopt.r
 [![License: Apache
 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/Quicopt/quicopt-r/blob/main/LICENSE)
 
-The R client for the [Quicopt](https://quicopt.com) optimization
-service.
+quicopt lets you write an optimization model in R and solve it with the
+[Quicopt](https://quicopt.com) service. You state what you can decide,
+what you want to achieve, and which conditions have to hold, and the
+service finds the best decision. Nothing needs to be installed besides
+the package: the model is sent to the service, and the answer comes back
+as an R list.
 
-You describe a decision: what you get to choose, what has to hold, and
-what you want as much (or as little) of as possible. Quicopt finds the
-best choice there is.
-
-Part of that decision is often taken before the data is known — demand,
-prices, yields. Declare that data as random variables, and the model is
-solved over scenarios drawn from their distributions: minimize an
-expectation or a conditional value at risk, and require constraints to
-hold with a given probability. Observed history in a `data.frame`
-becomes a stochastic program in one call.
-
-There is no solver on your machine; the service does the solving.
+quicopt is built in particular for decisions under uncertainty. When
+part of the data, such as demand, prices or travel times, is not known
+in advance, you describe it by a probability distribution or by
+observations in a data frame, and the service finds the decision that
+does best across many possible outcomes.
 
 ## Install
 
@@ -34,76 +31,79 @@ install.packages("quicopt", repos = c("https://quicopt.r-universe.dev",
                                       "https://cloud.r-project.org"))
 ```
 
-Or straight from the source repository — the package is pure R, so this
-needs no compiler either:
+or from the source repository, which needs no compiler either, since the
+package is written in plain R:
 
 ``` r
 
 pak::pak("Quicopt/quicopt-r")
 ```
 
-## Toy Model
+## A first model
+
+A workshop makes tables and chairs. A table earns 50 and takes 3 hours
+of carpentry, a chair earns 20 and takes 1 hour. There are 41 hours
+available and wood for 18 pieces. How many of each should it make?
 
 ``` r
 
 library(quicopt)
 
 m <- model()
-x <- num_var(m, "x", 0, 4)
-y <- bin_var(m, "y")
-maximize(m, 3 * x + 5 * y)
-add(m, x + 2 * y <= 5)
+tables <- int_var(m, "tables", lower = 0)
+chairs <- int_var(m, "chairs", lower = 0)
+
+maximize(m, 50 * tables + 20 * chairs)    # profit
+add(m, 3 * tables + chairs <= 41)         # hours of carpentry
+add(m, tables + chairs <= 18)             # wood
 
 res <- solve(m)
-res$status; res$objective   # "optimal" 14
-res$solution
+res$solution                              # 12 tables, 5 chairs
+res$objective                             # a profit of 700
 ```
 
-## Optimization under Uncertainty
+## A decision under uncertainty
 
-Order `x` units at 3 apiece against a demand you will only learn later,
-pay for the mismatch, and meet demand in at least 90% of scenarios:
+A shop orders stock at 3 per unit before it knows the day’s demand,
+which is roughly normal with mean 100 and standard deviation 15. Each
+unit of demand it cannot meet costs 10. The shop wants the lowest
+expected cost, and enough stock to meet demand on at least 90% of days:
 
 ``` r
 
 m <- model()
-x <- num_var(m, "x", 0, 200)                     # decide now
-demand <- rand_var(m, "demand", normal(100, 15)) # learn later
-set_scenarios(m, 512, seed = 42)
+stock  <- num_var(m, "stock", lower = 0, upper = 200)   # decided now
+demand <- rand_var(m, "demand", normal(100, 15))       # learned later
+set_scenarios(m, 512, seed = 42)                       # 512 simulated days
 
-minimize(m, 3 * x + 10 * expectation(max(demand - x, 0)))
-add(m, prob(demand - x <= 0) >= 0.9)
+minimize(m, 3 * stock + 10 * expectation(max(demand - stock, 0)))
+add(m, prob(demand <= stock) >= 0.9)
 
 res <- solve(m)
-res$solution[["x"]]                              # 118.7: the 90% service
-                                                 # level binds at the sample q90
+res$solution[["stock"]]                                # 118.7
 ```
 
-`max(demand - x, 0)` is the shortfall — and it is plain R: arithmetic,
-`max`, `sum` and friends build the model’s expressions directly. Note
-that scenarios are drawn by the service from the model’s own seed
-(`set_scenarios`), so [`set.seed()`](https://rdrr.io/r/base/Random.html)
-plays no role here.
+The stock was chosen to work on those 512 simulated days.
+[`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+checks it on new ones, and `add(..., margin = 2)` builds in a safety
+margin for what it finds. With observed history in a data frame instead
+of a distribution, `set_empirical(m, history)` makes each column a
+random variable and each row a scenario.
 
-The solution was found on those scenarios, so check it on others before
-trusting it:
+## Learn more
 
-``` r
-
-resample(m, res, seed = 7)$feasible      # does the 90% level still hold on fresh draws?
-add(m, prob(demand - x <= 0) >= 0.9, margin = 2)   # if not: the level plus 2 standard errors
-```
-
-Have the uncertainty as data instead of a distribution? Every column of
-a data frame becomes a random variable, jointly, with correlation
-preserved:
-
-``` r
-
-history <- read.csv("demand_price.csv")   # observed rows
-m <- model()
-set_empirical(m, history)                 # columns -> sources, nrow -> scenarios
-```
+- [Get
+  started](https://quicopt.github.io/quicopt-r/articles/quicopt.html):
+  variables, objectives, constraints and the answer, step by step.
+- [Deciding before the data
+  arrives](https://quicopt.github.io/quicopt-r/articles/stochastic.html):
+  random variables, expected costs, chance constraints, and checking a
+  solution on new scenarios.
+- [Choosing an
+  order](https://quicopt.github.io/quicopt-r/articles/permutations.html):
+  routes, schedules and assignments.
+- [Reference](https://quicopt.github.io/quicopt-r/reference/): every
+  function.
 
 ## License
 

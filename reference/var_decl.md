@@ -1,6 +1,12 @@
-# A variable declaration
+# A decision variable, for building a program by hand
 
-A variable declaration
+Declares one decision variable of a
+[`program()`](https://quicopt.github.io/quicopt-r/reference/program.md).
+[`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
+[`int_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+and
+[`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+build these for you.
 
 ## Usage
 
@@ -25,35 +31,59 @@ var_decl(
 
 - name:
 
-  The variable's name; solutions come back keyed by it.
+  The variable's name, used for it in the answer.
 
 - axes:
 
-  Index-set names the variable ranges over
-  ([`character()`](https://rdrr.io/r/base/character.html) for a scalar).
+  The names of the index sets the variable is indexed over;
+  [`character()`](https://rdrr.io/r/base/character.html) for a single
+  variable.
 
 - domain:
 
-  CONTINUOUS, INTEGER or BINARY.
+  `CONTINUOUS`, `INTEGER` or `BINARY`.
 
 - lower, upper:
 
-  A number (`-Inf`/`Inf` for an open direction), or the name of a
-  parameter table when the bound varies by index.
+  A number (`-Inf` or `Inf` for no bound), or the name of a parameter
+  table, for a bound that differs from index to index.
 
 - start:
 
-  The initial point handed to the solver.
+  The value the search starts from.
 
 ## Value
 
-`var_decl()` returns a plain list, with no class attribute, with the
-fields `name`, `axes`, `domain` (the integer domain code), `lower`,
-`upper` and `start` (numeric). It declares one variable of the model,
-and is an entry of the list a
+`var_decl()` returns a plain list without a class, with the fields
+`name`, `axes`, `domain`, `lower`, `upper` and `start`. It is an element
+of the list a
 [`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
 takes as `vars`.
 
-`CONTINUOUS`, `INTEGER` and `BINARY` are not functions but integer
-constants (`1L`, `2L` and `3L`): the codes the service uses for a
-variable's domain, to be passed as `domain`.
+`CONTINUOUS`, `INTEGER` and `BINARY` are not functions but constants:
+the whole numbers 1, 2 and 3, which stand for the three kinds of
+variable in `domain`.
+
+## Examples
+
+``` r
+var_decl("tables", domain = INTEGER, lower = 0)
+#> $name
+#> [1] "tables"
+#> 
+#> $axes
+#> character(0)
+#> 
+#> $domain
+#> [1] 2
+#> 
+#> $lower
+#> [1] 0
+#> 
+#> $upper
+#> [1] Inf
+#> 
+#> $start
+#> [1] 0
+#> 
+```
