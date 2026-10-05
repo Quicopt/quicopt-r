@@ -7,7 +7,7 @@ navbar:
     right: [github]
 articles:
 - title: Articles
-  contents: [stochastic]
+  contents: [stochastic, permutations]
 reference:
 - title: Authoring a model
   contents: [model, num_var, set_start, minimize, add, expressions, holds]
