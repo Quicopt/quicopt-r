@@ -1,3 +1,7 @@
+# quicopt 0.5.0
+
+* `solve()` and `submit()` take `time_limit`, the number of seconds the solve may run, in place of the time the service would choose. A solver that proves its answer sooner still stops sooner; a search runs for all of it. The service grants at most its maximum, and a warning says so when it granted less; `res$solver_data$time_budget_s` is the time it granted. `solve()` waits for the answer at least `time_limit` plus a minute, and `job_result()` polls that long by default. The service must be recent enough to know the setting; an older one refuses the request.
+
 # quicopt 0.4.0
 
 * `perm_var(m, "tour", n)` declares a permutation: `n` items in `n` slots, one each, as a decision the service keeps consistent while it searches. `item_at(slot, P)` is the item in a slot and `slot_of(item, P)` the slot of an item, integer expressions vectorized over their first argument; `precede(P, a, b)` requires item `a` in an earlier slot than item `b`. A solution reports both views under `res$structures$<name>`, and `set_start()`, `evaluate()` and `resample()` carry the order along with the plain variables.
