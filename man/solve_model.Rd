@@ -13,6 +13,7 @@ solve_model(
   config = NULL,
   gzip = FALSE,
   timeout = 60,
+  time_limit = NULL,
   transport = NULL
 )
 
@@ -36,6 +37,9 @@ query parameters.}
 a large model.}
 
 \item{timeout}{How many seconds to wait for the answer.}
+
+\item{time_limit}{How many seconds the solve may run, or \code{NULL} to leave
+that to the service (see the Time limit section).}
 
 \item{transport}{For tests: a function that is called instead of sending
 the request. It takes a list with the elements \code{method}, \code{url},
@@ -78,6 +82,20 @@ which can read better in a pipe.
 \code{solve()} waits for up to \code{timeout} seconds. For a model that takes
 longer, \code{\link[=submit]{submit()}} sends it without waiting.
 }
+\section{Time limit}{
+
+The service decides how long a solve may run. \code{time_limit} sets that time
+instead, in seconds. A solver that proves its answer sooner still stops
+sooner; a search, which cannot prove it is done, runs for all of it. The
+service grants at most its maximum (120 seconds on the free tier). Asked
+for more, it runs for its maximum, and a warning says that the solve got
+less time than requested. \code{res$solver_data$time_budget_s} is the time the
+service granted.
+
+\code{solve()} waits for the answer at least \code{time_limit} plus a minute, even
+when \code{timeout} is shorter.
+}
+
 \section{API keys}{
 
 The service needs an API key. The first time a model is solved in an R
@@ -115,5 +133,8 @@ res <- solve(m)
 res$status
 res$solution
 res
+
+res <- solve(m, time_limit = 30)
+res$solver_data$time_budget_s   # 30: the seconds the service granted
 }
 }

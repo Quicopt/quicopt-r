@@ -9,7 +9,7 @@
 \usage{
 job_status(job)
 
-job_result(job, wait = TRUE, timeout = 120, poll = 0.5)
+job_result(job, wait = TRUE, timeout = NULL, poll = 0.5)
 
 job_log(job)
 
@@ -21,7 +21,8 @@ job_delete(job)
 \item{wait}{\code{TRUE} waits until the job is finished. \code{FALSE} asks once, and
 is an error if the job is not finished yet.}
 
-\item{timeout}{How many seconds to wait at most.}
+\item{timeout}{How many seconds to wait at most: by default 120, or the
+job's \code{time_limit} plus 60 when that is longer.}
 
 \item{poll}{How many seconds to wait between two checks.}
 }
@@ -41,7 +42,8 @@ is an error if the job is not finished yet.}
 \code{"done"} or \code{"failed"}, together with the last lines of its log.
 \item \code{job_result()} returns the answer of the job, in the same form as
 \code{\link[=solve]{solve()}}. By default it waits for the job to finish, checking every
-\code{poll} seconds for up to \code{timeout} seconds.
+\code{poll} seconds for up to \code{timeout} seconds. Like \code{\link[=solve]{solve()}}, it warns
+when the service granted less time than the job's \code{time_limit}.
 \item \code{job_log()} returns the job's log as text.
 \item \code{job_delete()} deletes the job and its stored answer from the service.
 }
