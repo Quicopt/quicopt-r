@@ -15,12 +15,14 @@ reference:
   contents: [stochastic, rand_var, set_distribution, set_scenarios, set_empirical,
              distribution, empirical, expectation, cvar, prob, variance,
              scenario_max, is_random]
-- title: Orders and assignments
-  contents: [perm_var, item_at, precede, lookup_table]
+- title: Orders, groups and lookups
+  contents: [perm_var, item_at, precede, part_var, part_of, lookup_table]
+- title: Minimum loads, fees and blocks
+  contents: [active, block]
 - title: Solving and checking a solution
   contents: [solve_model, submit, job_status, evaluate, resample, DEFAULT_BASE_URL]
 - title: Building a program by hand
   contents: [program, var_decl, index_set, constraint, consets, parametric,
-             permutation_decl, ir, wire, encode, encode_params, as_program]
+             permutation_decl, partition_decl, ir, wire, encode, encode_params, as_program]
 - title: internal
   contents: [quicopt-package]

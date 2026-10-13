@@ -20,10 +20,11 @@
 #'   of an index set, for example the sum of `body` over all `i` in a set
 #'   `S`.
 #' * `ir_set_ref(name, args)`: the index set a reduction runs over.
-#' * `ir_struct_ref(name)`: a permutation declared in the program's
-#'   `structures`. It may appear only as the second argument of the operators
-#'   `"item_at"` and `"slot_of"`, which is what [item_at()] and [slot_of()]
-#'   build.
+#' * `ir_struct_ref(name)`: a permutation or a partition declared in the
+#'   program's `structures`. It may appear only as the second argument of the
+#'   operators `"item_at"` and `"slot_of"` (a permutation) or `"part_of"` and
+#'   `"size_of"` (a partition), which is what [item_at()], [slot_of()],
+#'   [part_of()] and [size_of()] build.
 #' * `ir_table_ref(param, index)`: an entry of a parameter table at positions
 #'   given by expression nodes, which is what indexing a [lookup_table()]
 #'   builds.
@@ -56,8 +57,8 @@ NULL
 ir_const <- function(value) list(kind = "const", value = as.numeric(value))
 
 #' @rdname ir
-#' @param name The name of the variable, table, random variable, permutation
-#'   or index set referred to.
+#' @param name The name of the variable, table, random variable, permutation,
+#'   partition or index set referred to.
 #' @param index A position: a list of whole numbers and index names, `list()`
 #'   for none. For `ir_table_ref()`, a list of one or two expression nodes.
 #' @export
@@ -229,6 +230,31 @@ permutation_decl <- function(size, start = integer(), fixed = FALSE, precede = l
   list(kind = "permutation", size = as.integer(size), start = as.integer(start),
        fixed = isTRUE(fixed), precede = lapply(precede, as.integer))
 
+#' A partition, for building a program by hand
+#'
+#' Declares one partition of a [program()]: `size` items, each in one of
+#' `parts` parts (see [part_var()]). [part_var()] builds these for you.
+#'
+#' @param size How many items, at least 1.
+#' @param parts How many parts, at least 2.
+#' @param start The assignment the search starts from: `start[i]` is the part
+#'   of item `i`, a whole number from 1 to `parts`. `integer()` leaves the
+#'   start to the service.
+#' @param fixed Whether the partition is fixed at `start`, which must then be
+#'   given. This is how [evaluate()] and [resample()] keep the assignment of a
+#'   solution.
+#' @return A plain list without a class, with the fields `kind = "partition"`,
+#'   `size`, `parts`, `start` and `fixed`. It is an element of the named list a
+#'   [program()] takes as `structures`, and the element's name is the name
+#'   [ir_struct_ref()] refers to.
+#' @examples
+#' # five people in two teams, people 1 to 3 starting in team 1
+#' structures <- list(teams = partition_decl(5, 2, start = c(1, 1, 1, 2, 2)))
+#' @export
+partition_decl <- function(size, parts, start = integer(), fixed = FALSE)
+  list(kind = "partition", size = as.integer(size), parts = as.integer(parts),
+       start = as.integer(start), fixed = isTRUE(fixed))
+
 # ── declarations and the container ──────────────────────────────────────────
 
 # Domain codes are the service's own; see the vendored schema.
@@ -245,15 +271,29 @@ INTEGER <- 2L
 #' @export
 BINARY <- 3L
 
+#' @rdname var_decl
+#' @export
+SEMICONTINUOUS <- 4L
+
+#' @rdname var_decl
+#' @export
+SEMIINTEGER <- 5L
+
 #' A decision variable, for building a program by hand
 #'
 #' Declares one decision variable of a [program()]. [num_var()], [int_var()]
 #' and [bin_var()] build these for you.
 #'
+#' A variable of domain `SEMICONTINUOUS` is either 0 or a value between its
+#' bounds, and one of domain `SEMIINTEGER` is either 0 or a whole number
+#' between them (see the `semi` argument of [num_var()]). Both need finite
+#' bounds.
+#'
 #' @param name The variable's name, used for it in the answer.
 #' @param axes The names of the index sets the variable is indexed over;
 #'   `character()` for a single variable.
-#' @param domain `CONTINUOUS`, `INTEGER` or `BINARY`.
+#' @param domain `CONTINUOUS`, `INTEGER`, `BINARY`, `SEMICONTINUOUS` or
+#'   `SEMIINTEGER`.
 #' @param lower,upper A number (`-Inf` or `Inf` for no bound), or the name of
 #'   a parameter table, for a bound that differs from index to index.
 #' @param start The value the search starts from.
@@ -261,9 +301,9 @@ BINARY <- 3L
 #'   `name`, `axes`, `domain`, `lower`, `upper` and `start`. It is an element
 #'   of the list a [program()] takes as `vars`.
 #'
-#'   `CONTINUOUS`, `INTEGER` and `BINARY` are not functions but constants: the
-#'   whole numbers 1, 2 and 3, which stand for the three kinds of variable in
-#'   `domain`.
+#'   `CONTINUOUS`, `INTEGER`, `BINARY`, `SEMICONTINUOUS` and `SEMIINTEGER`
+#'   are not functions but constants: the whole numbers 1 to 5, which stand for
+#'   the five kinds of variable in `domain`.
 #' @examples
 #' var_decl("tables", domain = INTEGER, lower = 0)
 #' @export
@@ -333,7 +373,8 @@ constraint <- function(f, set, over = list()) list(f = f, set = set, over = over
 #'
 #' A model with random variables also needs `sources`, which declares them,
 #' and `scenarios` and `scenario_seed`, which say how many scenarios are drawn
-#' and from which seed. A model with permutations needs `structures`.
+#' and from which seed. A model with permutations or partitions needs
+#' `structures`, and one with blocks `blocks`.
 #'
 #' @param sets A list of [index_set()]s.
 #' @param indexed_sets Sets that differ from position to position (see
@@ -348,8 +389,10 @@ constraint <- function(f, set, over = list()) list(f = f, set = set, over = over
 #' @param scenario_seed The seed to draw them from, at least 1.
 #' @param sources The random variables: a named list of [parametric()] and
 #'   [empirical()] declarations.
-#' @param structures The permutations: a named list of [permutation_decl()]
-#'   declarations.
+#' @param structures The permutations and partitions: a named list of
+#'   [permutation_decl()] and [partition_decl()] declarations.
+#' @param blocks The blocks (see [block()]): a named list, each element a list
+#'   of [ir_var()] nodes, the block's variables.
 #' @return An object of class `quicopt_program`: a list with one element per
 #'   argument, under the argument's name.
 #' @export
@@ -357,12 +400,12 @@ program <- function(sets = list(), indexed_sets = list(), params = list(),
                     vars = list(), objective = NULL, sense = "min",
                     constraints = list(), fix = list(),
                     scenarios = 1, scenario_seed = 1, sources = list(),
-                    structures = list()) {
+                    structures = list(), blocks = list()) {
   structure(list(sets = sets, indexed_sets = indexed_sets, params = params,
                  vars = vars, objective = objective, sense = sense,
                  constraints = constraints, fix = fix,
                  scenarios = as.numeric(scenarios),
                  scenario_seed = as.numeric(scenario_seed),
-                 sources = sources, structures = structures),
+                 sources = sources, structures = structures, blocks = blocks),
             class = "quicopt_program")
 }

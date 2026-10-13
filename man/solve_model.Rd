@@ -61,9 +61,10 @@ A list of class \code{quicopt_result}, with these elements:
 \item \code{objective}: the value of the objective at the solution.
 \item \code{solution}: a named numeric vector with the value of each decision
 variable, in the order they were declared.
-\item \code{structures}: for a model with permutations, one element per
-permutation, holding the integer vectors \code{item_at} and \code{slot_of} (see
-\code{\link[=perm_var]{perm_var()}}); otherwise \code{NULL}.
+\item \code{structures}: for a model with permutations or partitions, one element
+per permutation, holding the integer vectors \code{item_at} and \code{slot_of}
+(see \code{\link[=perm_var]{perm_var()}}), and one per partition, holding \code{part_of} and
+\code{size_of} (see \code{\link[=part_var]{part_var()}}); otherwise \code{NULL}.
 \item \code{model_class}: the kind of model the service recognized, such as
 \code{"lp"}, \code{"milp"} or \code{"stochastic"}.
 \item \code{solver_data}: further details from the service, such as
@@ -111,8 +112,9 @@ and not kept.
 \itemize{
 \item \code{"optimal"}: the service has proved that no better solution exists.
 \item \code{"heuristic"}: the best solution a search found, without that proof.
-Models with random variables, permutations or lookup tables are solved
-this way. If such a result has \code{feasible = FALSE}, the search found no
+Models with random variables, permutations, partitions or lookup tables
+are solved this way, and so are models with \code{\link[=holds]{holds()}}, \code{max()} or
+\code{min()}. If such a result has \code{feasible = FALSE}, the search found no
 solution that meets every constraint, which does not prove that none
 exists.
 }

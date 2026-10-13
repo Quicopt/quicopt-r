@@ -82,7 +82,7 @@ perm_var <- function(m, name, n, start = NULL) {
   vars[[name]] <- P
   .m_set(m, "vars", vars)
   structs <- .m_get(m, "structures")
-  structs[[name]] <- list(n = n, start = start, precede = list())
+  structs[[name]] <- list(kind = "permutation", n = n, start = start, precede = list())
   .m_set(m, "structures", structs)
   P
 }
@@ -317,6 +317,148 @@ lookup_table <- function(m, name, values) {
   .nodes_of(i, paste0("lookup into '", name, "'"))
 }
 
+# ── partitions ──────────────────────────────────────────────────────────────
+
+#' Divide items into groups as a decision
+#'
+#' Some decisions put things into groups: people into teams, jobs onto
+#' machines, parcels into vans. `part_var()` declares such a decision, a
+#' *partition*: each of `n` items goes into exactly one of `parts` groups,
+#' called *parts*. Items are numbered from 1 to `n` and parts from 1 to
+#' `parts`. A part may stay empty.
+#'
+#' [part_of()] gives the part an item is in, and [size_of()] how many items a
+#' part holds. Both are expressions whose values the service chooses, like the
+#' value of a decision variable. A requirement on the sizes, such as teams of
+#' two and three, is an ordinary constraint: `add(m, size_of(1, teams) == 2)`.
+#' Data that depends on an item's part, such as what a person costs in each
+#' team, is read from a [lookup_table()]: `cost[1:5, part_of(1:5, teams)]`.
+#' Whether an item is in a given part is `holds(part_of(i, teams) == t)`.
+#'
+#' @section The answer:
+#' For each partition, the result of [solve()] holds `res$structures$<name>`
+#' with two integer vectors: `part_of`, the part of each item, and `size_of`,
+#' the number of items in each part. [set_start()], [evaluate()] and
+#' [resample()] take the division from a result too.
+#'
+#' A model with a partition is solved by a search, so its status is
+#' `"heuristic"`.
+#'
+#' `add_part_var()` declares the partition in the same way but returns the
+#' model, for use in a pipe; `m$name` then retrieves the partition.
+#'
+#' @param m A [model()].
+#' @param name The partition's name, unique within the model.
+#' @param n How many items; at least 1.
+#' @param parts How many parts; at least 2.
+#' @param start The division the service's search starts from: `start[i]` is
+#'   the part of item `i`, a whole number from 1 to `parts`. Left `NULL`, the
+#'   service chooses one.
+#' @return The partition, for use with [part_of()] and [size_of()].
+#' @examples
+#' # Six players of strengths 7, 5, 4, 3, 2 and 1 form a team of four and a
+#' # team of two, as evenly matched as possible.
+#' strength <- c(7, 5, 4, 3, 2, 1)                         # of players 1 to 6
+#' m <- model()
+#' teams <- part_var(m, "teams", 6, 2)                     # 6 players into teams 1 and 2
+#' in_team <- function(t) holds(part_of(1:6, teams) == t)  # 1 for each player in team t
+#' add(m, size_of(1, teams) == 4)                          # team 1 has four players
+#' minimize(m, max(sum(strength * in_team(1)), sum(strength * in_team(2))))
+#' \dontrun{
+#' res <- solve(m)
+#' res$objective                                           # 11
+#' res$structures$teams$part_of                            # 2 1 2 1 1 1: players 1 and 3 form team 2
+#' res$structures$teams$size_of                            # 4 2
+#' }
+#' @export
+part_var <- function(m, name, n, parts, start = NULL) {
+  .check_model(m, "part_var")
+  .check_name(m, name)
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != trunc(n))
+    stop("a partition needs a whole number of items, at least 1")
+  if (!is.numeric(parts) || length(parts) != 1L || is.na(parts) || parts < 2 ||
+      parts != trunc(parts))
+    stop("a partition needs a whole number of parts, at least 2")
+  n <- as.integer(n); parts <- as.integer(parts)
+  start <- .check_part_start(start, n, parts, name)
+  P <- structure(list(name = name, n = n, parts = parts, model = m),
+                 class = c("quicopt_partition", "quicopt"))
+  vars <- .m_get(m, "vars")
+  vars[[name]] <- P
+  .m_set(m, "vars", vars)
+  structs <- .m_get(m, "structures")
+  structs[[name]] <- list(kind = "partition", n = n, parts = parts, start = start)
+  .m_set(m, "structures", structs)
+  P
+}
+
+# A start for a partition of n items into parts: NULL, or one part per item.
+.check_part_start <- function(start, n, parts, name) {
+  if (is.null(start)) return(integer(0))
+  if (!is.numeric(start) || anyNA(start) || length(start) != n ||
+      any(start != trunc(start)) || any(start < 1) || any(start > parts))
+    stop("'", name, "': start must give each of the ", n, " items a part from 1 to ",
+         parts, " (start[i] is the part item i starts in)")
+  as.integer(start)
+}
+
+#' @rdname part_var
+#' @return `add_part_var()` returns the model, invisibly.
+#' @export
+add_part_var <- function(m, name, n, parts, start = NULL) {
+  part_var(m, name, n, parts, start)
+  invisible(m)
+}
+
+# A partition handle.
+.check_partition <- function(P, caller) {
+  if (!inherits(P, "quicopt_partition"))
+    stop(caller, " takes a partition from part_var(), got ", class(P)[[1L]])
+  P
+}
+
+#' The part of an item, and the size of a part
+#'
+#' For a partition `P` from [part_var()], `part_of(item, P)` is the part an
+#' item is in, and `size_of(part, P)` is how many items a part holds. For
+#' people divided into teams, `part_of(3, teams)` is the team of person 3, and
+#' `size_of(1, teams)` is the number of people in team 1.
+#'
+#' The result is an expression whose value the service chooses, like the
+#' value of a decision variable. To read data that depends on an item's part,
+#' index a [lookup_table()] with `part_of()`.
+#'
+#' The first argument is a plain number, or a vector of numbers, and both
+#' functions return one element per number: `part_of(1:5, P)` is the parts of
+#' the first five items, an expression of length 5.
+#'
+#' @param item Items: whole numbers from 1 to the number of items.
+#' @param part Parts: whole numbers from 1 to the number of parts.
+#' @param P A partition from [part_var()].
+#' @return An expression with one element per element of the first argument:
+#'   for `part_of()` each a whole number from 1 to the number of parts, for
+#'   `size_of()` each a whole number from 0 to the number of items.
+#' @examples
+#' m <- model()
+#' teams <- part_var(m, "teams", 5, 2)
+#' part_of(3, teams)                   # the team of person 3
+#' size_of(1, teams)                   # how many people are in team 1
+#' part_of(1:5, teams)                 # everyone's team
+#' @export
+part_of <- function(item, P) {
+  .check_partition(P, "part_of")
+  item <- .check_positions(item, P$n, "items", "part_of")
+  .qexpr(lapply(item, function(i) ir_apply("part_of", list(ir_const(i), ir_struct_ref(P$name)))))
+}
+
+#' @rdname part_of
+#' @export
+size_of <- function(part, P) {
+  .check_partition(P, "size_of")
+  part <- .check_positions(part, P$parts, "parts", "size_of")
+  .qexpr(lapply(part, function(b) ir_apply("size_of", list(ir_const(b), ir_struct_ref(P$name)))))
+}
+
 # ── printing ────────────────────────────────────────────────────────────────
 
 #' @export
@@ -330,6 +472,13 @@ print.quicopt_perm <- function(x, ...) {
 }
 
 #' @export
+print.quicopt_partition <- function(x, ...) {
+  cat("partition '", x$name, "': ", x$n, " item", if (x$n != 1L) "s", " in ",
+      x$parts, " parts\n", sep = "")
+  invisible(x)
+}
+
+#' @export
 print.quicopt_table <- function(x, ...) {
   cat("lookup table '", x$name, "': ", paste(x$dim, collapse = " x "), "\n", sep = "")
   invisible(x)
@@ -337,10 +486,11 @@ print.quicopt_table <- function(x, ...) {
 
 # ── lowering ────────────────────────────────────────────────────────────────
 
-# The model's permutations as program declarations.
+# The model's permutations and partitions as program declarations.
 .structure_decls <- function(m)
-  lapply(.m_get(m, "structures"),
-         function(s) permutation_decl(s$n, s$start, FALSE, s$precede))
+  lapply(.m_get(m, "structures"), function(s)
+    if (identical(s$kind, "partition")) partition_decl(s$n, s$parts, s$start, FALSE)
+    else permutation_decl(s$n, s$start, FALSE, s$precede))
 
 # The model's lookup tables as parameter tables: one entry per cell, keyed by
 # its position (one or two indices).
@@ -355,20 +505,28 @@ print.quicopt_table <- function(x, ...) {
   })
 }
 
-# A result's reported permutations, each as its slot_of view, checked against
-# the model: what set_start() and a pinned evaluation read.
-.result_slots <- function(m, solution, caller) {
+# A result's reported structures, each as the view a start is written in (a
+# permutation's slot_of, a partition's part_of), checked against the model:
+# what set_start() and a pinned evaluation read.
+.result_starts <- function(m, solution, caller) {
   structs <- .m_get(m, "structures")
   if (!length(structs)) return(list())
   if (!inherits(solution, "quicopt_result") || is.null(solution$structures))
-    stop(caller, ": the model has a permutation, so it takes a solve() result, ",
-         "which carries the order found")
+    stop(caller, ": the model has a permutation or a partition, so it takes a solve() ",
+         "result, which carries the arrangement found")
   out <- list()
   for (name in names(structs)) {
     s <- solution$structures[[name]]
-    if (is.null(s) || is.null(s$slot_of))
-      stop(caller, ": the result carries no order for the permutation '", name, "'")
-    out[[name]] <- .check_perm_start(as.integer(s$slot_of), structs[[name]]$n, name)
+    decl <- structs[[name]]
+    if (identical(decl$kind, "partition")) {
+      if (is.null(s) || is.null(s$part_of))
+        stop(caller, ": the result carries no division for the partition '", name, "'")
+      out[[name]] <- .check_part_start(as.integer(s$part_of), decl$n, decl$parts, name)
+    } else {
+      if (is.null(s) || is.null(s$slot_of))
+        stop(caller, ": the result carries no order for the permutation '", name, "'")
+      out[[name]] <- .check_perm_start(as.integer(s$slot_of), decl$n, name)
+    }
   }
   out
 }

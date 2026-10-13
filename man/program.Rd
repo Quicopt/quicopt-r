@@ -16,7 +16,8 @@ program(
   scenarios = 1,
   scenario_seed = 1,
   sources = list(),
-  structures = list()
+  structures = list(),
+  blocks = list()
 )
 }
 \arguments{
@@ -44,8 +45,11 @@ above).}
 \item{sources}{The random variables: a named list of \code{\link[=parametric]{parametric()}} and
 \code{\link[=empirical]{empirical()}} declarations.}
 
-\item{structures}{The permutations: a named list of \code{\link[=permutation_decl]{permutation_decl()}}
-declarations.}
+\item{structures}{The permutations and partitions: a named list of
+\code{\link[=permutation_decl]{permutation_decl()}} and \code{\link[=partition_decl]{partition_decl()}} declarations.}
+
+\item{blocks}{The blocks (see \code{\link[=block]{block()}}): a named list, each element a list
+of \code{\link[=ir_var]{ir_var()}} nodes, the block's variables.}
 }
 \value{
 An object of class \code{quicopt_program}: a list with one element per
@@ -76,5 +80,6 @@ The order of the entries does not matter.
 
 A model with random variables also needs \code{sources}, which declares them,
 and \code{scenarios} and \code{scenario_seed}, which say how many scenarios are drawn
-and from which seed. A model with permutations needs \code{structures}.
+and from which seed. A model with permutations or partitions needs
+\code{structures}, and one with blocks \code{blocks}.
 }
