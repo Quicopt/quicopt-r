@@ -58,7 +58,6 @@ check("holds(==) is 1 - indicator(lhs - rhs)",
 check("a tolerance folds into the argument",
       identical(node(holds(x >= 60, tol = 1e-6)),
                 step(ir_apply("+", list(minus(X, ir_const(60)), ir_const(1e-6))))))
-# min() and max() dispatch on their first argument, so the expression comes first
 check("min() is the catalog's binary min",
       identical(node(min(sum(active(d)), 1)),
                 ir_apply("min", list(ir_apply("+", list(ir_apply("indicator", list(ir_var("d[1]"))),
