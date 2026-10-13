@@ -36,11 +36,23 @@ charge of 200 whenever the stock runs out.
 and \code{b} are within 0.01 of each other, and \code{holds(a <= b, tol = 0.01)} is
 1 when \code{a} is at most \code{b + 0.01}. Without it, \code{==} and \code{!=} compare exactly.
 
-In a model without random variables, \code{holds()} limits the kind of model
-the service accepts: every variable must then be an integer or a binary
-variable, with finite bounds. The same holds for \code{max()} and \code{min()}. In a
-model with random variables there is no such limit.
+A model with \code{holds()} is solved by a search, so its status is
+\code{"heuristic"}. The same holds for \code{max()} and \code{min()}. When every variable of such a model is an integer or a binary variable, each
+needs finite bounds; a model with a continuous variable or with random
+variables has no such limit.
 }
+\section{A fee due from a level}{
+
+\code{holds()} writes a cost that is due once a total reaches a level, and a
+discount that is earned there. With deliveries \code{ship} from one warehouse to
+several customers, \code{60 * holds(sum(ship) >= 1)} is a fee of 60 that the
+warehouse costs once it ships anything, and \code{-30 * holds(sum(ship) >= 60)}
+a discount of 30 from 60 units on. \code{min(sum(active(ship)), 1)} is the same
+"anything shipped" written with \code{\link[=active]{active()}}: 1 once any delivery takes
+place. (\code{min()} and \code{max()} read the model expression from their first
+argument, so it comes before the number.)
+}
+
 \examples{
 m <- model()
 stock  <- num_var(m, "stock", lower = 0, upper = 200)

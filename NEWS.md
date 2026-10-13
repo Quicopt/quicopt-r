@@ -1,10 +1,18 @@
+# quicopt 0.6.0
+
+* `num_var()` and `int_var()` take `semi = TRUE` for a variable that is either 0 or between its bounds, never in between: a delivery of nothing or of 10 to 25 units. Its bounds must be finite. `active(x)` is 1 when such a variable is not 0, so a fee per delivery is `fee * active(delivery)`, and a model that is otherwise linear is still solved to a proven optimum.
+* `block(m, name, vars)` names the variables of one subproblem, such as one customer's deliveries. Every solution the service returns satisfies the constraints over one block's variables alone. A variable is in at most one block and needs finite bounds.
+* `part_var(m, "teams", n, parts)` declares a partition: each of `n` items in one of `parts` parts. `part_of(item, P)` is an item's part and `size_of(part, P)` the number of items in a part, both vectorized over their first argument. A solution reports both under `res$structures$<name>`, and `set_start()`, `evaluate()` and `resample()` carry the division along.
+* A model with `max()`, `min()`, `holds()` or a switch is solved by a search; such a model whose variables are all integer or binary needs finite bounds on each, as before, but one with a continuous variable is now accepted.
+* `partition_decl()`, the constants `SEMICONTINUOUS` and `SEMIINTEGER`, and `program(blocks = )` are the data-layer forms. The service must be recent enough to know these constructs; an older one refuses the model when it is sent.
+
 # quicopt 0.5.0
 
 * `solve()` and `submit()` take `time_limit`, the number of seconds the solve may run, in place of the time the service would choose. A solver that proves its answer sooner still stops sooner; a search runs for all of it. The service grants at most its maximum, and a warning says so when it granted less; `res$solver_data$time_budget_s` is the time it granted. `solve()` waits for the answer at least `time_limit` plus a minute, and `job_result()` polls that long by default. The service must be recent enough to know the setting; an older one refuses the request.
 
 # quicopt 0.4.0
 
-* `perm_var(m, "tour", n)` declares a permutation: `n` items in `n` slots, one each, as a decision the service keeps consistent while it searches. `item_at(slot, P)` is the item in a slot and `slot_of(item, P)` the slot of an item, integer expressions vectorized over their first argument; `precede(P, a, b)` requires item `a` in an earlier slot than item `b`. A solution reports both views under `res$structures$<name>`, and `set_start()`, `evaluate()` and `resample()` carry the order along with the plain variables.
+* `perm_var(m, "tour", n)` declares a permutation: `n` items in `n` slots, one each. `item_at(slot, P)` is the item in a slot and `slot_of(item, P)` the slot of an item, integer expressions vectorized over their first argument; `precede(P, a, b)` requires item `a` in an earlier slot than item `b`. A solution reports both views under `res$structures$<name>`, and `set_start()`, `evaluate()` and `resample()` carry the order along with the plain variables.
 * `lookup_table(m, "dist", values)` declares a numeric vector or matrix whose entries are read at positions the solver decides: `dist[item_at(1:4, tour), item_at(2:5, tour)]` is the legs of a round, `cost[choice]` a cost chosen through an integer variable. A lookup is an ordinary expression, and is random exactly when one of its positions is.
 * A model with a permutation or a lookup is solved by search, as a model under uncertainty is, and the two combine. The service must be recent enough to know these constructs; an older one refuses the model when it is sent.
 * `permutation_decl()`, `ir_struct_ref()` and `ir_table_ref()` are the data-layer forms, and `program()` takes `structures`.

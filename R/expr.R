@@ -47,10 +47,12 @@
 #' `var()`, [holds()] instead of `ifelse()`, and `identical()` instead of
 #' `%in%` or `match()` to check whether two expressions are the same.
 #'
-#' In a model without random variables, `max()`, `min()` and [holds()] limit
-#' the kind of model the service accepts: every variable must then be an
-#' integer or a binary variable, with finite bounds. In a model with random
-#' variables there is no such limit.
+#' A model with `max()`, `min()` or [holds()] is solved by a search, so its
+#' status is `"heuristic"`. When every variable of such a model is an integer or a binary variable, each
+#' needs finite bounds; a model with a continuous variable or with random
+#' variables has no such limit. A fixed fee for using a variable at all is the exception:
+#' written with [active()] on a variable declared with `semi = TRUE`, it keeps
+#' a linear model exact.
 #'
 #' @examples
 #' m <- model()
@@ -88,6 +90,9 @@ NULL
   if (inherits(x, "quicopt_expr")) return(x$nodes)
   if (inherits(x, "quicopt_perm"))
     stop("a permutation is read through item_at(slot, ", x$name, ") or slot_of(item, ",
+         x$name, "), not used directly in a model ", what)
+  if (inherits(x, "quicopt_partition"))
+    stop("a partition is read through part_of(item, ", x$name, ") or size_of(part, ",
          x$name, "), not used directly in a model ", what)
   if (inherits(x, "quicopt_table"))
     stop("a lookup table is read by indexing it, ", x$name,
@@ -201,10 +206,20 @@ Summary.quicopt <- function(..., na.rm = FALSE) {
 #' and `b` are within 0.01 of each other, and `holds(a <= b, tol = 0.01)` is
 #' 1 when `a` is at most `b + 0.01`. Without it, `==` and `!=` compare exactly.
 #'
-#' In a model without random variables, `holds()` limits the kind of model
-#' the service accepts: every variable must then be an integer or a binary
-#' variable, with finite bounds. The same holds for `max()` and `min()`. In a
-#' model with random variables there is no such limit.
+#' A model with `holds()` is solved by a search, so its status is
+#' `"heuristic"`. The same holds for `max()` and `min()`. When every variable of such a model is an integer or a binary variable, each
+#' needs finite bounds; a model with a continuous variable or with random
+#' variables has no such limit.
+#'
+#' @section A fee due from a level:
+#' `holds()` writes a cost that is due once a total reaches a level, and a
+#' discount that is earned there. With deliveries `ship` from one warehouse to
+#' several customers, `60 * holds(sum(ship) >= 1)` is a fee of 60 that the
+#' warehouse costs once it ships anything, and `-30 * holds(sum(ship) >= 60)`
+#' a discount of 30 from 60 units on. `min(sum(active(ship)), 1)` is the same
+#' "anything shipped" written with [active()]: 1 once any delivery takes
+#' place. (`min()` and `max()` read the model expression from their first
+#' argument, so it comes before the number.)
 #'
 #' @param rel A comparison of expressions.
 #' @param tol How far the comparison may be off and still count as true; a

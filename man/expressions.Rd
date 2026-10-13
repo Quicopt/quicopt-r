@@ -56,10 +56,12 @@ expressions do not work on them either: use \code{\link[=variance]{variance()}} 
 \code{var()}, \code{\link[=holds]{holds()}} instead of \code{ifelse()}, and \code{identical()} instead of
 \code{\%in\%} or \code{match()} to check whether two expressions are the same.
 
-In a model without random variables, \code{max()}, \code{min()} and \code{\link[=holds]{holds()}} limit
-the kind of model the service accepts: every variable must then be an
-integer or a binary variable, with finite bounds. In a model with random
-variables there is no such limit.
+A model with \code{max()}, \code{min()} or \code{\link[=holds]{holds()}} is solved by a search, so its
+status is \code{"heuristic"}. When every variable of such a model is an integer or a binary variable, each
+needs finite bounds; a model with a continuous variable or with random
+variables has no such limit. A fixed fee for using a variable at all is the exception:
+written with \code{\link[=active]{active()}} on a variable declared with \code{semi = TRUE}, it keeps
+a linear model exact.
 }
 
 \examples{

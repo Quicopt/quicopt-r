@@ -106,6 +106,50 @@ fixtures <- list(
       scenarios = 4,
       sources = list(shock = empirical(c(0.9, 1.0, 1.1, 1.3)),
                      price = parametric("normal", list(ir_param("μ"), ir_const(2.0)))))
+  },
+
+  holes_blocks = function() {                  # both hole domains, indicator, step, min, blocks
+    # The blocks are given in the order opposite to their emission (pair
+    # before supply), on purpose: the encoder sorts them by name.
+    q <- ir_var("q"); r <- ir_var("r"); s <- ir_var("s")
+    x <- function(i) ir_var("x", list(i))
+    ind <- function(e) ir_apply("indicator", list(e))
+    times <- function(k, e) ir_apply("*", list(ir_const(k), e))
+    program(
+      sets = list(index_set("I", list(1L, 2L))),
+      vars = list(var_decl("q", character(), SEMIINTEGER, 10.0, 25.0, 0.0),
+                  var_decl("r", character(), SEMICONTINUOUS, 2.5, 8.0, 0.0),
+                  var_decl("s", character(), BINARY, 0.0, 1.0, 0.0),
+                  var_decl("x", "I", INTEGER, 0.0, 4.0, 0.0)),
+      objective = ir_apply("+", list(
+        times(1.5, q), times(2.0, r), times(30.0, ind(q)),
+        times(40.0, ir_apply("step", list(
+          ir_apply("-", list(ir_apply("+", list(x(1L), x(2L))), ir_const(1.0)))))),
+        times(-5.0, ir_apply("min", list(ir_const(1.0), ir_apply("+", list(ind(q), ind(r)))))))),
+      sense = "min",
+      constraints = list(
+        constraint(ir_apply("-", list(ir_apply("+", list(q, r)), ir_const(12.0))), nonneg()),
+        constraint(ir_apply("-", list(times(8.0, s), r)), nonneg()),
+        constraint(ir_apply("-", list(ir_apply("+", list(x(1L), x(2L))), ir_const(3.0))), nonneg())),
+      blocks = list(pair = list(x(1L), x(2L)), supply = list(q, r, s)))
+  },
+
+  partition = function() {                     # a live and a fixed partition, part reads
+    teams <- ir_struct_ref("teams"); split <- ir_struct_ref("split")
+    part <- function(i) ir_apply("part_of", list(ir_const(i), teams))
+    size <- function(b, P) ir_apply("size_of", list(ir_const(b), P))
+    program(
+      params = list(cost = list(list(key = list(1L), value = 2.0),
+                                list(key = list(2L), value = 0.5))),
+      vars = list(var_decl("y", character(), CONTINUOUS, 0.0, 5.0, 0.0)),
+      objective = ir_apply("+", list(
+        ir_table_ref("cost", list(part(1))), ir_table_ref("cost", list(part(3))),
+        ir_apply("^", list(ir_apply("-", list(size(1, teams), size(2, teams))), ir_const(2.0))),
+        ir_var("y"))),
+      sense = "min",
+      constraints = list(constraint(ir_apply("-", list(ir_var("y"), size(3, split))), nonneg())),
+      structures = list(teams = partition_decl(5, 2, start = c(1, 2, 1, 2, 1)),
+                        split = partition_decl(4, 3, start = c(3, 1, 3, 2), fixed = TRUE)))
   }
 )
 

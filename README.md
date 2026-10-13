@@ -81,6 +81,39 @@ it finds. With observed history in a data frame instead of a distribution,
 `set_empirical(m, history)` makes each column a random variable and each row a
 scenario.
 
+## Minimum loads, fees and groups
+
+A delivery is often either nothing or at least a minimum load: `semi = TRUE`
+says so, and `active()` is 1 when such a delivery takes place, so a fee per
+delivery is one term. `holds()` charges a fee once a total reaches a level, and
+`block()` names the variables of one subproblem, such as one customer's
+deliveries. Three warehouses supply three customers:
+
+```r
+demand  <- c(40, 30, 20)                                # units, customers 1 to 3
+price   <- rbind(c(1, 3, 4), c(3, 1, 3), c(4, 2, 1))    # per unit, price[warehouse, customer]
+opening <- c(60, 50, 40)                                # fee of warehouses 1 to 3
+
+m <- model()
+ship <- int_var(m, "ship", lower = 10, upper = 25, n = 9, semi = TRUE)   # none, or 10 to 25 units
+to   <- function(c) ship[3 * (c - 1) + 1:3]             # to customer c, from warehouses 1 to 3
+from <- function(w) ship[w + c(0, 3, 6)]                # from warehouse w, to customers 1 to 3
+for (c in 1:3) {
+  block(m, paste0("customer_", c), to(c))
+  add(m, sum(to(c)) >= demand[c])
+}
+sent <- c(sum(from(1)), sum(from(2)), sum(from(3)))     # units leaving each warehouse
+minimize(m, sum(as.vector(price) * ship)                # price per unit
+            + 5 * sum(active(ship))                     # 5 per delivery
+            + sum(opening * holds(sent >= 1)))          # a warehouse that ships pays its fee
+
+res <- solve(m)
+res$objective                                           # 300: warehouse 2 stays closed
+```
+
+`part_var()` splits items into groups, such as people into teams, read
+through `part_of()` and `size_of()`.
+
 ## Learn more
 
 * [Get started](https://quicopt.github.io/quicopt-r/articles/quicopt.html):

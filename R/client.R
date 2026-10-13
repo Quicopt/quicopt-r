@@ -61,8 +61,9 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #'
 #' * `"optimal"`: the service has proved that no better solution exists.
 #' * `"heuristic"`: the best solution a search found, without that proof.
-#'   Models with random variables, permutations or lookup tables are solved
-#'   this way. If such a result has `feasible = FALSE`, the search found no
+#'   Models with random variables, permutations, partitions or lookup tables
+#'   are solved this way, and so are models with [holds()], `max()` or
+#'   `min()`. If such a result has `feasible = FALSE`, the search found no
 #'   solution that meets every constraint, which does not prove that none
 #'   exists.
 #'
@@ -92,9 +93,10 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #'   * `objective`: the value of the objective at the solution.
 #'   * `solution`: a named numeric vector with the value of each decision
 #'     variable, in the order they were declared.
-#'   * `structures`: for a model with permutations, one element per
-#'     permutation, holding the integer vectors `item_at` and `slot_of` (see
-#'     [perm_var()]); otherwise `NULL`.
+#'   * `structures`: for a model with permutations or partitions, one element
+#'     per permutation, holding the integer vectors `item_at` and `slot_of`
+#'     (see [perm_var()]), and one per partition, holding `part_of` and
+#'     `size_of` (see [part_var()]); otherwise `NULL`.
 #'   * `model_class`: the kind of model the service recognized, such as
 #'     `"lp"`, `"milp"` or `"stochastic"`.
 #'   * `solver_data`: further details from the service, such as
@@ -404,8 +406,9 @@ print.quicopt_job <- function(x, ...) {
                  # solver_data; the sibling clients surface it at the top level,
                  # and so does this one.
                  model_class = parsed$solver_data$model_class,
-                 # The permutations found, both views as integer vectors; the
-                 # key is absent for a model that declares none.
+                 # The permutations and partitions found, both views of each
+                 # as integer vectors; the key is absent for a model that
+                 # declares none.
                  structures = .parse_structures(parsed$structures),
                  solve_time_seconds = parsed$solve_time_seconds,
                  solver_data = parsed$solver_data,
@@ -414,10 +417,12 @@ print.quicopt_job <- function(x, ...) {
             class = "quicopt_result")
 }
 
+# Each structure's views as integer vectors, under the names the service
+# gives them: item_at and slot_of for a permutation, part_of and size_of for a
+# partition.
 .parse_structures <- function(s) {
   if (is.null(s)) return(NULL)
-  lapply(s, function(p) list(item_at = as.integer(unlist(p$item_at)),
-                             slot_of = as.integer(unlist(p$slot_of))))
+  lapply(s, function(p) if (is.null(p)) NULL else lapply(p, function(v) as.integer(unlist(v))))
 }
 
 #' @export
@@ -426,9 +431,11 @@ print.quicopt_result <- function(x, ...) {
   else {
     cat("quicopt result: ", x$status,
         if (!is.null(x$objective)) paste0(", objective ", x$objective), "\n", sep = "")
-    for (name in names(x$structures))
-      cat("  ", name, ": item_at = [", paste(x$structures[[name]]$item_at, collapse = ", "),
+    for (name in names(x$structures)) {
+      view <- if (is.null(x$structures[[name]]$part_of)) "item_at" else "part_of"
+      cat("  ", name, ": ", view, " = [", paste(x$structures[[name]][[view]], collapse = ", "),
           "]\n", sep = "")
+    }
   }
   invisible(x)
 }

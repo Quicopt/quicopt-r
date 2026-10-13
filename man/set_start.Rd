@@ -27,8 +27,9 @@ named vector of values. Variables it is not given keep their start value.
 \details{
 The service rounds the start of a whole-number variable, and moves a start
 that lies outside the variable's bounds to the nearest bound. A result also
-holds the order found for each permutation (see \code{\link[=perm_var]{perm_var()}}), and that
-order becomes the permutation's start.
+holds the order found for each permutation (see \code{\link[=perm_var]{perm_var()}}) and the
+groups found for each partition (see \code{\link[=part_var]{part_var()}}), and these become their
+starts.
 }
 \examples{
 \dontrun{

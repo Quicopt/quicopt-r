@@ -19,8 +19,9 @@
 #' the data is uncertain, the random variables and the number of scenarios.
 #' `model()` creates an empty one, and these functions fill it:
 #'
-#' * decisions: [num_var()], [int_var()], [bin_var()], and [perm_var()] for an
-#'   order;
+#' * decisions: [num_var()], [int_var()], [bin_var()], [perm_var()] for an
+#'   order and [part_var()] for a division into groups;
+#' * subproblems: [block()];
 #' * uncertain data: [rand_var()] and [set_empirical()];
 #' * the objective: [minimize()] or [maximize()];
 #' * constraints: [add()].
@@ -60,16 +61,18 @@ model <- function() {
   assign("scenarios", 1, envir = m)
   assign("seed", 1, envir = m)
   assign("scen_set", FALSE, envir = m)
-  assign("structures", list(), envir = m)    # name -> list(n, start, precede), see structured.R
+  assign("structures", list(), envir = m)    # name -> list(kind, n, start, ...), see structured.R
   assign("tables", list(), envir = m)        # name -> numeric vector or matrix
+  assign("blocks", list(), envir = m)        # name -> the members' flat names, see blocks.R
   class(m) <- "quicopt_model"
   m
 }
 
-# The registry holds four kinds of handle under one namespace: decision
+# The registry holds five kinds of handle under one namespace: decision
 # variables (quicopt_var), random variables (quicopt_rv), permutations
-# (quicopt_perm) and lookup tables (quicopt_table). Only the first lowers to
-# wire variables, which is what the solution is keyed by.
+# (quicopt_perm), partitions (quicopt_partition) and lookup tables
+# (quicopt_table). Only the first lowers to wire variables, which is what the
+# solution is keyed by.
 .is_decision <- function(v) inherits(v, "quicopt_var")
 
 .m_get <- function(m, field) get(field, envir = m, inherits = FALSE)
@@ -103,17 +106,24 @@ model <- function() {
        ", but the variable has length ", n)
 }
 
-.new_var <- function(m, name, domain, lower, upper, n, start, caller) {
+.new_var <- function(m, name, domain, lower, upper, n, start, caller, semi = FALSE) {
   .check_model(m, caller)
   .check_name(m, name)
   if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != trunc(n))
     stop("n must be a whole number of at least 1")
+  if (!is.logical(semi) || length(semi) != 1L || is.na(semi))
+    stop("semi is TRUE or FALSE")
   n <- as.integer(n)
   lower <- .per_element(lower, n, "lower bound", name)
   upper <- .per_element(upper, n, "upper bound", name)
   start <- .per_element(start, n, "start", name)
   if (any(lower > upper))
     stop("'", name, "': a lower bound exceeds its upper bound")
+  if (semi) {
+    if (any(!is.finite(c(lower, upper))))
+      stop("'", name, "': a variable that is 0 or between its bounds needs finite bounds")
+    domain <- if (domain == INTEGER) SEMIINTEGER else SEMICONTINUOUS
+  }
   # A family lowers to flat scalar variables named name[i] — the well-trodden
   # wire subset every client emits. Solutions come back under these names.
   flat <- if (n == 1L) name else sprintf("%s[%d]", name, seq_len(n))
@@ -139,6 +149,15 @@ model <- function() {
 #' `add_var()` declares a variable in the same way but returns the model, for
 #' use in a pipe (see [model()]).
 #'
+#' With `semi = TRUE`, the variable is either 0 or between its bounds, never
+#' in between: a delivery of either nothing or 10 to 25 units is
+#' `int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)`. Solvers for
+#' mixed-integer programs call such a variable *semi-continuous*, or
+#' *semi-integer* when it must be a whole number. The bounds must then be
+#' finite. When 0 already lies between them, `semi` changes nothing. [active()]
+#' is 1 when such a variable is not 0, which is how a fixed fee per delivery is
+#' written: `fee * active(delivery)`.
+#'
 #' With `n` greater than 1, one call declares `n` variables under one name,
 #' and they behave like an R vector: `x[3]` is the third, arithmetic works
 #' element by element, and `sum(x)` adds them up. `lower`, `upper` and `start`
@@ -154,6 +173,8 @@ model <- function() {
 #' @param n How many variables to declare under this name.
 #' @param start The value the service's search starts from (see
 #'   [set_start()]).
+#' @param semi Whether the variable may also be 0 when 0 lies outside its
+#'   bounds (see above).
 #' @return The variable, an expression of length `n`.
 #' @examples
 #' m <- model()
@@ -162,14 +183,15 @@ model <- function() {
 #' share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
 #' sum(share)
 #' take[2]
+#' delivery <- int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)   # none, or 10 to 25
 #' @export
-num_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
-  .new_var(m, name, CONTINUOUS, lower, upper, n, start, "num_var")
+num_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
+  .new_var(m, name, CONTINUOUS, lower, upper, n, start, "num_var", semi)
 
 #' @rdname num_var
 #' @export
-int_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
-  .new_var(m, name, INTEGER, lower, upper, n, start, "int_var")
+int_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
+  .new_var(m, name, INTEGER, lower, upper, n, start, "int_var", semi)
 
 #' @rdname num_var
 #' @export
@@ -182,10 +204,10 @@ bin_var <- function(m, name, n = 1, start = 0)
 #' @return `add_var()` returns the model, invisibly.
 #' @export
 add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
-                    domain = c("num", "int", "bin")) {
+                    domain = c("num", "int", "bin"), semi = FALSE) {
   switch(match.arg(domain),
-         num = num_var(m, name, lower, upper, n, start),
-         int = int_var(m, name, lower, upper, n, start),
+         num = num_var(m, name, lower, upper, n, start, semi),
+         int = int_var(m, name, lower, upper, n, start, semi),
          bin = bin_var(m, name, n, start))
   invisible(m)
 }
@@ -240,8 +262,9 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 #'
 #' The service rounds the start of a whole-number variable, and moves a start
 #' that lies outside the variable's bounds to the nearest bound. A result also
-#' holds the order found for each permutation (see [perm_var()]), and that
-#' order becomes the permutation's start.
+#' holds the order found for each permutation (see [perm_var()]) and the
+#' groups found for each partition (see [part_var()]), and these become their
+#' starts.
 #'
 #' @param m A [model()].
 #' @param values A result from [solve()], or a named numeric vector, with
@@ -264,10 +287,11 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 #' @export
 set_start <- function(m, values) {
   .check_model(m, "set_start")
-  # a result's permutations, when it carries any; a plain vector names
-  # decision variables only and leaves every permutation's start alone
-  slots <- if (inherits(values, "quicopt_result") && !is.null(values$structures))
-    .result_slots(m, values, "set_start") else list()
+  # a result's permutations and partitions, when it carries any; a plain
+  # vector names decision variables only and leaves every structure's start
+  # alone
+  starts <- if (inherits(values, "quicopt_result") && !is.null(values$structures))
+    .result_starts(m, values, "set_start") else list()
   values <- .solution_values(m, values, complete = FALSE, caller = "set_start")
   lookup <- .flat_lookup(m)
   vars <- .m_get(m, "vars")
@@ -277,7 +301,7 @@ set_start <- function(m, values) {
   }
   .m_set(m, "vars", vars)
   structs <- .m_get(m, "structures")
-  for (name in names(slots)) structs[[name]]$start <- slots[[name]]
+  for (name in names(starts)) structs[[name]]$start <- starts[[name]]
   .m_set(m, "structures", structs)
   invisible(m)
 }
@@ -367,10 +391,10 @@ maximize <- function(m, e) .set_objective(m, e, "max", "maximize")
 #' plant is closed. `b` is a single variable, or a vector variable with one
 #' element per constraint.
 #'
-#' In a model without random variables, a switch limits the kind of model
-#' the service accepts: every variable must then be an integer or a binary
-#' variable, with finite bounds. The same holds for [holds()], `max()` and
-#' `min()`.
+#' A model with a switch is solved by a search, so its status is
+#' `"heuristic"`. The same holds for [holds()], `max()` and `min()`. When every variable of such a model is an integer or a binary variable, each
+#' needs finite bounds; a model with a continuous variable or with random
+#' variables has no such limit.
 #'
 #' @param m A [model()].
 #' @param rel A comparison of expressions, written with `<=`, `>=` or `==`.
@@ -501,6 +525,8 @@ print.quicopt_model <- function(x, ...) {
   decision <- Filter(.is_decision, vars)
   random <- Filter(function(v) inherits(v, "quicopt_rv"), vars)
   perms <- Filter(function(v) inherits(v, "quicopt_perm"), vars)
+  parts <- Filter(function(v) inherits(v, "quicopt_partition"), vars)
+  blocks <- get("blocks", envir = x, inherits = FALSE)
   nflat <- sum(vapply(decision, function(v) v$n, 0L))
   obj <- get("objective", envir = x, inherits = FALSE)
   cat("quicopt model: ", nflat, " variable", if (nflat != 1L) "s", sep = "")
@@ -510,6 +536,10 @@ print.quicopt_model <- function(x, ...) {
   }
   if (length(perms))
     cat(", ", length(perms), " permutation", if (length(perms) != 1L) "s", sep = "")
+  if (length(parts))
+    cat(", ", length(parts), " partition", if (length(parts) != 1L) "s", sep = "")
+  if (length(blocks))
+    cat(", ", length(blocks), " block", if (length(blocks) != 1L) "s", sep = "")
   cat(", ", length(get("constraints", envir = x, inherits = FALSE)),
       " constraint row(s)\n", sep = "")
   if (!is.null(obj))
@@ -589,5 +619,6 @@ as_program <- function(m) {
           scenarios = scen,
           scenario_seed = .m_get(m, "seed"),
           sources = sources,
-          structures = .structure_decls(m))
+          structures = .structure_decls(m),
+          blocks = lapply(.m_get(m, "blocks"), function(flat) lapply(flat, ir_var)))
 }

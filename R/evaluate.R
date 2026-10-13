@@ -10,22 +10,25 @@
 # The model lowered with every decision variable pinned at the solution.
 # Integer and binary values are rounded first: a pin is lower = upper = value,
 # and an integer variable pinned between two integers has no feasible value.
-# A permutation is pinned by declaring it fixed at the order the result
-# reports, so a model with one takes a solve() result, not a bare vector.
+# A permutation or a partition is pinned by declaring it fixed at the
+# arrangement the result reports, so a model with one takes a solve() result,
+# not a bare vector. A variable that may be 0 or between its bounds is pinned
+# at 0 too.
 .pinned_program <- function(m, solution, caller) {
-  slots <- .result_slots(m, solution, caller)
+  starts <- .result_starts(m, solution, caller)
   values <- .solution_values(m, solution, complete = TRUE, caller = caller)
   prog <- as_program(m)
   prog$fix <- lapply(prog$vars, function(vd) {
     v <- as.numeric(values[[vd$name]])
-    if (vd$domain != CONTINUOUS) v <- round(v)
-    if (v < vd$lower || v > vd$upper)
+    if (vd$domain != CONTINUOUS && vd$domain != SEMICONTINUOUS) v <- round(v)
+    semi <- vd$domain %in% c(SEMICONTINUOUS, SEMIINTEGER)
+    if ((v < vd$lower || v > vd$upper) && !(semi && v == 0))
       stop(caller, ": the value ", v, " for '", vd$name, "' lies outside its bounds [",
            vd$lower, ", ", vd$upper, "]")
     list(var = vd$name, index = list(), value = v)
   })
-  for (name in names(slots)) {
-    prog$structures[[name]]$start <- slots[[name]]
+  for (name in names(starts)) {
+    prog$structures[[name]]$start <- starts[[name]]
     prog$structures[[name]]$fixed <- TRUE
   }
   prog

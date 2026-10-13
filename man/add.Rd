@@ -63,10 +63,10 @@ constraint apply only in solutions in which \code{b} is 1. For example,
 plant is closed. \code{b} is a single variable, or a vector variable with one
 element per constraint.
 
-In a model without random variables, a switch limits the kind of model
-the service accepts: every variable must then be an integer or a binary
-variable, with finite bounds. The same holds for \code{\link[=holds]{holds()}}, \code{max()} and
-\code{min()}.
+A model with a switch is solved by a search, so its status is
+\code{"heuristic"}. The same holds for \code{\link[=holds]{holds()}}, \code{max()} and \code{min()}. When every variable of such a model is an integer or a binary variable, each
+needs finite bounds; a model with a continuous variable or with random
+variables has no such limit.
 }
 
 \examples{

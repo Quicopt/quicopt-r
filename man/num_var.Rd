@@ -7,9 +7,9 @@
 \alias{add_var}
 \title{Declare decision variables}
 \usage{
-num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
+num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
 
-int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
+int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
 
 bin_var(m, name, n = 1, start = 0)
 
@@ -20,7 +20,8 @@ add_var(
   upper = Inf,
   n = 1,
   start = 0,
-  domain = c("num", "int", "bin")
+  domain = c("num", "int", "bin"),
+  semi = FALSE
 )
 }
 \arguments{
@@ -36,6 +37,9 @@ unique within the model.}
 
 \item{start}{The value the service's search starts from (see
 \code{\link[=set_start]{set_start()}}).}
+
+\item{semi}{Whether the variable may also be 0 when 0 lies outside its
+bounds (see above).}
 
 \item{domain}{For \code{add_var()}: \code{"num"}, \code{"int"} or \code{"bin"}, to declare the
 variable as \code{num_var()}, \code{int_var()} or \code{bin_var()} would.}
@@ -57,6 +61,15 @@ Each returns the variable, for use in expressions such as
 \code{add_var()} declares a variable in the same way but returns the model, for
 use in a pipe (see \code{\link[=model]{model()}}).
 
+With \code{semi = TRUE}, the variable is either 0 or between its bounds, never
+in between: a delivery of either nothing or 10 to 25 units is
+\code{int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)}. Solvers for
+mixed-integer programs call such a variable \emph{semi-continuous}, or
+\emph{semi-integer} when it must be a whole number. The bounds must then be
+finite. When 0 already lies between them, \code{semi} changes nothing. \code{\link[=active]{active()}}
+is 1 when such a variable is not 0, which is how a fixed fee per delivery is
+written: \code{fee * active(delivery)}.
+
 With \code{n} greater than 1, one call declares \code{n} variables under one name,
 and they behave like an R vector: \code{x[3]} is the third, arithmetic works
 element by element, and \code{sum(x)} adds them up. \code{lower}, \code{upper} and \code{start}
@@ -71,4 +84,5 @@ take   <- bin_var(m, "take", n = 6)                         # six yes-or-no deci
 share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
 sum(share)
 take[2]
+delivery <- int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)   # none, or 10 to 25
 }

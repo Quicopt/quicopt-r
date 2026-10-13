@@ -34,8 +34,8 @@ ir_set_ref(name, args = list())
 \arguments{
 \item{value}{A number.}
 
-\item{name}{The name of the variable, table, random variable, permutation
-or index set referred to.}
+\item{name}{The name of the variable, table, random variable, permutation,
+partition or index set referred to.}
 
 \item{index}{A position: a list of whole numbers and index names, \code{list()}
 for none. For \code{ir_table_ref()}, a list of one or two expression nodes.}
@@ -86,10 +86,11 @@ a list of argument nodes.
 of an index set, for example the sum of \code{body} over all \code{i} in a set
 \code{S}.
 \item \code{ir_set_ref(name, args)}: the index set a reduction runs over.
-\item \code{ir_struct_ref(name)}: a permutation declared in the program's
-\code{structures}. It may appear only as the second argument of the operators
-\code{"item_at"} and \code{"slot_of"}, which is what \code{\link[=item_at]{item_at()}} and \code{\link[=slot_of]{slot_of()}}
-build.
+\item \code{ir_struct_ref(name)}: a permutation or a partition declared in the
+program's \code{structures}. It may appear only as the second argument of the
+operators \code{"item_at"} and \code{"slot_of"} (a permutation) or \code{"part_of"} and
+\code{"size_of"} (a partition), which is what \code{\link[=item_at]{item_at()}}, \code{\link[=slot_of]{slot_of()}},
+\code{\link[=part_of]{part_of()}} and \code{\link[=size_of]{size_of()}} build.
 \item \code{ir_table_ref(param, index)}: an entry of a parameter table at positions
 given by expression nodes, which is what indexing a \code{\link[=lookup_table]{lookup_table()}}
 builds.

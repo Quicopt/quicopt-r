@@ -17,8 +17,9 @@ the data is uncertain, the random variables and the number of scenarios.
 }
 \details{
 \itemize{
-\item decisions: \code{\link[=num_var]{num_var()}}, \code{\link[=int_var]{int_var()}}, \code{\link[=bin_var]{bin_var()}}, and \code{\link[=perm_var]{perm_var()}} for an
-order;
+\item decisions: \code{\link[=num_var]{num_var()}}, \code{\link[=int_var]{int_var()}}, \code{\link[=bin_var]{bin_var()}}, \code{\link[=perm_var]{perm_var()}} for an
+order and \code{\link[=part_var]{part_var()}} for a division into groups;
+\item subproblems: \code{\link[=block]{block()}};
 \item uncertain data: \code{\link[=rand_var]{rand_var()}} and \code{\link[=set_empirical]{set_empirical()}};
 \item the objective: \code{\link[=minimize]{minimize()}} or \code{\link[=maximize]{maximize()}};
 \item constraints: \code{\link[=add]{add()}}.

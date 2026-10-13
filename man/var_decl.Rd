@@ -4,6 +4,8 @@
 \alias{CONTINUOUS}
 \alias{INTEGER}
 \alias{BINARY}
+\alias{SEMICONTINUOUS}
+\alias{SEMIINTEGER}
 \alias{var_decl}
 \title{A decision variable, for building a program by hand}
 \usage{
@@ -12,6 +14,10 @@ CONTINUOUS
 INTEGER
 
 BINARY
+
+SEMICONTINUOUS
+
+SEMIINTEGER
 
 var_decl(
   name,
@@ -28,7 +34,8 @@ var_decl(
 \item{axes}{The names of the index sets the variable is indexed over;
 \code{character()} for a single variable.}
 
-\item{domain}{\code{CONTINUOUS}, \code{INTEGER} or \code{BINARY}.}
+\item{domain}{\code{CONTINUOUS}, \code{INTEGER}, \code{BINARY}, \code{SEMICONTINUOUS} or
+\code{SEMIINTEGER}.}
 
 \item{lower, upper}{A number (\code{-Inf} or \code{Inf} for no bound), or the name of
 a parameter table, for a bound that differs from index to index.}
@@ -40,13 +47,19 @@ a parameter table, for a bound that differs from index to index.}
 \code{name}, \code{axes}, \code{domain}, \code{lower}, \code{upper} and \code{start}. It is an element
 of the list a \code{\link[=program]{program()}} takes as \code{vars}.
 
-\code{CONTINUOUS}, \code{INTEGER} and \code{BINARY} are not functions but constants: the
-whole numbers 1, 2 and 3, which stand for the three kinds of variable in
-\code{domain}.
+\code{CONTINUOUS}, \code{INTEGER}, \code{BINARY}, \code{SEMICONTINUOUS} and \code{SEMIINTEGER}
+are not functions but constants: the whole numbers 1 to 5, which stand for
+the five kinds of variable in \code{domain}.
 }
 \description{
 Declares one decision variable of a \code{\link[=program]{program()}}. \code{\link[=num_var]{num_var()}}, \code{\link[=int_var]{int_var()}}
 and \code{\link[=bin_var]{bin_var()}} build these for you.
+}
+\details{
+A variable of domain \code{SEMICONTINUOUS} is either 0 or a value between its
+bounds, and one of domain \code{SEMIINTEGER} is either 0 or a whole number
+between them (see the \code{semi} argument of \code{\link[=num_var]{num_var()}}). Both need finite
+bounds.
 }
 \examples{
 var_decl("tables", domain = INTEGER, lower = 0)

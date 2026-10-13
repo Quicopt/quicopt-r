@@ -274,7 +274,8 @@ NULL
 # A structure declaration: the name, the kind as its catalog key, and the
 # kind's fields. The start is packed (one length-delimited run of varints, as a
 # generated encoder emits a proto3 repeated int64) and omitted when empty;
-# `fixed` is omitted when false; precedences ride in the order given.
+# `fixed` is omitted when false; a permutation's precedences ride in the order
+# given, and a partition's part count comes last (field 7).
 .enc_structure <- function(io, name, s) {
   .w_str(io, 1, name)
   .w_str(io, 2, s$kind)
@@ -284,6 +285,14 @@ NULL
   if (isTRUE(s$fixed)) .w_varint(io, 5, 1)
   for (p in s$precede)
     .w_msg(io, 6, .msg(function(b) { .w_varint(b, 1, p[[1L]]); .w_varint(b, 2, p[[2L]]) }))
+  if (identical(s$kind, "partition")) .w_varint(io, 7, s$parts)
+}
+
+# A block: its name, then each member as a variable reference, in the order
+# given.
+.enc_block <- function(io, name, members) {
+  .w_str(io, 1, name)
+  for (v in members) .w_msg(io, 2, .msg(function(b) .enc_var_ref(b, v)))
 }
 
 # ── the program ─────────────────────────────────────────────────────────────
@@ -307,7 +316,8 @@ NULL
 encode <- function(prog) {
   if (inherits(prog, "quicopt_model")) prog <- as_program(prog)
   if (!inherits(prog, "quicopt_program")) stop("encode takes a program() or a model()")
-  # Fields in schema order (1-8 deterministic, 9-11 stochastic, 12 structured);
+  # Fields in schema order (1-8 deterministic, 9-11 stochastic, 12 structured,
+  # 13 blocks);
   # the order-free tables are emitted sorted, which is what makes equal
   # programs equal bytes.
   # The two scenario scalars are omitted at their default of 1 — and that is
@@ -342,6 +352,8 @@ encode <- function(prog) {
     .w_msg(io, 11, .msg(function(b) .enc_source(b, name, prog$sources[[name]])))
   for (name in .sort_names(names2(prog$structures)))
     .w_msg(io, 12, .msg(function(b) .enc_structure(b, name, prog$structures[[name]])))
+  for (name in .sort_names(names2(prog$blocks)))
+    .w_msg(io, 13, .msg(function(b) .enc_block(b, name, prog$blocks[[name]])))
   .bytes(io)
 }
 
