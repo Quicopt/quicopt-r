@@ -254,5 +254,52 @@ check("job_delete DELETEs the job",
       rec$requests[[3]]$method == "DELETE" &&
       identical(rec$requests[[3]]$url, paste0(DEFAULT_BASE_URL, "/v1/jobs/j-11")))
 
+# ── time limits ─────────────────────────────────────────────────────────────
+
+granted <- function(asked, budget)
+  ok_response(sprintf('{"status":"optimal","solver_data":{"time_limit_s":%g,"time_budget_s":%g}}',
+                      asked, budget))
+
+# a time limit rides the query string, and the wait grows to cover it
+forget_session_key()
+rec <- recorder(list(granted(90, 90)))
+. <- solve_model(m, time_limit = 90, transport = rec$fn)
+check("time_limit rides the query string",
+      grepl("time_limit=90", rec$requests[[1]]$url, fixed = TRUE))
+check("the wait covers the time limit plus a minute", rec$requests[[1]]$timeout == 150)
+rec <- recorder(list(ok_response('{"status":"optimal"}')))
+. <- solve_model(m, timeout = 45, transport = rec$fn)
+check("without a time limit nothing is sent and the wait is the timeout",
+      !grepl("time_limit", rec$requests[[1]]$url, fixed = TRUE) && rec$requests[[1]]$timeout == 45)
+
+# a bad time limit is refused before anything is sent
+rec <- recorder(list(ok_response('{"status":"optimal"}')))
+for (bad in list(0, -1, Inf, NA_real_, c(10, 20), "30"))
+  expect_error_like(paste("time_limit =", deparse(bad), "is refused"),
+                    solve_model(m, time_limit = bad, transport = rec$fn), "time_limit")
+check("nothing was sent for a bad time limit", length(rec$requests) == 0)
+
+# a time limit the service lowered warns; one it granted is silent
+rec <- recorder(list(granted(300, 120)))
+msg <- tryCatch({ solve_model(m, time_limit = 300, transport = rec$fn); NULL },
+                warning = function(w) conditionMessage(w))
+check("a lowered time limit warns",
+      !is.null(msg) && grepl("for 120 s, not the 300 s asked for", msg, fixed = TRUE))
+rec <- recorder(list(granted(30, 30)))
+msg <- tryCatch({ solve_model(m, time_limit = 30, transport = rec$fn); NULL },
+                warning = function(w) conditionMessage(w))
+check("a granted time limit is silent", is.null(msg))
+
+# a job keeps its time limit, polls long enough for it, and warns when lowered
+forget_session_key()
+rec <- recorder(list(list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-12"}')),
+                     granted(300, 120)))
+job <- submit(m, time_limit = 300, transport = rec$fn)
+check("submit sends the time limit and the job keeps it",
+      grepl("time_limit=300", rec$requests[[1]]$url, fixed = TRUE) && job$time_limit == 300)
+msg <- tryCatch({ job_result(job); NULL }, warning = function(w) conditionMessage(w))
+check("job_result warns when the time limit was lowered",
+      !is.null(msg) && grepl("120 s is the most it grants", msg, fixed = TRUE))
+
 forget_session_key()
 cat("client: all green\n")

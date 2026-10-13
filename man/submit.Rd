@@ -12,6 +12,7 @@ submit(
   config = NULL,
   gzip = FALSE,
   timeout = 60,
+  time_limit = NULL,
   transport = NULL
 )
 }
@@ -34,6 +35,9 @@ a large model.}
 
 \item{timeout}{How many seconds to wait for the answer.}
 
+\item{time_limit}{How many seconds the solve may run, or \code{NULL} to leave
+that to the service (see the Time limit section).}
+
 \item{transport}{For tests: a function that is called instead of sending
 the request. It takes a list with the elements \code{method}, \code{url},
 \code{headers}, \code{body} and \code{timeout}, and returns a list with the elements
@@ -51,7 +55,8 @@ answer when it is ready, and \code{\link[=job_status]{job_status()}} shows how f
 }
 \details{
 The job keeps the address, the key and the other settings it was submitted
-with, so the functions that follow it up need only the job.
+with, so the functions that follow it up need only the job. Given a
+\code{time_limit}, \code{\link[=job_result]{job_result()}} waits at least that long plus a minute.
 }
 \examples{
 \dontrun{

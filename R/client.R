@@ -17,6 +17,11 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 # package's interface is one. A caller-supplied value in `config` wins.
 .SOURCE_LANGUAGE <- "quicopt-r"
 
+# How long a request may take beyond the solve itself (waiting in the queue,
+# reading the model, writing the answer) before the client stops waiting on a
+# solve whose time limit it set.
+.WAIT_MARGIN <- 60
+
 # Session state: a key minted by the first keyless call, replayed for the rest
 # of the session. Deliberately memory-only — nothing is written to the user's
 # filespace.
@@ -31,6 +36,18 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #'
 #' `solve()` waits for up to `timeout` seconds. For a model that takes
 #' longer, [submit()] sends it without waiting.
+#'
+#' @section Time limit:
+#' The service decides how long a solve may run. `time_limit` sets that time
+#' instead, in seconds. A solver that proves its answer sooner still stops
+#' sooner; a search, which cannot prove it is done, runs for all of it. The
+#' service grants at most its maximum (120 seconds on the free tier). Asked
+#' for more, it runs for its maximum, and a warning says that the solve got
+#' less time than requested. `res$solver_data$time_budget_s` is the time the
+#' service granted.
+#'
+#' `solve()` waits for the answer at least `time_limit` plus a minute, even
+#' when `timeout` is shorter.
 #'
 #' @section API keys:
 #' The service needs an API key. The first time a model is solved in an R
@@ -62,6 +79,8 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #' @param gzip Whether to compress the model before sending it; worth it for
 #'   a large model.
 #' @param timeout How many seconds to wait for the answer.
+#' @param time_limit How many seconds the solve may run, or `NULL` to leave
+#'   that to the service (see the Time limit section).
 #' @param transport For tests: a function that is called instead of sending
 #'   the request. It takes a list with the elements `method`, `url`,
 #'   `headers`, `body` and `timeout`, and returns a list with the elements
@@ -95,16 +114,43 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #' res$status
 #' res$solution
 #' res
+#'
+#' res <- solve(m, time_limit = 30)
+#' res$solver_data$time_budget_s   # 30: the seconds the service granted
 #' }
 #' @export
 solve_model <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
                         project = NULL, config = NULL, gzip = FALSE,
-                        timeout = 60, transport = NULL) {
+                        timeout = 60, time_limit = NULL, transport = NULL) {
+  time_limit <- .check_time_limit(time_limit)
+  wait <- if (is.null(time_limit)) timeout else max(timeout, time_limit + .WAIT_MARGIN)
   resp <- .request(base_url, "POST", "/v1/solve",
                    body = if (is.raw(m)) m else encode(m),
-                   meta = .meta_config(m, project, config), gzip = gzip,
-                   api_key = api_key, timeout = timeout, transport = transport)
-  .parse_result(resp$body, .declared(m))
+                   meta = .meta_config(m, project, config, time_limit), gzip = gzip,
+                   api_key = api_key, timeout = wait, transport = transport)
+  .warn_if_lowered(.parse_result(resp$body, .declared(m)))
+}
+
+# A time limit, checked before anything is sent: NULL, or one positive,
+# finite number of seconds.
+.check_time_limit <- function(time_limit) {
+  if (is.null(time_limit)) return(NULL)
+  if (!is.numeric(time_limit) || length(time_limit) != 1L || is.na(time_limit) ||
+      !is.finite(time_limit) || time_limit <= 0)
+    stop("time_limit is one positive, finite number of seconds", call. = FALSE)
+  as.numeric(time_limit)
+}
+
+# Warn when the service ran a solve for less time than its time_limit asked
+# for. The service grants at most its maximum and reports what was asked and
+# what it granted side by side in solver_data.
+.warn_if_lowered <- function(res) {
+  asked <- res$solver_data$time_limit_s
+  granted <- res$solver_data$time_budget_s
+  if (!is.null(asked) && !is.null(granted) && granted < asked)
+    warning(sprintf("the service ran this solve for %g s, not the %g s asked for: %g s is the most it grants",
+                    granted, asked, granted), call. = FALSE)
+  res
 }
 
 # The decision variables' wire names in the order they were declared: the order
@@ -140,7 +186,8 @@ solve.quicopt_model <- function(a, b, ...) {
 #' answer when it is ready, and [job_status()] shows how far the job has got.
 #'
 #' The job keeps the address, the key and the other settings it was submitted
-#' with, so the functions that follow it up need only the job.
+#' with, so the functions that follow it up need only the job. Given a
+#' `time_limit`, [job_result()] waits at least that long plus a minute.
 #'
 #' @inheritParams solve_model
 #' @return A job, of class `quicopt_job`, for [job_result()], [job_status()],
@@ -154,10 +201,11 @@ solve.quicopt_model <- function(a, b, ...) {
 #' @export
 submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
                    project = NULL, config = NULL, gzip = FALSE,
-                   timeout = 60, transport = NULL) {
+                   timeout = 60, time_limit = NULL, transport = NULL) {
+  time_limit <- .check_time_limit(time_limit)
   resp <- .request(base_url, "POST", "/v1/jobs",
                    body = if (is.raw(m)) m else encode(m),
-                   meta = .meta_config(m, project, config), gzip = gzip,
+                   meta = .meta_config(m, project, config, time_limit), gzip = gzip,
                    api_key = api_key, timeout = timeout, transport = transport)
   parsed <- jsonlite::fromJSON(rawToChar(resp$body), simplifyVector = FALSE)
   # /v1/jobs echoes a minted key in the accepted-response body as well as the
@@ -166,7 +214,7 @@ submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
   if (is.null(parsed$job_id)) stop("the service accepted the job but returned no job_id")
   structure(list(job_id = parsed$job_id, base_url = base_url,
                  api_key = api_key, timeout = timeout, transport = transport,
-                 declared = .declared(m)),
+                 declared = .declared(m), time_limit = time_limit),
             class = "quicopt_job")
 }
 
@@ -176,7 +224,8 @@ submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
 #'   `"done"` or `"failed"`, together with the last lines of its log.
 #' * `job_result()` returns the answer of the job, in the same form as
 #'   [solve()]. By default it waits for the job to finish, checking every
-#'   `poll` seconds for up to `timeout` seconds.
+#'   `poll` seconds for up to `timeout` seconds. Like [solve()], it warns
+#'   when the service granted less time than the job's `time_limit`.
 #' * `job_log()` returns the job's log as text.
 #' * `job_delete()` deletes the job and its stored answer from the service.
 #'
@@ -195,17 +244,21 @@ job_status <- function(job) .job_json(job, "GET", "")
 #' @rdname job_status
 #' @param wait `TRUE` waits until the job is finished. `FALSE` asks once, and
 #'   is an error if the job is not finished yet.
-#' @param timeout How many seconds to wait at most.
+#' @param timeout How many seconds to wait at most: by default 120, or the
+#'   job's `time_limit` plus 60 when that is longer.
 #' @param poll How many seconds to wait between two checks.
 #' @return `job_result()` returns the answer, a list of class
 #'   `quicopt_result` (see [solve()]).
 #' @export
-job_result <- function(job, wait = TRUE, timeout = 120, poll = 0.5) {
+job_result <- function(job, wait = TRUE, timeout = NULL, poll = 0.5) {
+  if (is.null(timeout))
+    timeout <- if (is.null(job$time_limit)) 120 else max(120, job$time_limit + .WAIT_MARGIN)
   deadline <- Sys.time() + timeout
   repeat {
     resp <- tryCatch(.job_request(job, "GET", "/result"),
                      quicopt_error = function(e) e)
-    if (!inherits(resp, "quicopt_error")) return(.parse_result(resp$body, job$declared))
+    if (!inherits(resp, "quicopt_error"))
+      return(.warn_if_lowered(.parse_result(resp$body, job$declared)))
     if (!wait || !identical(resp$reason, "not_done") || Sys.time() > deadline)
       stop(resp)
     Sys.sleep(poll)
@@ -263,8 +316,8 @@ print.quicopt_job <- function(x, ...) {
 
 # The per-call metadata, sent as query parameters and never inside the encoded
 # model: the caller's config first, then the automatic source_language unless
-# the config already set one, then the project id.
-.meta_config <- function(m, project, config) {
+# the config already set one, then the project id and the time limit.
+.meta_config <- function(m, project, config, time_limit = NULL) {
   meta <- if (is.null(config)) list() else {
     if (is.null(names(config)) || any(!nzchar(names(config))))
       stop("config must be a fully named list")
@@ -273,6 +326,7 @@ print.quicopt_job <- function(x, ...) {
   if (inherits(m, "quicopt_model") && is.null(meta$source_language))
     meta$source_language <- .SOURCE_LANGUAGE
   if (!is.null(project)) meta$project_id <- project
+  if (!is.null(time_limit)) meta$time_limit <- time_limit
   meta
 }
 
