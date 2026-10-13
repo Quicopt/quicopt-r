@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,11 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.1" id="quicopt-061">quicopt 0.6.1<a class="anchor" aria-label="anchor" href="#quicopt-061"></a></h2>
+<ul><li>
+<code><a href="../reference/summaries.html">max()</a></code>, <code><a href="../reference/summaries.html">min()</a></code>, <code><a href="../reference/summaries.html">sum()</a></code> and <code><a href="../reference/summaries.html">prod()</a></code> accept a plain number before an expression. <code>max(0, demand - stock)</code> used to stop with “invalid ‘type’ (list) of argument”, because base R chooses the method of these functions by their first argument only; only <code>max(demand - stock, 0)</code> worked. quicopt now provides its own versions of the four functions, which pass any call without an expression to base R unchanged. R notes them as masked from <code>base</code> when the package is attached.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="quicopt-060">quicopt 0.6.0<a class="anchor" aria-label="anchor" href="#quicopt-060"></a></h2>
 <ul><li>
 <code><a href="../reference/num_var.html">num_var()</a></code> and <code><a href="../reference/num_var.html">int_var()</a></code> take <code>semi = TRUE</code> for a variable that is either 0 or between its bounds, never in between: a delivery of nothing or of 10 to 25 units. Its bounds must be finite. <code>active(x)</code> is 1 when such a variable is not 0, so a fee per delivery is <code>fee * active(delivery)</code>, and a model that is otherwise linear is still solved to a proven optimum.</li>
@@ -39,7 +44,7 @@
 <code>block(m, name, vars)</code> names the variables of one subproblem, such as one customer’s deliveries. Every solution the service returns satisfies the constraints over one block’s variables alone. A variable is in at most one block and needs finite bounds.</li>
 <li>
 <code>part_var(m, "teams", n, parts)</code> declares a partition: each of <code>n</code> items in one of <code>parts</code> parts. <code>part_of(item, P)</code> is an item’s part and <code>size_of(part, P)</code> the number of items in a part, both vectorized over their first argument. A solution reports both under <code>res$structures$&lt;name&gt;</code>, and <code><a href="../reference/set_start.html">set_start()</a></code>, <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> carry the division along.</li>
-<li>A model with <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>, <code><a href="../reference/holds.html">holds()</a></code> or a switch is solved by a search; such a model whose variables are all integer or binary needs finite bounds on each, as before, but one with a continuous variable is now accepted.</li>
+<li>A model with <code><a href="../reference/summaries.html">max()</a></code>, <code><a href="../reference/summaries.html">min()</a></code>, <code><a href="../reference/holds.html">holds()</a></code> or a switch is solved by a search; such a model whose variables are all integer or binary needs finite bounds on each, as before, but one with a continuous variable is now accepted.</li>
 <li>
 <code><a href="../reference/partition_decl.html">partition_decl()</a></code>, the constants <code>SEMICONTINUOUS</code> and <code>SEMIINTEGER</code>, and <code>program(blocks = )</code> are the data-layer forms. The service must be recent enough to know these constructs; an older one refuses the model when it is sent.</li>
 </ul></div>
@@ -85,10 +90,10 @@
 <li>
 <code>is_random(x)</code> says whether an expression still varies across scenarios. An aggregator applied to a non-random expression, and a random objective or constraint, are now refused in R with the public names, before the service refuses them with wire names.</li>
 <li>
-<code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code> of a model expression is the mean over its elements, like <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code>; <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> concatenates expressions.</li>
+<code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code> of a model expression is the mean over its elements, like <code><a href="../reference/summaries.html">sum()</a></code>; <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> concatenates expressions.</li>
 </ul><p>Fixed:</p>
 <ul><li>
-<code>-x</code> and <code><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod()</a></code> over three or more elements encoded shapes the service rejected.</li>
+<code>-x</code> and <code><a href="../reference/summaries.html">prod()</a></code> over three or more elements encoded shapes the service rejected.</li>
 <li>
 <code>x &lt;= 3</code> with a vector <code>x</code> added one row instead of one per element.</li>
 <li>The <code>solution</code> of a result is ordered as the variables were declared. It used to keep the order the answer arrived in, which is the service’s own, so <code>which(res$solution == 1)</code> did not count items the way the model did.</li>

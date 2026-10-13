@@ -84,11 +84,12 @@ variable with one element per constraint.
 A model with a switch is solved by a search, so its status is
 `"heuristic"`. The same holds for
 [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md),
-[`max()`](https://rdrr.io/r/base/Extremes.html) and
-[`min()`](https://rdrr.io/r/base/Extremes.html). When every variable of
-such a model is an integer or a binary variable, each needs finite
-bounds; a model with a continuous variable or with random variables has
-no such limit.
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+and
+[`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md).
+When every variable of such a model is an integer or a binary variable,
+each needs finite bounds; a model with a continuous variable or with
+random variables has no such limit.
 
 ## Examples
 

@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://quicopt.github.io/quicopt-r/404.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/LICENSE-text.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/articles/deliveries.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/articles/index.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/articles/permutations.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/articles/quicopt.html</loc></url>
@@ -54,6 +55,7 @@
 <url><loc>https://quicopt.github.io/quicopt-r/reference/solve_model.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/stochastic.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/submit.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/reference/summaries.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/var_decl.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/variance.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/wire.html</loc></url>

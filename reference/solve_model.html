@@ -13,7 +13,7 @@ which can read better in a pipe."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -178,8 +178,8 @@ and not kept.</p>
 <p><code>status</code> says what kind of answer the result holds:</p><ul><li><p><code>"optimal"</code>: the service has proved that no better solution exists.</p></li>
 <li><p><code>"heuristic"</code>: the best solution a search found, without that proof.
 Models with random variables, permutations, partitions or lookup tables
-are solved this way, and so are models with <code><a href="holds.html">holds()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> or
-<code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>. If such a result has <code>feasible = FALSE</code>, the search found no
+are solved this way, and so are models with <code><a href="holds.html">holds()</a></code>, <code><a href="summaries.html">max()</a></code> or
+<code><a href="summaries.html">min()</a></code>. If such a result has <code>feasible = FALSE</code>, the search found no
 solution that meets every constraint, which does not prove that none
 exists.</p></li>
 </ul><p>Other values say why no solution is available.</p>

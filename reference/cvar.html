@@ -15,7 +15,7 @@ scenarios as good as possible, rather than the average one."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,7 +82,7 @@ negative, <code>cvar(-profit, 0.95)</code>.</p>
 <span class="r-in"><span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">cost</span> <span class="op">&lt;-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cost</span> <span class="op">&lt;-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="summaries.html">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu">cvar</span><span class="op">(</span><span class="va">cost</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span>              <span class="co"># the average cost of the worst 5% of scenarios</span></span></span>
 </code></pre></div>
     </div>

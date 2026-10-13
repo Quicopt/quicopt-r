@@ -15,7 +15,7 @@ model. No distribution has to be chosen or fitted."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -89,7 +89,7 @@ uncertainty when the data frame holds others too.</p>
 <span class="r-in"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="model.html">model</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">stock</span> <span class="op">&lt;-</span> <span class="fu"><a href="num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">set_empirical</span><span class="op">(</span><span class="va">m</span>, <span class="va">history</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="expectation.html">expectation</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">price</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">demand</span>, <span class="va">stock</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="expectation.html">expectation</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">price</span> <span class="op">*</span> <span class="fu"><a href="summaries.html">min</a></span><span class="op">(</span><span class="va">m</span><span class="op">$</span><span class="va">demand</span>, <span class="va">stock</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

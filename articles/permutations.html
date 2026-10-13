@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -163,7 +163,7 @@ service carries out for whatever order it is considering:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lookup_table.html">lookup_table</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"dist"</span>, <span class="va">km</span><span class="op">)</span></span>
 <span><span class="va">legs</span> <span class="op">&lt;-</span> <span class="va">dist</span><span class="op">[</span><span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">route</span><span class="op">)</span>, <span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">2</span><span class="op">:</span><span class="fl">5</span>, <span class="va">route</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">legs</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">legs</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Indexing a lookup table pairs up its indices, which is different from
 an ordinary R matrix. <code>km[1:4, 2:5]</code> is a 4 × 4 block of
 <code>km</code>, but <code>legs</code> has four elements: the distance
@@ -227,7 +227,7 @@ objective:</p>
 <span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">256</span>, seed <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">legs</span> <span class="op">&lt;-</span> <span class="va">dist</span><span class="op">[</span><span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">route</span><span class="op">)</span>, <span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">2</span><span class="op">:</span><span class="fl">5</span>, <span class="va">route</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">legs</span> <span class="op">*</span> <span class="va">traffic</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/expectation.html">expectation</a></span><span class="op">(</span><span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">legs</span> <span class="op">*</span> <span class="va">traffic</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">structures</span><span class="op">$</span><span class="va">route</span><span class="op">$</span><span class="va">item_at</span></span>
@@ -265,7 +265,7 @@ they are in, which is what <code><a href="../reference/item_at.html">slot_of()</
 <span><span class="va">place</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/perm_var.html">perm_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"place"</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">metres</span> <span class="op">&lt;-</span> <span class="va">walk</span><span class="op">[</span><span class="fu"><a href="../reference/item_at.html">slot_of</a></span><span class="op">(</span><span class="va">from</span>, <span class="va">place</span><span class="op">)</span>, <span class="fu"><a href="../reference/item_at.html">slot_of</a></span><span class="op">(</span><span class="va">to</span>, <span class="va">place</span><span class="op">)</span><span class="op">]</span>          <span class="co"># one per pair of departments</span></span>
-<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">trips</span> <span class="op">*</span> <span class="va">metres</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">trips</span> <span class="op">*</span> <span class="va">metres</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">structures</span><span class="op">$</span><span class="va">place</span><span class="op">$</span><span class="va">slot_of</span></span>

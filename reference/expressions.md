@@ -17,11 +17,11 @@ written as ordinary R code, with these operators and functions:
   [`sin()`](https://rdrr.io/r/base/Trig.html) and
   [`cos()`](https://rdrr.io/r/base/Trig.html);
 
-- [`sum()`](https://rdrr.io/r/base/sum.html),
-  [`prod()`](https://rdrr.io/r/base/prod.html),
-  [`max()`](https://rdrr.io/r/base/Extremes.html),
-  [`min()`](https://rdrr.io/r/base/Extremes.html) and
-  [`mean()`](https://rdrr.io/r/base/mean.html).
+- [`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+  [`prod()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+  [`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+  [`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  and [`mean()`](https://rdrr.io/r/base/mean.html).
 
 Expressions need not be linear. Printing an expression shows what was
 built.
@@ -39,16 +39,19 @@ There are two differences. First, the two sides of an arithmetic
 operation must have the same length, or one of them length 1. R would
 recycle the shorter vector, which in a model is almost always a mistake,
 so here it is an error. Second,
-[`sum()`](https://rdrr.io/r/base/sum.html),
-[`prod()`](https://rdrr.io/r/base/prod.html),
-[`max()`](https://rdrr.io/r/base/Extremes.html),
-[`min()`](https://rdrr.io/r/base/Extremes.html) and
-[`mean()`](https://rdrr.io/r/base/mean.html) combine all the elements of
-all their arguments into one, as they do for numbers: `max(x, 0)` is the
-largest of all the elements of `x` and 0, not an element-by-element
-maximum, and there is no
-[`pmax()`](https://rdrr.io/r/base/Extremes.html). `mean(x)` is the mean
-over the elements of `x`; the mean over the scenarios is
+[`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`prod()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+and [`mean()`](https://rdrr.io/r/base/mean.html) combine all the
+elements of all their arguments into one, as they do for numbers:
+`max(x, 0)` is the largest of all the elements of `x` and 0, not an
+element-by-element maximum, and there is no
+[`pmax()`](https://rdrr.io/r/base/Extremes.html). The arguments can come
+in any order, so `max(0, x)` works too (see
+[summaries](https://quicopt.github.io/quicopt-r/reference/summaries.md)).
+`mean(x)` is the mean over the elements of `x`; the mean over the
+scenarios is
 [`expectation()`](https://quicopt.github.io/quicopt-r/reference/expectation.md).
 
 ## Comparisons
@@ -85,8 +88,9 @@ instead of [`ifelse()`](https://rdrr.io/r/base/ifelse.html), and
 or [`match()`](https://rdrr.io/r/base/match.html) to check whether two
 expressions are the same.
 
-A model with [`max()`](https://rdrr.io/r/base/Extremes.html),
-[`min()`](https://rdrr.io/r/base/Extremes.html) or
+A model with
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md) or
 [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) is
 solved by a search, so its status is `"heuristic"`. When every variable
 of such a model is an integer or a binary variable, each needs finite

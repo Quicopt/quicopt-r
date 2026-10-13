@@ -45,9 +45,9 @@ An expression of the same length as `x`, no longer random.
   the same level is the average of the values above it.
 
 These are different from
-[`max()`](https://rdrr.io/r/base/Extremes.html),
-[`min()`](https://rdrr.io/r/base/Extremes.html) and
-[`quantile()`](https://rdrr.io/r/stats/quantile.html). `max(a, b)`
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+and [`quantile()`](https://rdrr.io/r/stats/quantile.html). `max(a, b)`
 compares two expressions *within* each scenario, and the result is still
 random. `scenario_max(x)` compares the values of one expression *across*
 the scenarios, and the result is a single number.

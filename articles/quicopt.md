@@ -126,9 +126,9 @@ declares a yes-or-no decision: a variable that is either 0 or 1. With
 `n = 6` it declares six of them at once, one per job, and `take` behaves
 like an R vector of length 6. `pay * take` multiplies element by
 element, as it would for two numeric vectors, and
-[`sum()`](https://rdrr.io/r/base/sum.html) adds the six products up. So
-`sum(pay * take)` is the pay of the accepted jobs, and
-`sum(hours * take)` is the hours they take.
+[`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+adds the six products up. So `sum(pay * take)` is the pay of the
+accepted jobs, and `sum(hours * take)` is the hours they take.
 
 In the answer, the six decisions are labelled `take[1]` to `take[6]`. To
 see which jobs were accepted:
@@ -179,12 +179,12 @@ variables. You write it as ordinary R code, with `+`, `-`, `*`, `/` and
 [`log()`](https://rdrr.io/r/base/Log.html),
 [`sin()`](https://rdrr.io/r/base/Trig.html) and
 [`cos()`](https://rdrr.io/r/base/Trig.html), and
-[`sum()`](https://rdrr.io/r/base/sum.html),
-[`prod()`](https://rdrr.io/r/base/prod.html),
-[`max()`](https://rdrr.io/r/base/Extremes.html),
-[`min()`](https://rdrr.io/r/base/Extremes.html) and
-[`mean()`](https://rdrr.io/r/base/mean.html). Expressions need not be
-linear: `tables^2` or `sqrt(chairs)` is allowed in an objective or a
+[`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`prod()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+[`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+and [`mean()`](https://rdrr.io/r/base/mean.html). Expressions need not
+be linear: `tables^2` or `sqrt(chairs)` is allowed in an objective or a
 constraint.
 
 Printing an expression shows what was built:

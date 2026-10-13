@@ -6,3 +6,5 @@
   arrives](https://quicopt.github.io/quicopt-r/articles/stochastic.md):
 - [Choosing an
   order](https://quicopt.github.io/quicopt-r/articles/permutations.md):
+- [Deliveries, fees and
+  teams](https://quicopt.github.io/quicopt-r/articles/deliveries.md):

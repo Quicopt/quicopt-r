@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,8 +169,8 @@ contractor accept?</p>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">take</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"take"</span>, n <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">pay</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">hours</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">12</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">pay</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">hours</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">12</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">solution</span></span>
@@ -180,7 +180,7 @@ contractor accept?</p>
 is either 0 or 1. With <code>n = 6</code> it declares six of them at
 once, one per job, and <code>take</code> behaves like an R vector of
 length 6. <code>pay * take</code> multiplies element by element, as it
-would for two numeric vectors, and <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> adds the six
+would for two numeric vectors, and <code><a href="../reference/summaries.html">sum()</a></code> adds the six
 products up. So <code>sum(pay * take)</code> is the pay of the accepted
 jobs, and <code>sum(hours * take)</code> is the hours they take.</p>
 <p>In the answer, the six decisions are labelled <code>take[1]</code> to
@@ -224,8 +224,8 @@ of the variables. You write it as ordinary R code, with <code>+</code>,
 <code>-</code>, <code>*</code>, <code>/</code> and <code>^</code>, the
 functions <code><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs()</a></code>, <code><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code>,
 <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code>, <code><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin()</a></code> and <code><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos()</a></code>, and
-<code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code>, <code><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>,
-<code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>. Expressions need not be
+<code><a href="../reference/summaries.html">sum()</a></code>, <code><a href="../reference/summaries.html">prod()</a></code>, <code><a href="../reference/summaries.html">max()</a></code>,
+<code><a href="../reference/summaries.html">min()</a></code> and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>. Expressions need not be
 linear: <code>tables^2</code> or <code>sqrt(chairs)</code> is allowed in
 an objective or a constraint.</p>
 <p>Printing an expression shows what was built:</p>

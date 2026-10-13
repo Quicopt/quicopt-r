@@ -15,7 +15,7 @@ ordinary R code, with these operators and functions:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,7 +54,7 @@ ordinary R code, with these operators and functions:</p>
 
 <ul><li><p><code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> and <code>^</code>;</p></li>
 <li><p><code><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs()</a></code>, <code><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code>, <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code>, <code><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin()</a></code> and <code><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos()</a></code>;</p></li>
-<li><p><code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code>, <code><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>.</p></li>
+<li><p><code><a href="summaries.html">sum()</a></code>, <code><a href="summaries.html">prod()</a></code>, <code><a href="summaries.html">max()</a></code>, <code><a href="summaries.html">min()</a></code> and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>.</p></li>
 </ul><p>Expressions need not be linear. Printing an expression shows what was
 built.</p>
     </div>
@@ -69,10 +69,11 @@ and numbers into a longer expression, and <code><a href="https://rdrr.io/r/base/
 <p>There are two differences. First, the two sides of an arithmetic operation
 must have the same length, or one of them length 1. R would recycle the
 shorter vector, which in a model is almost always a mistake, so here it is
-an error. Second, <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code>, <code><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code> combine
+an error. Second, <code><a href="summaries.html">sum()</a></code>, <code><a href="summaries.html">prod()</a></code>, <code><a href="summaries.html">max()</a></code>, <code><a href="summaries.html">min()</a></code> and <code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code> combine
 all the elements of all their arguments into one, as they do for numbers:
 <code>max(x, 0)</code> is the largest of all the elements of <code>x</code> and 0, not an
-element-by-element maximum, and there is no <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code>. <code>mean(x)</code> is the mean
+element-by-element maximum, and there is no <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code>. The arguments can come
+in any order, so <code>max(0, x)</code> works too (see <a href="summaries.html">summaries</a>). <code>mean(x)</code> is the mean
 over the elements of <code>x</code>; the mean over the scenarios is <code><a href="expectation.html">expectation()</a></code>.</p>
     </div>
     <div class="section level2">
@@ -96,7 +97,7 @@ base, stop with an error. Base R functions that are not written for
 expressions do not work on them either: use <code><a href="variance.html">variance()</a></code> instead of
 <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var()</a></code>, <code><a href="holds.html">holds()</a></code> instead of <code><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse()</a></code>, and <code><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical()</a></code> instead of
 <code>%in%</code> or <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> to check whether two expressions are the same.</p>
-<p>A model with <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> or <code><a href="holds.html">holds()</a></code> is solved by a search, so its
+<p>A model with <code><a href="summaries.html">max()</a></code>, <code><a href="summaries.html">min()</a></code> or <code><a href="holds.html">holds()</a></code> is solved by a search, so its
 status is <code>"heuristic"</code>. When every variable of such a model is an integer or a binary variable, each
 needs finite bounds; a model with a continuous variable or with random
 variables has no such limit. A fixed fee for using a variable at all is the exception:
@@ -119,9 +120,9 @@ a linear model exact.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] (2 * x[1])</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [2] (2 * x[2])</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [3] (2 * x[3])</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                                    <span class="co"># one expression</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="summaries.html">sum</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                                    <span class="co"># one expression</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (x[1] + x[2] + x[3])</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.5</span><span class="op">)</span>                               <span class="co"># the largest of all four</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="summaries.html">max</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.5</span><span class="op">)</span>                               <span class="co"># the largest of all four</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> max(max(max(x[1], x[2]), x[3]), 0.5)</span>
 </code></pre></div>
     </div>

@@ -1,5 +1,20 @@
 # Changelog
 
+## quicopt 0.6.1
+
+- [`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+  [`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+  [`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  and
+  [`prod()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  accept a plain number before an expression. `max(0, demand - stock)`
+  used to stop with “invalid ‘type’ (list) of argument”, because base R
+  chooses the method of these functions by their first argument only;
+  only `max(demand - stock, 0)` worked. quicopt now provides its own
+  versions of the four functions, which pass any call without an
+  expression to base R unchanged. R notes them as masked from `base`
+  when the package is attached.
+
 ## quicopt 0.6.0
 
 - [`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
@@ -24,8 +39,9 @@
   and
   [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
   carry the division along.
-- A model with [`max()`](https://rdrr.io/r/base/Extremes.html),
-  [`min()`](https://rdrr.io/r/base/Extremes.html),
+- A model with
+  [`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
+  [`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md),
   [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) or
   a switch is solved by a search; such a model whose variables are all
   integer or binary needs finite bounds on each, as before, but one with
@@ -133,13 +149,14 @@ The release for checking a solution, not only finding one.
   names, before the service refuses them with wire names.
 - [`mean()`](https://rdrr.io/r/base/mean.html) of a model expression is
   the mean over its elements, like
-  [`sum()`](https://rdrr.io/r/base/sum.html);
+  [`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md);
   [`c()`](https://rdrr.io/r/base/c.html) concatenates expressions.
 
 Fixed:
 
-- `-x` and [`prod()`](https://rdrr.io/r/base/prod.html) over three or
-  more elements encoded shapes the service rejected.
+- `-x` and
+  [`prod()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  over three or more elements encoded shapes the service rejected.
 - `x <= 3` with a vector `x` added one row instead of one per element.
 - The `solution` of a result is ordered as the variables were declared.
   It used to keep the order the answer arrived in, which is the

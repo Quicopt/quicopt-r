@@ -157,10 +157,11 @@ only, and not kept.
   Models with random variables, permutations, partitions or lookup
   tables are solved this way, and so are models with
   [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md),
-  [`max()`](https://rdrr.io/r/base/Extremes.html) or
-  [`min()`](https://rdrr.io/r/base/Extremes.html). If such a result has
-  `feasible = FALSE`, the search found no solution that meets every
-  constraint, which does not prove that none exists.
+  [`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  or
+  [`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md).
+  If such a result has `feasible = FALSE`, the search found no solution
+  that meets every constraint, which does not prove that none exists.
 
 Other values say why no solution is available.
 

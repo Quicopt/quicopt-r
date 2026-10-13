@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,7 @@ scenarios stays at or below. With <code>n</code> scenarios it is the
 <code>scenario_quantile(x, 1)</code> is <code>scenario_max(x)</code>. For a cost it is also
 known as the <em>value at risk</em>; <code><a href="cvar.html">cvar()</a></code> at the same level is the average
 of the values above it.</p></li>
-</ul><p>These are different from <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code>. <code>max(a, b)</code>
+</ul><p>These are different from <code><a href="summaries.html">max()</a></code>, <code><a href="summaries.html">min()</a></code> and <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code>. <code>max(a, b)</code>
 compares two expressions <em>within</em> each scenario, and the result is still
 random. <code>scenario_max(x)</code> compares the values of one expression <em>across</em>
 the scenarios, and the result is a single number.</p>
@@ -91,7 +91,7 @@ found with these on new scenarios, with <code><a href="resample.html">resample()
 <span class="r-in"><span><span class="va">stock</span>  <span class="op">&lt;-</span> <span class="fu"><a href="num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"stock"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu"><a href="rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">512</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">cost</span> <span class="op">&lt;-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cost</span> <span class="op">&lt;-</span> <span class="fl">3</span> <span class="op">*</span> <span class="va">stock</span> <span class="op">+</span> <span class="fl">10</span> <span class="op">*</span> <span class="fu"><a href="summaries.html">max</a></span><span class="op">(</span><span class="va">demand</span> <span class="op">-</span> <span class="va">stock</span>, <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu">scenario_max</span><span class="op">(</span><span class="va">cost</span><span class="op">)</span><span class="op">)</span>                  <span class="co"># the cost of the worst scenario</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu">scenario_quantile</span><span class="op">(</span><span class="va">cost</span>, <span class="fl">0.95</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">500</span><span class="op">)</span>     <span class="co"># at most 500 in 95% of scenarios</span></span></span>
 </code></pre></div>

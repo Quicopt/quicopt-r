@@ -46,11 +46,12 @@ exactly.
 
 A model with `holds()` is solved by a search, so its status is
 `"heuristic"`. The same holds for
-[`max()`](https://rdrr.io/r/base/Extremes.html) and
-[`min()`](https://rdrr.io/r/base/Extremes.html). When every variable of
-such a model is an integer or a binary variable, each needs finite
-bounds; a model with a continuous variable or with random variables has
-no such limit.
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+and
+[`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md).
+When every variable of such a model is an integer or a binary variable,
+each needs finite bounds; a model with a continuous variable or with
+random variables has no such limit.
 
 ## A fee due from a level
 
@@ -62,9 +63,11 @@ the warehouse costs once it ships anything, and
 `min(sum(active(ship)), 1)` is the same "anything shipped" written with
 [`active()`](https://quicopt.github.io/quicopt-r/reference/active.md): 1
 once any delivery takes place.
-([`min()`](https://rdrr.io/r/base/Extremes.html) and
-[`max()`](https://rdrr.io/r/base/Extremes.html) read the model
-expression from their first argument, so it comes before the number.)
+([`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+and
+[`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+read the model expression from their first argument, so it comes before
+the number.)
 
 ## Examples
 

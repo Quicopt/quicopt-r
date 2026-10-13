@@ -21,7 +21,7 @@ the service chooses."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -123,7 +123,7 @@ table makes the request large.</p>
 <span class="r-in"><span><span class="va">dist</span>  <span class="op">&lt;-</span> <span class="fu">lookup_table</span><span class="op">(</span><span class="va">m</span>, <span class="st">"dist"</span>, <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/outer.html" class="external-link">outer</a></span><span class="op">(</span><span class="va">position</span>, <span class="va">position</span>, <span class="st">"-"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">route</span> <span class="op">&lt;-</span> <span class="fu"><a href="perm_var.html">perm_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"route"</span>, <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">legs</span>  <span class="op">&lt;-</span> <span class="va">dist</span><span class="op">[</span><span class="fu"><a href="item_at.html">item_at</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">route</span><span class="op">)</span>, <span class="fu"><a href="item_at.html">item_at</a></span><span class="op">(</span><span class="fl">2</span><span class="op">:</span><span class="fl">5</span>, <span class="va">route</span><span class="op">)</span><span class="op">]</span>    <span class="co"># the four legs of the route</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">legs</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="minimize.html">minimize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="summaries.html">sum</a></span><span class="op">(</span><span class="va">legs</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># the price of one of four options, picked by an integer variable</span></span></span>
 <span class="r-in"><span><span class="va">price</span>  <span class="op">&lt;-</span> <span class="fu">lookup_table</span><span class="op">(</span><span class="va">m</span>, <span class="st">"price"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">1.5</span><span class="op">)</span><span class="op">)</span></span></span>

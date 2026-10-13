@@ -4,8 +4,9 @@ The objective is the single number that the service makes as small
 (`minimize()`) or as large (`maximize()`) as possible. Calling either
 function again replaces the objective. An expression with several
 elements has to be combined into one first, for example with
-[`sum()`](https://rdrr.io/r/base/sum.html). A model without an objective
-asks for any solution that meets the constraints.
+[`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md). A
+model without an objective asks for any solution that meets the
+constraints.
 
 ## Usage
 

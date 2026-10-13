@@ -18,6 +18,11 @@
   constraints to a model
 - [`expressions`](https://quicopt.github.io/quicopt-r/reference/expressions.md)
   : Expressions: arithmetic on variables
+- [`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  [`prod()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  [`max()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  [`min()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
+  : Sums, products, maxima and minima
 - [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) :
   A comparison as a 0/1 expression
 
