@@ -51,6 +51,27 @@ e <- max(v, w, 0)     ; check("n-ary max nests binary",
                               e$nodes[[1]]$op == "max" && e$nodes[[1]]$args[[1]]$op == "max")
 e <- min(v, 3)        ; check("min", e$nodes[[1]]$op == "min")
 
+# A plain number first: base R would pick its numeric method from the first
+# argument and stop, so the package's own sum/prod/max/min read the call.
+const_then <- function(e, op, value) {
+  n <- e$nodes[[1]]
+  n$op == op && n$args[[1]]$kind == "const" && n$args[[1]]$value == value
+}
+check("max(0, e) is the catalog's max", const_then(max(0, v - w), "max", 0))
+check("min(1, e) is the catalog's min", const_then(min(1, v), "min", 1))
+check("sum(2, e) is one + node", const_then(sum(2, v), "+", 2))
+check("prod(2, e) is the catalog's *", const_then(prod(2, v), "*", 2))
+check("max(c(0, 1), e) folds every element", {
+  n <- max(c(0, 1), v)$nodes[[1]]
+  n$op == "max" && n$args[[1]]$op == "max" && n$args[[2]]$kind == "var"
+})
+shock <- rand_var(m, "shock", normal(0, 1))
+check("a number first works on random variables too", max(0, shock - v)$nodes[[1]]$op == "max")
+check("without an expression they are base R's",
+      identical(max(3, 7), 7) && identical(sum(1:10), 55L) && identical(prod(1:4), 24) &&
+      identical(max(c(1, NA, 3), na.rm = TRUE), 3) && is.na(max(c(1, NA, 3))) &&
+      identical(min(as.Date("2026-01-01"), as.Date("2026-03-01")), as.Date("2026-01-01")))
+
 expect_error_like("round is outside the catalog", round(v), "not in the operator catalog")
 expect_error_like("range is outside the catalog", range(v), "not in the operator catalog")
 expect_error_like("%% is outside the catalog", v %% 2, "not in the operator catalog")

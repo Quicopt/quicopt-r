@@ -28,7 +28,8 @@
 #' an error. Second, `sum()`, `prod()`, `max()`, `min()` and `mean()` combine
 #' all the elements of all their arguments into one, as they do for numbers:
 #' `max(x, 0)` is the largest of all the elements of `x` and 0, not an
-#' element-by-element maximum, and there is no `pmax()`. `mean(x)` is the mean
+#' element-by-element maximum, and there is no `pmax()`. The arguments can come
+#' in any order, so `max(0, x)` works too (see [summaries]). `mean(x)` is the mean
 #' over the elements of `x`; the mean over the scenarios is [expectation()].
 #'
 #' @section Comparisons:
@@ -154,9 +155,12 @@ Math.quicopt <- function(x, ...) {
 }
 
 #' @export
-Summary.quicopt <- function(..., na.rm = FALSE) {
-  op <- .Generic
-  nodes <- unlist(lapply(list(...), .nodes_of), recursive = FALSE)
+Summary.quicopt <- function(..., na.rm = FALSE) .summarize(.Generic, list(...))
+
+# One expression combining every element of every argument with `op`, which is
+# sum, prod, max or min. Arguments may be expressions or numbers.
+.summarize <- function(op, args) {
+  nodes <- unlist(lapply(args, .nodes_of), recursive = FALSE)
   switch(op,
     # sum/prod fold ALL elements of all arguments into one scalar, exactly R's
     # semantics on numeric vectors. The catalog's + is n-ary, so a sum is one
@@ -176,6 +180,65 @@ Summary.quicopt <- function(..., na.rm = FALSE) {
     stop("'", op, "' is not in the operator catalog")
   )
 }
+
+# sum(), prod(), max() and min() are the package's own, because base R chooses
+# their method by the FIRST argument only: max(0, demand - x) would reach base
+# max, which cannot read an expression, and stop with "invalid 'type' (list) of
+# argument" before any code here runs. Each passes a call with no expression in
+# it to base R unchanged, so it masks base without changing what base does.
+# A clearer error instead is not available: the failure happens inside base.
+.summary_or_base <- function(op, base_fn, args, na.rm) {
+  if (any(vapply(args, inherits, NA, what = "quicopt"))) return(.summarize(op, args))
+  do.call(base_fn, c(args, list(na.rm = na.rm)))
+}
+
+#' Sums, products, maxima and minima
+#'
+#' `sum()`, `prod()`, `max()` and `min()` work on model expressions as they do
+#' on numbers: each combines all the elements of all its arguments into one
+#' value, so `max(x, 0)` is the largest of all the elements of `x` and 0. The
+#' arguments can be expressions, numbers or both, in any order:
+#' `max(0, demand - stock)` and `max(demand - stock, 0)` mean the same.
+#'
+#' quicopt provides its own versions of these four functions, because base R
+#' would read `max(0, x)` with its numeric `max()` and stop with an error.
+#' Called without any expression, they are base R's functions, so loading the
+#' package changes nothing about how they work on numbers. R reports this when
+#' the package is attached, as these functions being masked from `base`.
+#'
+#' The status of a model with `max()` or `min()` is `"heuristic"`: a good
+#' answer, not a proven optimum.
+#'
+#' @param ... Expressions, numbers, or both.
+#' @param na.rm Passed to base R when no argument is an expression, and
+#'   ignored otherwise, since an expression has no missing values.
+#' @return An expression with one element when any argument is an
+#'   expression; otherwise what base R returns.
+#' @examples
+#' m <- model()
+#' stock <- num_var(m, "stock", lower = 0, upper = 100)
+#' demand <- c(60, 80, 120)
+#' max(0, demand - stock)          # the largest shortfall of the three
+#' sum(2, stock)                   # 2 + stock
+#' max(3, 7)                       # 7, as in base R
+#' @name summaries
+NULL
+
+#' @rdname summaries
+#' @export
+sum <- function(..., na.rm = FALSE) .summary_or_base("sum", base::sum, list(...), na.rm)
+
+#' @rdname summaries
+#' @export
+prod <- function(..., na.rm = FALSE) .summary_or_base("prod", base::prod, list(...), na.rm)
+
+#' @rdname summaries
+#' @export
+max <- function(..., na.rm = FALSE) .summary_or_base("max", base::max, list(...), na.rm)
+
+#' @rdname summaries
+#' @export
+min <- function(..., na.rm = FALSE) .summary_or_base("min", base::min, list(...), na.rm)
 
 # ── relations (the constraints-to-be) ───────────────────────────────────────
 

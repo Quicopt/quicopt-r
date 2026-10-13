@@ -1,3 +1,7 @@
+# quicopt 0.6.1
+
+* `max()`, `min()`, `sum()` and `prod()` accept a plain number before an expression. `max(0, demand - stock)` used to stop with "invalid 'type' (list) of argument", because base R chooses the method of these functions by their first argument only; only `max(demand - stock, 0)` worked. quicopt now provides its own versions of the four functions, which pass any call without an expression to base R unchanged. R notes them as masked from `base` when the package is attached.
+
 # quicopt 0.6.0
 
 * `num_var()` and `int_var()` take `semi = TRUE` for a variable that is either 0 or between its bounds, never in between: a delivery of nothing or of 10 to 25 units. Its bounds must be finite. `active(x)` is 1 when such a variable is not 0, so a fee per delivery is `fee * active(delivery)`, and a model that is otherwise linear is still solved to a proven optimum.

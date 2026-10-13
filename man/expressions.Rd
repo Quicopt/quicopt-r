@@ -33,7 +33,8 @@ shorter vector, which in a model is almost always a mistake, so here it is
 an error. Second, \code{sum()}, \code{prod()}, \code{max()}, \code{min()} and \code{mean()} combine
 all the elements of all their arguments into one, as they do for numbers:
 \code{max(x, 0)} is the largest of all the elements of \code{x} and 0, not an
-element-by-element maximum, and there is no \code{pmax()}. \code{mean(x)} is the mean
+element-by-element maximum, and there is no \code{pmax()}. The arguments can come
+in any order, so \code{max(0, x)} works too (see \link{summaries}). \code{mean(x)} is the mean
 over the elements of \code{x}; the mean over the scenarios is \code{\link[=expectation]{expectation()}}.
 }
 
