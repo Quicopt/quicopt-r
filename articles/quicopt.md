@@ -215,6 +215,12 @@ sends it without waiting and returns a job, and
 [`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
 collects the answer when it is ready.
 
+The service decides how long a solve may run.
+`solve(m, time_limit = 30)` gives it 30 seconds instead. A solver that
+proves its answer sooner still stops sooner; a search, which cannot
+prove that it is done, runs for all of it. The service grants at most
+its maximum, and a warning says so when it granted less.
+
 ## Writing a model as a pipe
 
 Every function that changes a model also returns the model, so a model

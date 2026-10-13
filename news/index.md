@@ -1,5 +1,20 @@
 # Changelog
 
+## quicopt 0.5.0
+
+- [`solve()`](https://rdrr.io/r/base/solve.html) and
+  [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+  take `time_limit`, the number of seconds the solve may run, in place
+  of the time the service would choose. A solver that proves its answer
+  sooner still stops sooner; a search runs for all of it. The service
+  grants at most its maximum, and a warning says so when it granted
+  less; `res$solver_data$time_budget_s` is the time it granted.
+  [`solve()`](https://rdrr.io/r/base/solve.html) waits for the answer at
+  least `time_limit` plus a minute, and
+  [`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+  polls that long by default. The service must be recent enough to know
+  the setting; an older one refuses the request.
+
 ## quicopt 0.4.0
 
 - `perm_var(m, "tour", n)` declares a permutation: `n` items in `n`

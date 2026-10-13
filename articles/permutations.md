@@ -250,3 +250,6 @@ solve(m)$solution
   error.
 - A model with a permutation is solved by a search, so its status is
   `"heuristic"`.
+- The search runs for as long as the service decides.
+  `solve(m, time_limit = 60)` lets it run for 60 seconds, which can find
+  a better order for a large model.

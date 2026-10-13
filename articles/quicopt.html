@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -249,6 +249,11 @@ session. If you have a key of your own, pass it as
 <p>A large model can take a while to solve. <code><a href="../reference/submit.html">submit()</a></code> sends
 it without waiting and returns a job, and <code><a href="../reference/job_status.html">job_result()</a></code>
 collects the answer when it is ready.</p>
+<p>The service decides how long a solve may run.
+<code>solve(m, time_limit = 30)</code> gives it 30 seconds instead. A
+solver that proves its answer sooner still stops sooner; a search, which
+cannot prove that it is done, runs for all of it. The service grants at
+most its maximum, and a warning says so when it granted less.</p>
 </div>
 <div class="section level2">
 <h2 id="writing-a-model-as-a-pipe">Writing a model as a pipe<a class="anchor" aria-label="anchor" href="#writing-a-model-as-a-pipe"></a>

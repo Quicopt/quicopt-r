@@ -13,7 +13,7 @@ which can read better in a pipe."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,7 @@ which can read better in a pipe.</p>
 <span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  gzip <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="fl">60</span>,</span>
+<span>  time_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  transport <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -96,6 +97,11 @@ a large model.</p></dd>
 
 <dt id="arg-timeout">timeout<a class="anchor" aria-label="anchor" href="#arg-timeout"></a></dt>
 <dd><p>How many seconds to wait for the answer.</p></dd>
+
+
+<dt id="arg-time-limit">time_limit<a class="anchor" aria-label="anchor" href="#arg-time-limit"></a></dt>
+<dd><p>How many seconds the solve may run, or <code>NULL</code> to leave
+that to the service (see the Time limit section).</p></dd>
 
 
 <dt id="arg-transport">transport<a class="anchor" aria-label="anchor" href="#arg-transport"></a></dt>
@@ -141,6 +147,20 @@ the result shows.</p></li>
 longer, <code><a href="submit.html">submit()</a></code> sends it without waiting.</p>
     </div>
     <div class="section level2">
+    <h2 id="time-limit">Time limit<a class="anchor" aria-label="anchor" href="#time-limit"></a></h2>
+
+
+<p>The service decides how long a solve may run. <code>time_limit</code> sets that time
+instead, in seconds. A solver that proves its answer sooner still stops
+sooner; a search, which cannot prove it is done, runs for all of it. The
+service grants at most its maximum (120 seconds on the free tier). Asked
+for more, it runs for its maximum, and a warning says that the solve got
+less time than requested. <code>res$solver_data$time_budget_s</code> is the time the
+service granted.</p>
+<p><code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> waits for the answer at least <code>time_limit</code> plus a minute, even
+when <code>timeout</code> is shorter.</p>
+    </div>
+    <div class="section level2">
     <h2 id="api-keys">API keys<a class="anchor" aria-label="anchor" href="#api-keys"></a></h2>
 
 
@@ -177,6 +197,9 @@ exists.</p></li>
 <span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">status</span></span></span>
 <span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">solution</span></span></span>
 <span class="r-in"><span><span class="va">res</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span>, time_limit <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">solver_data</span><span class="op">$</span><span class="va">time_budget_s</span>   <span class="co"># 30: the seconds the service granted</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

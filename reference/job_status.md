@@ -6,7 +6,9 @@
 - `job_result()` returns the answer of the job, in the same form as
   [`solve()`](https://rdrr.io/r/base/solve.html). By default it waits
   for the job to finish, checking every `poll` seconds for up to
-  `timeout` seconds.
+  `timeout` seconds. Like
+  [`solve()`](https://rdrr.io/r/base/solve.html), it warns when the
+  service granted less time than the job's `time_limit`.
 
 - `job_log()` returns the job's log as text.
 
@@ -17,7 +19,7 @@
 ``` r
 job_status(job)
 
-job_result(job, wait = TRUE, timeout = 120, poll = 0.5)
+job_result(job, wait = TRUE, timeout = NULL, poll = 0.5)
 
 job_log(job)
 
@@ -38,7 +40,8 @@ job_delete(job)
 
 - timeout:
 
-  How many seconds to wait at most.
+  How many seconds to wait at most: by default 120, or the job's
+  `time_limit` plus 60 when that is longer.
 
 - poll:
 

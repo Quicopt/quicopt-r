@@ -5,7 +5,8 @@ job_status() returns the job's state, &quot;queued&quot;, &quot;running&quot;,
 &quot;done&quot; or &quot;failed&quot;, together with the last lines of its log.
 job_result() returns the answer of the job, in the same form as
 solve(). By default it waits for the job to finish, checking every
-poll seconds for up to timeout seconds.
+poll seconds for up to timeout seconds. Like solve(), it warns
+when the service granted less time than the job's time_limit.
 job_log() returns the job's log as text.
 job_delete() deletes the job and its stored answer from the service.
 
@@ -15,7 +16,8 @@ job_status() returns the job's state, &quot;queued&quot;, &quot;running&quot;,
 &quot;done&quot; or &quot;failed&quot;, together with the last lines of its log.
 job_result() returns the answer of the job, in the same form as
 solve(). By default it waits for the job to finish, checking every
-poll seconds for up to timeout seconds.
+poll seconds for up to timeout seconds. Like solve(), it warns
+when the service granted less time than the job's time_limit.
 job_log() returns the job's log as text.
 job_delete() deletes the job and its stored answer from the service.
 
@@ -27,7 +29,7 @@ job_delete() deletes the job and its stored answer from the service.
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,7 +60,8 @@ job_delete() deletes the job and its stored answer from the service.
 <code>"done"</code> or <code>"failed"</code>, together with the last lines of its log.</p></li>
 <li><p><code>job_result()</code> returns the answer of the job, in the same form as
 <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code>. By default it waits for the job to finish, checking every
-<code>poll</code> seconds for up to <code>timeout</code> seconds.</p></li>
+<code>poll</code> seconds for up to <code>timeout</code> seconds. Like <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code>, it warns
+when the service granted less time than the job's <code>time_limit</code>.</p></li>
 <li><p><code>job_log()</code> returns the job's log as text.</p></li>
 <li><p><code>job_delete()</code> deletes the job and its stored answer from the service.</p></li>
 </ul></div>
@@ -67,7 +70,7 @@ job_delete() deletes the job and its stored answer from the service.
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">job_status</span><span class="op">(</span><span class="va">job</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">job_result</span><span class="op">(</span><span class="va">job</span>, wait <span class="op">=</span> <span class="cn">TRUE</span>, timeout <span class="op">=</span> <span class="fl">120</span>, poll <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span><span class="fu">job_result</span><span class="op">(</span><span class="va">job</span>, wait <span class="op">=</span> <span class="cn">TRUE</span>, timeout <span class="op">=</span> <span class="cn">NULL</span>, poll <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">job_log</span><span class="op">(</span><span class="va">job</span><span class="op">)</span></span>
 <span></span>
@@ -88,7 +91,8 @@ is an error if the job is not finished yet.</p></dd>
 
 
 <dt id="arg-timeout">timeout<a class="anchor" aria-label="anchor" href="#arg-timeout"></a></dt>
-<dd><p>How many seconds to wait at most.</p></dd>
+<dd><p>How many seconds to wait at most: by default 120, or the
+job's <code>time_limit</code> plus 60 when that is longer.</p></dd>
 
 
 <dt id="arg-poll">poll<a class="anchor" aria-label="anchor" href="#arg-poll"></a></dt>

@@ -18,6 +18,7 @@ solve_model(
   config = NULL,
   gzip = FALSE,
   timeout = 60,
+  time_limit = NULL,
   transport = NULL
 )
 
@@ -62,6 +63,11 @@ solve(a, b, ...)
 - timeout:
 
   How many seconds to wait for the answer.
+
+- time_limit:
+
+  How many seconds the solve may run, or `NULL` to leave that to the
+  service (see the Time limit section).
 
 - transport:
 
@@ -117,6 +123,19 @@ seconds. For a model that takes longer,
 [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
 sends it without waiting.
 
+## Time limit
+
+The service decides how long a solve may run. `time_limit` sets that
+time instead, in seconds. A solver that proves its answer sooner still
+stops sooner; a search, which cannot prove it is done, runs for all of
+it. The service grants at most its maximum (120 seconds on the free
+tier). Asked for more, it runs for its maximum, and a warning says that
+the solve got less time than requested. `res$solver_data$time_budget_s`
+is the time the service granted.
+
+[`solve()`](https://rdrr.io/r/base/solve.html) waits for the answer at
+least `time_limit` plus a minute, even when `timeout` is shorter.
+
 ## API keys
 
 The service needs an API key. The first time a model is solved in an R
@@ -154,5 +173,8 @@ res <- solve(m)
 res$status
 res$solution
 res
+
+res <- solve(m, time_limit = 30)
+res$solver_data$time_budget_s   # 30: the seconds the service granted
 } # }
 ```

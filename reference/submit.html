@@ -13,7 +13,7 @@ answer when it is ready, and job_status() shows how far the job has got."></head
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,7 @@ answer when it is ready, and <code><a href="job_status.html">job_status()</a></c
 <span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  gzip <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  timeout <span class="op">=</span> <span class="fl">60</span>,</span>
+<span>  time_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  transport <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -95,6 +96,11 @@ a large model.</p></dd>
 <dd><p>How many seconds to wait for the answer.</p></dd>
 
 
+<dt id="arg-time-limit">time_limit<a class="anchor" aria-label="anchor" href="#arg-time-limit"></a></dt>
+<dd><p>How many seconds the solve may run, or <code>NULL</code> to leave
+that to the service (see the Time limit section).</p></dd>
+
+
 <dt id="arg-transport">transport<a class="anchor" aria-label="anchor" href="#arg-transport"></a></dt>
 <dd><p>For tests: a function that is called instead of sending
 the request. It takes a list with the elements <code>method</code>, <code>url</code>,
@@ -110,7 +116,8 @@ the request. It takes a list with the elements <code>method</code>, <code>url</c
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The job keeps the address, the key and the other settings it was submitted
-with, so the functions that follow it up need only the job.</p>
+with, so the functions that follow it up need only the job. Given a
+<code>time_limit</code>, <code><a href="job_status.html">job_result()</a></code> waits at least that long plus a minute.</p>
     </div>
 
     <div class="section level2">

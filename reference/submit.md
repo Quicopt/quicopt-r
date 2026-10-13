@@ -20,6 +20,7 @@ submit(
   config = NULL,
   gzip = FALSE,
   timeout = 60,
+  time_limit = NULL,
   transport = NULL
 )
 ```
@@ -62,6 +63,11 @@ submit(
 
   How many seconds to wait for the answer.
 
+- time_limit:
+
+  How many seconds the solve may run, or `NULL` to leave that to the
+  service (see the Time limit section).
+
 - transport:
 
   For tests: a function that is called instead of sending the request.
@@ -82,6 +88,9 @@ and
 
 The job keeps the address, the key and the other settings it was
 submitted with, so the functions that follow it up need only the job.
+Given a `time_limit`,
+[`job_result()`](https://quicopt.github.io/quicopt-r/reference/job_status.md)
+waits at least that long plus a minute.
 
 ## Examples
 

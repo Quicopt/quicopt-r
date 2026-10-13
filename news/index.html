@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,11 @@
       <small>Source: <a href="https://github.com/Quicopt/quicopt-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="quicopt-050">quicopt 0.5.0<a class="anchor" aria-label="anchor" href="#quicopt-050"></a></h2>
+<ul><li>
+<code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> and <code><a href="../reference/submit.html">submit()</a></code> take <code>time_limit</code>, the number of seconds the solve may run, in place of the time the service would choose. A solver that proves its answer sooner still stops sooner; a search runs for all of it. The service grants at most its maximum, and a warning says so when it granted less; <code>res$solver_data$time_budget_s</code> is the time it granted. <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> waits for the answer at least <code>time_limit</code> plus a minute, and <code><a href="../reference/job_status.html">job_result()</a></code> polls that long by default. The service must be recent enough to know the setting; an older one refuses the request.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="quicopt-040">quicopt 0.4.0<a class="anchor" aria-label="anchor" href="#quicopt-040"></a></h2>
 <ul><li>

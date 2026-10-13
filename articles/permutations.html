@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -313,6 +313,9 @@ permutation. A set of requirements that contradicts itself, such as 1
 before 2 and 2 before 1, is an error.</li>
 <li>A model with a permutation is solved by a search, so its status is
 <code>"heuristic"</code>.</li>
+<li>The search runs for as long as the service decides.
+<code>solve(m, time_limit = 60)</code> lets it run for 60 seconds, which
+can find a better order for a large model.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
