@@ -8,9 +8,9 @@ is either 0 or 1.
 ## Usage
 
 ``` r
-num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
+num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
 
-int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0)
+int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
 
 bin_var(m, name, n = 1, start = 0)
 
@@ -21,7 +21,8 @@ add_var(
   upper = Inf,
   n = 1,
   start = 0,
-  domain = c("num", "int", "bin")
+  domain = c("num", "int", "bin"),
+  semi = FALSE
 )
 ```
 
@@ -50,6 +51,11 @@ add_var(
   The value the service's search starts from (see
   [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md)).
 
+- semi:
+
+  Whether the variable may also be 0 when 0 lies outside its bounds (see
+  above).
+
 - domain:
 
   For `add_var()`: `"num"`, `"int"` or `"bin"`, to declare the variable
@@ -69,6 +75,16 @@ Each returns the variable, for use in expressions such as
 for use in a pipe (see
 [`model()`](https://quicopt.github.io/quicopt-r/reference/model.md)).
 
+With `semi = TRUE`, the variable is either 0 or between its bounds,
+never in between: a delivery of either nothing or 10 to 25 units is
+`int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)`. Solvers
+for mixed-integer programs call such a variable *semi-continuous*, or
+*semi-integer* when it must be a whole number. The bounds must then be
+finite. When 0 already lies between them, `semi` changes nothing.
+[`active()`](https://quicopt.github.io/quicopt-r/reference/active.md) is
+1 when such a variable is not 0, which is how a fixed fee per delivery
+is written: `fee * active(delivery)`.
+
 With `n` greater than 1, one call declares `n` variables under one name,
 and they behave like an R vector: `x[3]` is the third, arithmetic works
 element by element, and `sum(x)` adds them up. `lower`, `upper` and
@@ -87,4 +103,5 @@ sum(share)
 #> (share[1] + share[2] + share[3])
 take[2]
 #> take[2]
+delivery <- int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)   # none, or 10 to 25
 ```

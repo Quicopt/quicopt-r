@@ -21,9 +21,13 @@ An empty model, an object of class `quicopt_model`.
   [`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
   [`int_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
   [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
-  and
   [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
-  for an order;
+  for an order and
+  [`part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md)
+  for a division into groups;
+
+- subproblems:
+  [`block()`](https://quicopt.github.io/quicopt-r/reference/block.md);
 
 - uncertain data:
   [`rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md)

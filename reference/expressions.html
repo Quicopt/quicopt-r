@@ -15,7 +15,7 @@ ordinary R code, with these operators and functions:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -96,10 +96,12 @@ base, stop with an error. Base R functions that are not written for
 expressions do not work on them either: use <code><a href="variance.html">variance()</a></code> instead of
 <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var()</a></code>, <code><a href="holds.html">holds()</a></code> instead of <code><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse()</a></code>, and <code><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical()</a></code> instead of
 <code>%in%</code> or <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> to check whether two expressions are the same.</p>
-<p>In a model without random variables, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="holds.html">holds()</a></code> limit
-the kind of model the service accepts: every variable must then be an
-integer or a binary variable, with finite bounds. In a model with random
-variables there is no such limit.</p>
+<p>A model with <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> or <code><a href="holds.html">holds()</a></code> is solved by a search, so its
+status is <code>"heuristic"</code>. When every variable of such a model is an integer or a binary variable, each
+needs finite bounds; a model with a continuous variable or with random
+variables has no such limit. A fixed fee for using a variable at all is the exception:
+written with <code><a href="active.html">active()</a></code> on a variable declared with <code>semi = TRUE</code>, it keeps
+a linear model exact.</p>
     </div>
 
     <div class="section level2">

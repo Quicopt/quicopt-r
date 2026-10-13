@@ -81,12 +81,14 @@ example, `add(m, output <= 0, when = closed)` forces the output to 0
 only if the plant is closed. `b` is a single variable, or a vector
 variable with one element per constraint.
 
-In a model without random variables, a switch limits the kind of model
-the service accepts: every variable must then be an integer or a binary
-variable, with finite bounds. The same holds for
+A model with a switch is solved by a search, so its status is
+`"heuristic"`. The same holds for
 [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md),
 [`max()`](https://rdrr.io/r/base/Extremes.html) and
-[`min()`](https://rdrr.io/r/base/Extremes.html).
+[`min()`](https://rdrr.io/r/base/Extremes.html). When every variable of
+such a model is an integer or a binary variable, each needs finite
+bounds; a model with a continuous variable or with random variables has
+no such limit.
 
 ## Examples
 

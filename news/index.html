@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,18 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="quicopt-060">quicopt 0.6.0<a class="anchor" aria-label="anchor" href="#quicopt-060"></a></h2>
+<ul><li>
+<code><a href="../reference/num_var.html">num_var()</a></code> and <code><a href="../reference/num_var.html">int_var()</a></code> take <code>semi = TRUE</code> for a variable that is either 0 or between its bounds, never in between: a delivery of nothing or of 10 to 25 units. Its bounds must be finite. <code>active(x)</code> is 1 when such a variable is not 0, so a fee per delivery is <code>fee * active(delivery)</code>, and a model that is otherwise linear is still solved to a proven optimum.</li>
+<li>
+<code>block(m, name, vars)</code> names the variables of one subproblem, such as one customer’s deliveries. Every solution the service returns satisfies the constraints over one block’s variables alone. A variable is in at most one block and needs finite bounds.</li>
+<li>
+<code>part_var(m, "teams", n, parts)</code> declares a partition: each of <code>n</code> items in one of <code>parts</code> parts. <code>part_of(item, P)</code> is an item’s part and <code>size_of(part, P)</code> the number of items in a part, both vectorized over their first argument. A solution reports both under <code>res$structures$&lt;name&gt;</code>, and <code><a href="../reference/set_start.html">set_start()</a></code>, <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> carry the division along.</li>
+<li>A model with <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>, <code><a href="../reference/holds.html">holds()</a></code> or a switch is solved by a search; such a model whose variables are all integer or binary needs finite bounds on each, as before, but one with a continuous variable is now accepted.</li>
+<li>
+<code><a href="../reference/partition_decl.html">partition_decl()</a></code>, the constants <code>SEMICONTINUOUS</code> and <code>SEMIINTEGER</code>, and <code>program(blocks = )</code> are the data-layer forms. The service must be recent enough to know these constructs; an older one refuses the model when it is sent.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="quicopt-050">quicopt 0.5.0<a class="anchor" aria-label="anchor" href="#quicopt-050"></a></h2>
 <ul><li>
 <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> and <code><a href="../reference/submit.html">submit()</a></code> take <code>time_limit</code>, the number of seconds the solve may run, in place of the time the service would choose. A solver that proves its answer sooner still stops sooner; a search runs for all of it. The service grants at most its maximum, and a warning says so when it granted less; <code>res$solver_data$time_budget_s</code> is the time it granted. <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> waits for the answer at least <code>time_limit</code> plus a minute, and <code><a href="../reference/job_status.html">job_result()</a></code> polls that long by default. The service must be recent enough to know the setting; an older one refuses the request.</li>
@@ -39,7 +51,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="quicopt-040">quicopt 0.4.0<a class="anchor" aria-label="anchor" href="#quicopt-040"></a></h2>
 <ul><li>
-<code>perm_var(m, "tour", n)</code> declares a permutation: <code>n</code> items in <code>n</code> slots, one each, as a decision the service keeps consistent while it searches. <code>item_at(slot, P)</code> is the item in a slot and <code>slot_of(item, P)</code> the slot of an item, integer expressions vectorized over their first argument; <code>precede(P, a, b)</code> requires item <code>a</code> in an earlier slot than item <code>b</code>. A solution reports both views under <code>res$structures$&lt;name&gt;</code>, and <code><a href="../reference/set_start.html">set_start()</a></code>, <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> carry the order along with the plain variables.</li>
+<code>perm_var(m, "tour", n)</code> declares a permutation: <code>n</code> items in <code>n</code> slots, one each. <code>item_at(slot, P)</code> is the item in a slot and <code>slot_of(item, P)</code> the slot of an item, integer expressions vectorized over their first argument; <code>precede(P, a, b)</code> requires item <code>a</code> in an earlier slot than item <code>b</code>. A solution reports both views under <code>res$structures$&lt;name&gt;</code>, and <code><a href="../reference/set_start.html">set_start()</a></code>, <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> carry the order along with the plain variables.</li>
 <li>
 <code>lookup_table(m, "dist", values)</code> declares a numeric vector or matrix whose entries are read at positions the solver decides: <code>dist[item_at(1:4, tour), item_at(2:5, tour)]</code> is the legs of a round, <code>cost[choice]</code> a cost chosen through an integer variable. A lookup is an ordinary expression, and is random exactly when one of its positions is.</li>
 <li>A model with a permutation or a lookup is solved by search, as a model under uncertainty is, and the two combine. The service must be recent enough to know these constructs; an older one refuses the model when it is sent.</li>

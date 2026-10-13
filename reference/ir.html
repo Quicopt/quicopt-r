@@ -13,7 +13,7 @@ a list whose kind field says what it is:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,8 +75,8 @@ a list whose <code>kind</code> field says what it is:</p>
 
 
 <dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
-<dd><p>The name of the variable, table, random variable, permutation
-or index set referred to.</p></dd>
+<dd><p>The name of the variable, table, random variable, permutation,
+partition or index set referred to.</p></dd>
 
 
 <dt id="arg-index">index<a class="anchor" aria-label="anchor" href="#arg-index"></a></dt>
@@ -140,10 +140,11 @@ a list of argument nodes.</p></li>
 of an index set, for example the sum of <code>body</code> over all <code>i</code> in a set
 <code>S</code>.</p></li>
 <li><p><code>ir_set_ref(name, args)</code>: the index set a reduction runs over.</p></li>
-<li><p><code>ir_struct_ref(name)</code>: a permutation declared in the program's
-<code>structures</code>. It may appear only as the second argument of the operators
-<code>"item_at"</code> and <code>"slot_of"</code>, which is what <code><a href="item_at.html">item_at()</a></code> and <code><a href="item_at.html">slot_of()</a></code>
-build.</p></li>
+<li><p><code>ir_struct_ref(name)</code>: a permutation or a partition declared in the
+program's <code>structures</code>. It may appear only as the second argument of the
+operators <code>"item_at"</code> and <code>"slot_of"</code> (a permutation) or <code>"part_of"</code> and
+<code>"size_of"</code> (a partition), which is what <code><a href="item_at.html">item_at()</a></code>, <code><a href="item_at.html">slot_of()</a></code>,
+<code><a href="part_of.html">part_of()</a></code> and <code><a href="part_of.html">size_of()</a></code> build.</p></li>
 <li><p><code>ir_table_ref(param, index)</code>: an entry of a parameter table at positions
 given by expression nodes, which is what indexing a <code><a href="lookup_table.html">lookup_table()</a></code>
 builds.</p></li>

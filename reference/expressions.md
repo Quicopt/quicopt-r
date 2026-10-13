@@ -85,13 +85,16 @@ instead of [`ifelse()`](https://rdrr.io/r/base/ifelse.html), and
 or [`match()`](https://rdrr.io/r/base/match.html) to check whether two
 expressions are the same.
 
-In a model without random variables,
-[`max()`](https://rdrr.io/r/base/Extremes.html),
-[`min()`](https://rdrr.io/r/base/Extremes.html) and
-[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md)
-limit the kind of model the service accepts: every variable must then be
-an integer or a binary variable, with finite bounds. In a model with
-random variables there is no such limit.
+A model with [`max()`](https://rdrr.io/r/base/Extremes.html),
+[`min()`](https://rdrr.io/r/base/Extremes.html) or
+[`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) is
+solved by a search, so its status is `"heuristic"`. When every variable
+of such a model is an integer or a binary variable, each needs finite
+bounds; a model with a continuous variable or with random variables has
+no such limit. A fixed fee for using a variable at all is the exception:
+written with
+[`active()`](https://quicopt.github.io/quicopt-r/reference/active.md) on
+a variable declared with `semi = TRUE`, it keeps a linear model exact.
 
 ## Examples
 

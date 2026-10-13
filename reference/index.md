@@ -58,7 +58,7 @@
 - [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)
   : Does an expression vary across scenarios?
 
-## Orders and assignments
+## Orders, groups and lookups
 
 - [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
   [`add_perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
@@ -68,9 +68,22 @@
   : The item in a slot, and the slot of an item
 - [`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)
   : Require one item to come before another
+- [`part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md)
+  [`add_part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md)
+  : Divide items into groups as a decision
+- [`part_of()`](https://quicopt.github.io/quicopt-r/reference/part_of.md)
+  [`size_of()`](https://quicopt.github.io/quicopt-r/reference/part_of.md)
+  : The part of an item, and the size of a part
 - [`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
   [`` `[`( ``*`<quicopt_table>`*`)`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
   : A table of data indexed by decisions
+
+## Minimum loads, fees and blocks
+
+- [`active()`](https://quicopt.github.io/quicopt-r/reference/active.md)
+  : Whether a variable is in use
+- [`block()`](https://quicopt.github.io/quicopt-r/reference/block.md) :
+  Group the variables of a subproblem
 
 ## Solving and checking a solution
 
@@ -98,6 +111,8 @@
 - [`CONTINUOUS`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
   [`INTEGER`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
   [`BINARY`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
+  [`SEMICONTINUOUS`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
+  [`SEMIINTEGER`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
   [`var_decl()`](https://quicopt.github.io/quicopt-r/reference/var_decl.md)
   : A decision variable, for building a program by hand
 - [`index_set()`](https://quicopt.github.io/quicopt-r/reference/index_set.md)
@@ -113,6 +128,8 @@
   hand
 - [`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
   : A permutation, for building a program by hand
+- [`partition_decl()`](https://quicopt.github.io/quicopt-r/reference/partition_decl.md)
+  : A partition, for building a program by hand
 - [`ir_const()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_param()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
   [`ir_var()`](https://quicopt.github.io/quicopt-r/reference/ir.md)

@@ -102,9 +102,12 @@ A list of class `quicopt_result`, with these elements:
 - `solution`: a named numeric vector with the value of each decision
   variable, in the order they were declared.
 
-- `structures`: for a model with permutations, one element per
-  permutation, holding the integer vectors `item_at` and `slot_of` (see
-  [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md));
+- `structures`: for a model with permutations or partitions, one element
+  per permutation, holding the integer vectors `item_at` and `slot_of`
+  (see
+  [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)),
+  and one per partition, holding `part_of` and `size_of` (see
+  [`part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md));
   otherwise `NULL`.
 
 - `model_class`: the kind of model the service recognized, such as
@@ -151,10 +154,13 @@ only, and not kept.
 - `"optimal"`: the service has proved that no better solution exists.
 
 - `"heuristic"`: the best solution a search found, without that proof.
-  Models with random variables, permutations or lookup tables are solved
-  this way. If such a result has `feasible = FALSE`, the search found no
-  solution that meets every constraint, which does not prove that none
-  exists.
+  Models with random variables, permutations, partitions or lookup
+  tables are solved this way, and so are models with
+  [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md),
+  [`max()`](https://rdrr.io/r/base/Extremes.html) or
+  [`min()`](https://rdrr.io/r/base/Extremes.html). If such a result has
+  `feasible = FALSE`, the search found no solution that meets every
+  constraint, which does not prove that none exists.
 
 Other values say why no solution is available.
 

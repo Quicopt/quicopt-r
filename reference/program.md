@@ -30,7 +30,8 @@ program(
   scenarios = 1,
   scenario_seed = 1,
   sources = list(),
-  structures = list()
+  structures = list(),
+  blocks = list()
 )
 ```
 
@@ -90,9 +91,19 @@ program(
 
 - structures:
 
-  The permutations: a named list of
+  The permutations and partitions: a named list of
   [`permutation_decl()`](https://quicopt.github.io/quicopt-r/reference/permutation_decl.md)
+  and
+  [`partition_decl()`](https://quicopt.github.io/quicopt-r/reference/partition_decl.md)
   declarations.
+
+- blocks:
+
+  The blocks (see
+  [`block()`](https://quicopt.github.io/quicopt-r/reference/block.md)):
+  a named list, each element a list of
+  [`ir_var()`](https://quicopt.github.io/quicopt-r/reference/ir.md)
+  nodes, the block's variables.
 
 ## Value
 
@@ -118,4 +129,5 @@ The order of the entries does not matter.
 
 A model with random variables also needs `sources`, which declares them,
 and `scenarios` and `scenario_seed`, which say how many scenarios are
-drawn and from which seed. A model with permutations needs `structures`.
+drawn and from which seed. A model with permutations or partitions needs
+`structures`, and one with blocks `blocks`.

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -189,7 +189,7 @@
         </dt>
         <dd>Does an expression vary across scenarios?</dd>
       </dl></div><div class="section level2">
-      <h2 id="orders-and-assignments">Orders and assignments<a class="anchor" aria-label="anchor" href="#orders-and-assignments"></a></h2>
+      <h2 id="orders-groups-and-lookups">Orders, groups and lookups<a class="anchor" aria-label="anchor" href="#orders-groups-and-lookups"></a></h2>
 
 
 
@@ -221,10 +221,47 @@
 
         <dt>
 
+          <code><a href="part_var.html">part_var()</a></code> <code><a href="part_var.html">add_part_var()</a></code>
+
+        </dt>
+        <dd>Divide items into groups as a decision</dd>
+
+        <dt>
+
+          <code><a href="part_of.html">part_of()</a></code> <code><a href="part_of.html">size_of()</a></code>
+
+        </dt>
+        <dd>The part of an item, and the size of a part</dd>
+
+        <dt>
+
           <code><a href="lookup_table.html">lookup_table()</a></code> <code><a href="lookup_table.html">`[`(<i>&lt;quicopt_table&gt;</i>)</a></code>
 
         </dt>
         <dd>A table of data indexed by decisions</dd>
+      </dl></div><div class="section level2">
+      <h2 id="minimum-loads-fees-and-blocks">Minimum loads, fees and blocks<a class="anchor" aria-label="anchor" href="#minimum-loads-fees-and-blocks"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="active.html">active()</a></code>
+
+        </dt>
+        <dd>Whether a variable is in use</dd>
+
+        <dt>
+
+          <code><a href="block.html">block()</a></code>
+
+        </dt>
+        <dd>Group the variables of a subproblem</dd>
       </dl></div><div class="section level2">
       <h2 id="solving-and-checking-a-solution">Solving and checking a solution<a class="anchor" aria-label="anchor" href="#solving-and-checking-a-solution"></a></h2>
 
@@ -295,7 +332,7 @@
 
         <dt>
 
-          <code><a href="var_decl.html">CONTINUOUS</a></code> <code><a href="var_decl.html">INTEGER</a></code> <code><a href="var_decl.html">BINARY</a></code> <code><a href="var_decl.html">var_decl()</a></code>
+          <code><a href="var_decl.html">CONTINUOUS</a></code> <code><a href="var_decl.html">INTEGER</a></code> <code><a href="var_decl.html">BINARY</a></code> <code><a href="var_decl.html">SEMICONTINUOUS</a></code> <code><a href="var_decl.html">SEMIINTEGER</a></code> <code><a href="var_decl.html">var_decl()</a></code>
 
         </dt>
         <dd>A decision variable, for building a program by hand</dd>
@@ -334,6 +371,13 @@
 
         </dt>
         <dd>A permutation, for building a program by hand</dd>
+
+        <dt>
+
+          <code><a href="partition_decl.html">partition_decl()</a></code>
+
+        </dt>
+        <dd>A partition, for building a program by hand</dd>
 
         <dt>
 

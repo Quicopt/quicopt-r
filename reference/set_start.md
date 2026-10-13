@@ -36,8 +36,10 @@ The model, invisibly.
 The service rounds the start of a whole-number variable, and moves a
 start that lies outside the variable's bounds to the nearest bound. A
 result also holds the order found for each permutation (see
-[`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)),
-and that order becomes the permutation's start.
+[`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md))
+and the groups found for each partition (see
+[`part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md)),
+and these become their starts.
 
 ## Examples
 

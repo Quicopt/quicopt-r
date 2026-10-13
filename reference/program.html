@@ -17,7 +17,7 @@ parameter tables."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,7 +65,8 @@ parameter tables.</p>
 <span>  scenarios <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  scenario_seed <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  sources <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  structures <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  structures <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -120,8 +121,13 @@ above).</p></dd>
 
 
 <dt id="arg-structures">structures<a class="anchor" aria-label="anchor" href="#arg-structures"></a></dt>
-<dd><p>The permutations: a named list of <code><a href="permutation_decl.html">permutation_decl()</a></code>
-declarations.</p></dd>
+<dd><p>The permutations and partitions: a named list of
+<code><a href="permutation_decl.html">permutation_decl()</a></code> and <code><a href="partition_decl.html">partition_decl()</a></code> declarations.</p></dd>
+
+
+<dt id="arg-blocks">blocks<a class="anchor" aria-label="anchor" href="#arg-blocks"></a></dt>
+<dd><p>The blocks (see <code><a href="block.html">block()</a></code>): a named list, each element a list
+of <code><a href="ir.html">ir_var()</a></code> nodes, the block's variables.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -142,7 +148,8 @@ one variable at a value.</p></li>
 </ul><p>The order of the entries does not matter.</p>
 <p>A model with random variables also needs <code>sources</code>, which declares them,
 and <code>scenarios</code> and <code>scenario_seed</code>, which say how many scenarios are drawn
-and from which seed. A model with permutations needs <code>structures</code>.</p>
+and from which seed. A model with permutations or partitions needs
+<code>structures</code>, and one with blocks <code>blocks</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

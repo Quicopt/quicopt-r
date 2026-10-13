@@ -15,7 +15,7 @@ cap of length n, add(m, x &amp;lt;= cap) adds n constraints."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,10 +116,10 @@ constraint apply only in solutions in which <code>b</code> is 1. For example,
 <code>add(m, output &lt;= 0, when = closed)</code> forces the output to 0 only if the
 plant is closed. <code>b</code> is a single variable, or a vector variable with one
 element per constraint.</p>
-<p>In a model without random variables, a switch limits the kind of model
-the service accepts: every variable must then be an integer or a binary
-variable, with finite bounds. The same holds for <code><a href="holds.html">holds()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and
-<code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>.</p>
+<p>A model with a switch is solved by a search, so its status is
+<code>"heuristic"</code>. The same holds for <code><a href="holds.html">holds()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>. When every variable of such a model is an integer or a binary variable, each
+needs finite bounds; a model with a continuous variable or with random
+variables has no such limit.</p>
     </div>
 
     <div class="section level2">

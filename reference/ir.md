@@ -38,8 +38,8 @@ ir_set_ref(name, args = list())
 
 - name:
 
-  The name of the variable, table, random variable, permutation or index
-  set referred to.
+  The name of the variable, table, random variable, permutation,
+  partition or index set referred to.
 
 - index:
 
@@ -113,12 +113,15 @@ takes as `over`.
 
 - `ir_set_ref(name, args)`: the index set a reduction runs over.
 
-- `ir_struct_ref(name)`: a permutation declared in the program's
-  `structures`. It may appear only as the second argument of the
-  operators `"item_at"` and `"slot_of"`, which is what
-  [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+- `ir_struct_ref(name)`: a permutation or a partition declared in the
+  program's `structures`. It may appear only as the second argument of
+  the operators `"item_at"` and `"slot_of"` (a permutation) or
+  `"part_of"` and `"size_of"` (a partition), which is what
+  [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md),
+  [`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md),
+  [`part_of()`](https://quicopt.github.io/quicopt-r/reference/part_of.md)
   and
-  [`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
+  [`size_of()`](https://quicopt.github.io/quicopt-r/reference/part_of.md)
   build.
 
 - `ir_table_ref(param, index)`: an entry of a parameter table at

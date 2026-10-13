@@ -17,7 +17,7 @@ x that are at least 1. All six comparisons are accepted, including &amp;lt;,
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,10 +85,23 @@ charge of 200 whenever the stock runs out.</p>
 <p><code>tol</code> loosens the comparison. <code>holds(a == b, tol = 0.01)</code> is 1 when <code>a</code>
 and <code>b</code> are within 0.01 of each other, and <code>holds(a &lt;= b, tol = 0.01)</code> is
 1 when <code>a</code> is at most <code>b + 0.01</code>. Without it, <code>==</code> and <code>!=</code> compare exactly.</p>
-<p>In a model without random variables, <code>holds()</code> limits the kind of model
-the service accepts: every variable must then be an integer or a binary
-variable, with finite bounds. The same holds for <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>. In a
-model with random variables there is no such limit.</p>
+<p>A model with <code>holds()</code> is solved by a search, so its status is
+<code>"heuristic"</code>. The same holds for <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>. When every variable of such a model is an integer or a binary variable, each
+needs finite bounds; a model with a continuous variable or with random
+variables has no such limit.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="a-fee-due-from-a-level">A fee due from a level<a class="anchor" aria-label="anchor" href="#a-fee-due-from-a-level"></a></h2>
+
+
+<p><code>holds()</code> writes a cost that is due once a total reaches a level, and a
+discount that is earned there. With deliveries <code>ship</code> from one warehouse to
+several customers, <code>60 * holds(sum(ship) &gt;= 1)</code> is a fee of 60 that the
+warehouse costs once it ships anything, and <code>-30 * holds(sum(ship) &gt;= 60)</code>
+a discount of 30 from 60 units on. <code>min(sum(active(ship)), 1)</code> is the same
+"anything shipped" written with <code><a href="active.html">active()</a></code>: 1 once any delivery takes
+place. (<code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> read the model expression from their first
+argument, so it comes before the number.)</p>
     </div>
 
     <div class="section level2">

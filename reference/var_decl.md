@@ -17,6 +17,10 @@ INTEGER
 
 BINARY
 
+SEMICONTINUOUS
+
+SEMIINTEGER
+
 var_decl(
   name,
   axes = character(),
@@ -41,7 +45,7 @@ var_decl(
 
 - domain:
 
-  `CONTINUOUS`, `INTEGER` or `BINARY`.
+  `CONTINUOUS`, `INTEGER`, `BINARY`, `SEMICONTINUOUS` or `SEMIINTEGER`.
 
 - lower, upper:
 
@@ -60,9 +64,17 @@ of the list a
 [`program()`](https://quicopt.github.io/quicopt-r/reference/program.md)
 takes as `vars`.
 
-`CONTINUOUS`, `INTEGER` and `BINARY` are not functions but constants:
-the whole numbers 1, 2 and 3, which stand for the three kinds of
-variable in `domain`.
+`CONTINUOUS`, `INTEGER`, `BINARY`, `SEMICONTINUOUS` and `SEMIINTEGER`
+are not functions but constants: the whole numbers 1 to 5, which stand
+for the five kinds of variable in `domain`.
+
+## Details
+
+A variable of domain `SEMICONTINUOUS` is either 0 or a value between its
+bounds, and one of domain `SEMIINTEGER` is either 0 or a whole number
+between them (see the `semi` argument of
+[`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)).
+Both need finite bounds.
 
 ## Examples
 

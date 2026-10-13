@@ -44,12 +44,27 @@ and `b` are within 0.01 of each other, and `holds(a <= b, tol = 0.01)`
 is 1 when `a` is at most `b + 0.01`. Without it, `==` and `!=` compare
 exactly.
 
-In a model without random variables, `holds()` limits the kind of model
-the service accepts: every variable must then be an integer or a binary
-variable, with finite bounds. The same holds for
+A model with `holds()` is solved by a search, so its status is
+`"heuristic"`. The same holds for
 [`max()`](https://rdrr.io/r/base/Extremes.html) and
-[`min()`](https://rdrr.io/r/base/Extremes.html). In a model with random
-variables there is no such limit.
+[`min()`](https://rdrr.io/r/base/Extremes.html). When every variable of
+such a model is an integer or a binary variable, each needs finite
+bounds; a model with a continuous variable or with random variables has
+no such limit.
+
+## A fee due from a level
+
+`holds()` writes a cost that is due once a total reaches a level, and a
+discount that is earned there. With deliveries `ship` from one warehouse
+to several customers, `60 * holds(sum(ship) >= 1)` is a fee of 60 that
+the warehouse costs once it ships anything, and
+`-30 * holds(sum(ship) >= 60)` a discount of 30 from 60 units on.
+`min(sum(active(ship)), 1)` is the same "anything shipped" written with
+[`active()`](https://quicopt.github.io/quicopt-r/reference/active.md): 1
+once any delivery takes place.
+([`min()`](https://rdrr.io/r/base/Extremes.html) and
+[`max()`](https://rdrr.io/r/base/Extremes.html) read the model
+expression from their first argument, so it comes before the number.)
 
 ## Examples
 

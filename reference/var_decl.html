@@ -9,7 +9,7 @@ and bin_var() build these for you."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,10 @@ and <code><a href="num_var.html">bin_var()</a></code> build these for you.</p>
 <span></span>
 <span><span class="va">BINARY</span></span>
 <span></span>
+<span><span class="va">SEMICONTINUOUS</span></span>
+<span></span>
+<span><span class="va">SEMIINTEGER</span></span>
+<span></span>
 <span><span class="fu">var_decl</span><span class="op">(</span></span>
 <span>  <span class="va">name</span>,</span>
 <span>  axes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -71,7 +75,8 @@ and <code><a href="num_var.html">bin_var()</a></code> build these for you.</p>
 
 
 <dt id="arg-domain">domain<a class="anchor" aria-label="anchor" href="#arg-domain"></a></dt>
-<dd><p><code>CONTINUOUS</code>, <code>INTEGER</code> or <code>BINARY</code>.</p></dd>
+<dd><p><code>CONTINUOUS</code>, <code>INTEGER</code>, <code>BINARY</code>, <code>SEMICONTINUOUS</code> or
+<code>SEMIINTEGER</code>.</p></dd>
 
 
 <dt id="arg-lower-upper">lower, upper<a class="anchor" aria-label="anchor" href="#arg-lower-upper"></a></dt>
@@ -88,9 +93,16 @@ a parameter table, for a bound that differs from index to index.</p></dd>
     <p><code>var_decl()</code> returns a plain list without a class, with the fields
 <code>name</code>, <code>axes</code>, <code>domain</code>, <code>lower</code>, <code>upper</code> and <code>start</code>. It is an element
 of the list a <code><a href="program.html">program()</a></code> takes as <code>vars</code>.</p>
-<p><code>CONTINUOUS</code>, <code>INTEGER</code> and <code>BINARY</code> are not functions but constants: the
-whole numbers 1, 2 and 3, which stand for the three kinds of variable in
-<code>domain</code>.</p>
+<p><code>CONTINUOUS</code>, <code>INTEGER</code>, <code>BINARY</code>, <code>SEMICONTINUOUS</code> and <code>SEMIINTEGER</code>
+are not functions but constants: the whole numbers 1 to 5, which stand for
+the five kinds of variable in <code>domain</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>A variable of domain <code>SEMICONTINUOUS</code> is either 0 or a value between its
+bounds, and one of domain <code>SEMIINTEGER</code> is either 0 or a whole number
+between them (see the <code>semi</code> argument of <code><a href="num_var.html">num_var()</a></code>). Both need finite
+bounds.</p>
     </div>
 
     <div class="section level2">

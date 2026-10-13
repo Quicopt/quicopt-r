@@ -1,5 +1,41 @@
 # Changelog
 
+## quicopt 0.6.0
+
+- [`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+  and
+  [`int_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
+  take `semi = TRUE` for a variable that is either 0 or between its
+  bounds, never in between: a delivery of nothing or of 10 to 25 units.
+  Its bounds must be finite. `active(x)` is 1 when such a variable is
+  not 0, so a fee per delivery is `fee * active(delivery)`, and a model
+  that is otherwise linear is still solved to a proven optimum.
+- `block(m, name, vars)` names the variables of one subproblem, such as
+  one customer’s deliveries. Every solution the service returns
+  satisfies the constraints over one block’s variables alone. A variable
+  is in at most one block and needs finite bounds.
+- `part_var(m, "teams", n, parts)` declares a partition: each of `n`
+  items in one of `parts` parts. `part_of(item, P)` is an item’s part
+  and `size_of(part, P)` the number of items in a part, both vectorized
+  over their first argument. A solution reports both under
+  `res$structures$<name>`, and
+  [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md),
+  [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  carry the division along.
+- A model with [`max()`](https://rdrr.io/r/base/Extremes.html),
+  [`min()`](https://rdrr.io/r/base/Extremes.html),
+  [`holds()`](https://quicopt.github.io/quicopt-r/reference/holds.md) or
+  a switch is solved by a search; such a model whose variables are all
+  integer or binary needs finite bounds on each, as before, but one with
+  a continuous variable is now accepted.
+- [`partition_decl()`](https://quicopt.github.io/quicopt-r/reference/partition_decl.md),
+  the constants `SEMICONTINUOUS` and `SEMIINTEGER`, and
+  `program(blocks = )` are the data-layer forms. The service must be
+  recent enough to know these constructs; an older one refuses the model
+  when it is sent.
+
 ## quicopt 0.5.0
 
 - [`solve()`](https://rdrr.io/r/base/solve.html) and
@@ -18,8 +54,7 @@
 ## quicopt 0.4.0
 
 - `perm_var(m, "tour", n)` declares a permutation: `n` items in `n`
-  slots, one each, as a decision the service keeps consistent while it
-  searches. `item_at(slot, P)` is the item in a slot and
+  slots, one each. `item_at(slot, P)` is the item in a slot and
   `slot_of(item, P)` the slot of an item, integer expressions vectorized
   over their first argument; `precede(P, a, b)` requires item `a` in an
   earlier slot than item `b`. A solution reports both views under

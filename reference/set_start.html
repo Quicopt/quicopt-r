@@ -17,7 +17,7 @@ named vector of values. Variables it is not given keep their start value."></hea
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,8 +78,9 @@ names as in a solution: <code>"x"</code> for a single variable, <code>"x[1]"</co
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The service rounds the start of a whole-number variable, and moves a start
 that lies outside the variable's bounds to the nearest bound. A result also
-holds the order found for each permutation (see <code><a href="perm_var.html">perm_var()</a></code>), and that
-order becomes the permutation's start.</p>
+holds the order found for each permutation (see <code><a href="perm_var.html">perm_var()</a></code>) and the
+groups found for each partition (see <code><a href="part_var.html">part_var()</a></code>), and these become their
+starts.</p>
     </div>
 
     <div class="section level2">

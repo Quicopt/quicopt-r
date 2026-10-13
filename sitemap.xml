@@ -9,8 +9,10 @@
 <url><loc>https://quicopt.github.io/quicopt-r/index.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/news/index.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/DEFAULT_BASE_URL.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/reference/active.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/add.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/as_program.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/reference/block.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/consets.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/constraint.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/cvar.html</loc></url>
@@ -33,6 +35,9 @@
 <url><loc>https://quicopt.github.io/quicopt-r/reference/model.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/num_var.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/parametric.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/reference/part_of.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/reference/part_var.html</loc></url>
+<url><loc>https://quicopt.github.io/quicopt-r/reference/partition_decl.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/perm_var.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/permutation_decl.html</loc></url>
 <url><loc>https://quicopt.github.io/quicopt-r/reference/precede.html</loc></url>

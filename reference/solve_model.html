@@ -13,7 +13,7 @@ which can read better in a pipe."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,9 +131,10 @@ calls it that.</p></dd>
 <li><p><code>objective</code>: the value of the objective at the solution.</p></li>
 <li><p><code>solution</code>: a named numeric vector with the value of each decision
 variable, in the order they were declared.</p></li>
-<li><p><code>structures</code>: for a model with permutations, one element per
-permutation, holding the integer vectors <code>item_at</code> and <code>slot_of</code> (see
-<code><a href="perm_var.html">perm_var()</a></code>); otherwise <code>NULL</code>.</p></li>
+<li><p><code>structures</code>: for a model with permutations or partitions, one element
+per permutation, holding the integer vectors <code>item_at</code> and <code>slot_of</code>
+(see <code><a href="perm_var.html">perm_var()</a></code>), and one per partition, holding <code>part_of</code> and
+<code>size_of</code> (see <code><a href="part_var.html">part_var()</a></code>); otherwise <code>NULL</code>.</p></li>
 <li><p><code>model_class</code>: the kind of model the service recognized, such as
 <code>"lp"</code>, <code>"milp"</code> or <code>"stochastic"</code>.</p></li>
 <li><p><code>solver_data</code>: further details from the service, such as
@@ -176,8 +177,9 @@ and not kept.</p>
 
 <p><code>status</code> says what kind of answer the result holds:</p><ul><li><p><code>"optimal"</code>: the service has proved that no better solution exists.</p></li>
 <li><p><code>"heuristic"</code>: the best solution a search found, without that proof.
-Models with random variables, permutations or lookup tables are solved
-this way. If such a result has <code>feasible = FALSE</code>, the search found no
+Models with random variables, permutations, partitions or lookup tables
+are solved this way, and so are models with <code><a href="holds.html">holds()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> or
+<code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>. If such a result has <code>feasible = FALSE</code>, the search found no
 solution that meets every constraint, which does not prove that none
 exists.</p></li>
 </ul><p>Other values say why no solution is available.</p>
