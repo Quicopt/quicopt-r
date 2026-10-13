@@ -10,8 +10,8 @@
 #' `fee * active(delivery)`, and a limit on how many deliveries take place is
 #' a constraint on `sum(active(delivery))`.
 #'
-#' For such a variable the service writes the fee exactly, so a model that is
-#' otherwise linear is still solved to a proven optimum. On any other
+#' For such a variable, a model that is otherwise linear is still solved to a
+#' proven optimum. On any other
 #' variable, `active(x)` means the same, 1 when `x` is not 0, but the model is
 #' then solved by a search.
 #'

@@ -21,8 +21,8 @@ units, say. A fee charged for every delivery that takes place is then
 a constraint on \code{sum(active(delivery))}.
 }
 \details{
-For such a variable the service writes the fee exactly, so a model that is
-otherwise linear is still solved to a proven optimum. On any other
+For such a variable, a model that is otherwise linear is still solved to a
+proven optimum. On any other
 variable, \code{active(x)} means the same, 1 when \code{x} is not 0, but the model is
 then solved by a search.
 }
