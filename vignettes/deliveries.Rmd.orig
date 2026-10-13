@@ -1,0 +1,146 @@
+---
+title: "Deliveries, fees and teams"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Deliveries, fees and teams}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<!-- This vignette is PRE-COMPUTED: edit deliveries.Rmd.orig and re-knit
+     with tools/precompute-vignette.R, which runs the solves against the live
+     service and bakes their output into deliveries.Rmd. The shipped .Rmd
+     executes nothing, so package checks need no network. -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(comment = "#>", collapse = TRUE)
+library(quicopt)
+```
+
+Many planning problems have decisions that are either nothing or something substantial: a truck is sent with at least a minimum load or not at all, a machine runs at least an hour or stays off. A decision of that kind often comes with a fee that is due only when it is taken: a charge per delivery, the cost of opening a warehouse. And some problems ask how to divide people or things into groups. This article shows how to write all three, with a single delivery, a network of warehouses and a split into two teams. It assumes you have read `vignette("quicopt")`.
+
+## A delivery of nothing, or of 10 to 25 units
+
+A customer needs 40 units. Three suppliers can deliver them, but each one delivers either nothing or between 10 and 25 units, because smaller loads are not worth a trip. Each charges a price per unit and a fixed fee for every delivery it makes:
+
+| supplier | price per unit | fee per delivery |
+|----------|----------------|------------------|
+| 1        | 1              | 30               |
+| 2        | 2              | 10               |
+| 3        | 3              | 5                |
+
+From which suppliers should the customer order, and how much from each?
+
+A variable that is either 0 or between its bounds is declared with `semi = TRUE`. Its bounds are then the smallest and the largest delivery:
+
+```{r}
+m <- model()
+delivery <- int_var(m, "delivery", lower = 10, upper = 25, n = 3, semi = TRUE)
+```
+
+`delivery[1]` can be 0, 10, 11, ..., 25, but not 5. The fee is due only for a delivery that takes place, which is what `active()` expresses: `active(x)` is 1 when `x` is not 0, and 0 when it is.
+
+```{r}
+price <- c(1, 2, 3)
+fee   <- c(30, 10, 5)
+minimize(m, sum(price * delivery) + sum(fee * active(delivery)))
+add(m, sum(delivery) >= 40)                      # the customer needs 40 units
+```
+
+```{r}
+res <- solve(m)
+res$solution
+res$objective
+res$status
+```
+
+The customer orders 25 units from supplier 1 and 15 from supplier 2, for a total of 25 + 30 + 2 × 15 + 10 = 95. Supplier 3 has the smallest fee but the highest price, and it is not used. The status `"optimal"` means that no other order is cheaper: a model like this one, linear except for `semi = TRUE` and `active()`, is solved to a proven optimum.
+
+## Warehouses that supply several customers
+
+Three warehouses supply three customers, who need 40, 30 and 20 units. Every delivery is again either nothing or 10 to 25 units, it costs a price per unit that depends on the distance, plus 5 for the trip. A warehouse that delivers anything has to be opened, for a fee:
+
+```{r}
+demand  <- c(40, 30, 20)                                # units, customers 1 to 3
+price   <- rbind(c(1, 3, 4),                            # price per unit, from warehouse 1
+                 c(3, 1, 3),                            #                 from warehouse 2
+                 c(4, 2, 1))                            #                 from warehouse 3
+opening <- c(60, 50, 40)                                # fee for opening warehouses 1 to 3
+```
+
+There are nine possible deliveries, one from each warehouse to each customer. They are numbered so that deliveries 1 to 3 go to customer 1, from warehouses 1, 2 and 3, deliveries 4 to 6 to customer 2, and so on. Two small functions pick out the deliveries to one customer and from one warehouse:
+
+```{r}
+m <- model()
+ship <- int_var(m, "ship", lower = 10, upper = 25, n = 9, semi = TRUE)
+to   <- function(c) ship[3 * (c - 1) + 1:3]             # to customer c, from warehouses 1 to 3
+from <- function(w) ship[w + c(0, 3, 6)]                # from warehouse w, to customers 1 to 3
+```
+
+The deliveries to one customer form a small problem of their own: together they have to meet that customer's demand. `block()` says so. It names the variables of one such subproblem, and a constraint on the variables of a single block holds in every solution the service returns:
+
+```{r}
+for (c in 1:3) {
+  block(m, paste0("customer_", c), to(c))
+  add(m, sum(to(c)) >= demand[c])
+}
+```
+
+The customers are linked only through the warehouses: a warehouse is opened once, however many customers it supplies. Its fee is due when it sends at least one unit, which `holds()` expresses: `holds(sent >= 1)` is 1 for a warehouse that sends anything and 0 for one that sends nothing.
+
+```{r}
+sent <- c(sum(from(1)), sum(from(2)), sum(from(3)))     # units leaving each warehouse
+minimize(m, sum(as.vector(price) * ship)                # price per unit
+            + 5 * sum(active(ship))                     # 5 per delivery
+            + sum(opening * holds(sent >= 1)))          # the fee of each warehouse in use
+```
+
+`as.vector(price)` lists the prices column by column, which is the order of the deliveries: from warehouses 1, 2 and 3 to customer 1 first.
+
+```{r}
+res <- solve(m)
+res$objective
+matrix(res$solution, nrow = 3, dimnames = list(warehouse = 1:3, customer = 1:3))
+```
+
+Warehouse 2 stays closed. Warehouse 1 sends 25 units to customer 1 and 10 to customer 2, and warehouse 3 sends the rest. The total of 300 is 175 for the units, 25 for five deliveries and 100 for opening warehouses 1 and 3. The status of a model with `holds()` is `"heuristic"`: a good answer, not a proven optimum.
+
+```{r}
+res$status
+```
+
+## Splitting into teams
+
+Six players, of strengths 7, 5, 4, 3, 2 and 1, form a team of four and a team of two. The teams should be as evenly matched as possible, so the stronger team should be as weak as it can be.
+
+Dividing things into groups is a decision of its own, a *partition*: each of `n` items goes into exactly one of `parts` groups, called parts. `part_var()` declares it. `part_of(i, teams)` is the part of item `i`, and `size_of(t, teams)` is how many items part `t` holds; both are expressions whose values the service chooses.
+
+```{r}
+strength <- c(7, 5, 4, 3, 2, 1)                         # of players 1 to 6
+m <- model()
+teams <- part_var(m, "teams", 6, 2)                     # 6 players into teams 1 and 2
+add(m, size_of(1, teams) == 4)                          # team 1 has four players
+```
+
+The strength of a team is the sum of the strengths of its players. `holds(part_of(1:6, teams) == t)` is 1 for each player in team `t` and 0 for the others, so multiplying it by `strength` and adding up gives the strength of team `t`:
+
+```{r}
+in_team <- function(t) holds(part_of(1:6, teams) == t)
+minimize(m, max(sum(strength * in_team(1)), sum(strength * in_team(2))))
+```
+
+```{r}
+res <- solve(m)
+res$objective
+res$structures$teams$part_of
+res$structures$teams$size_of
+```
+
+`part_of` lists the team of each player: players 1 and 3 form team 2, with strength 7 + 4 = 11, and the other four form team 1, with 5 + 3 + 2 + 1 = 11. The strengths add up to 22, so neither team can be weaker than 11, and this split is as even as a split can be.
+
+## More about these
+
+* `num_var(..., semi = TRUE)` declares a continuous quantity that is 0 or between its bounds, such as a load measured in tonnes. Both bounds must be finite.
+* A variable can be in one block at most, and a variable in a block needs finite bounds. Declaring blocks changes nothing else about a model.
+* `part_var(m, "teams", 6, 2, start = ...)` sets the division the solve starts from, and `set_start()` takes it from an earlier result. `evaluate()` and `resample()` keep a partition fixed at the division in a result.
+* `solve(m, time_limit = 60)` gives a model like the warehouses or the teams 60 seconds, which can find a better answer for a large model.
