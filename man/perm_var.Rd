@@ -3,7 +3,7 @@
 \name{perm_var}
 \alias{perm_var}
 \alias{add_perm_var}
-\title{Declare an order as a decision}
+\title{Declare an ordering as a decision}
 \usage{
 perm_var(m, name, n, start = NULL)
 
@@ -27,16 +27,16 @@ The permutation, for use with \code{\link[=item_at]{item_at()}}, \code{\link[=sl
 \code{add_perm_var()} returns the model, invisibly.
 }
 \description{
-Some decisions are an arrangement: the order in which a courier visits its
-stops, the order of jobs on a machine, which department moves into which
-office. \code{perm_var()} declares such a decision, a \emph{permutation}.
+Some decisions are an arrangement: an ordering, such as the stops of a
+courier's route or the jobs on a machine, or a one-to-one assignment, such
+as which department moves into which office. \code{perm_var()} declares such a
+decision, a \emph{permutation}.
 }
 \section{Items and slots}{
 
-A permutation of size \code{n} arranges \code{n} things, called \emph{items}, in \code{n}
-numbered places, called \emph{slots}, with exactly one item in each slot. Items
-and slots are both numbered from 1 to \code{n}. What they stand for depends on
-the problem:
+A permutation arranges \code{n} things, called \emph{items}, in as many numbered
+places, called \emph{slots}, with exactly one item in each slot. Items and slots
+are both numbered from 1 to \code{n}. What they stand for depends on the problem:
 \itemize{
 \item for a route, the items are the stops and the slots are the visits: slot
 1 is the first stop visited, slot 2 the second, and so on;

@@ -20,7 +20,7 @@
 #' `model()` creates an empty one, and these functions fill it:
 #'
 #' * decisions: [num_var()], [int_var()], [bin_var()], [perm_var()] for an
-#'   order and [part_var()] for a division into groups;
+#'   ordering and [part_var()] for a division into groups;
 #' * subproblems: [block()];
 #' * uncertain data: [rand_var()] and [set_empirical()];
 #' * the objective: [minimize()] or [maximize()];
@@ -262,7 +262,7 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
 #'
 #' The service rounds the start of a whole-number variable, and moves a start
 #' that lies outside the variable's bounds to the nearest bound. A result also
-#' holds the order found for each permutation (see [perm_var()]) and the
+#' holds the ordering found for each permutation (see [perm_var()]) and the
 #' groups found for each partition (see [part_var()]), and these become their
 #' starts.
 #'

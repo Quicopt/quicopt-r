@@ -1,8 +1,8 @@
 ---
-title: "Choosing an order"
+title: "Orderings and assignments"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Choosing an order}
+  %\VignetteIndexEntry{Orderings and assignments}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,11 +17,12 @@ knitr::opts_chunk$set(comment = "#>", collapse = TRUE)
 library(quicopt)
 ```
 
-Some decisions are not amounts but arrangements: the order in which a courier
-visits its stops, the order of jobs on a machine, which department moves into
-which office. quicopt has a decision variable for this, the *permutation*.
-This article introduces it with two examples, a delivery route and an office
-plan. It assumes you have read `vignette("quicopt")`.
+Some decisions are not amounts but arrangements: an ordering, such as the
+stops of a courier's route or the jobs on a machine, or a one-to-one
+assignment, such as which department moves into which office. quicopt has a
+decision variable for this, the *permutation*. This article introduces it
+with two examples, a delivery route and an office plan. It assumes you have
+read `vignette("quicopt")`.
 
 ## A delivery route
 
@@ -42,9 +43,9 @@ km
 
 ## Items and slots
 
-A permutation arranges *n* things, called **items**, in *n* numbered places,
+A permutation arranges things, called **items**, in as many numbered places,
 called **slots**, with exactly one item in each slot. Items and slots are
-both numbered from 1 to *n*. What they stand for depends on the problem:
+both numbered from 1. What they stand for depends on the problem:
 
 | Problem        | Items           | Slots                                        |
 |----------------|-----------------|----------------------------------------------|
@@ -81,7 +82,7 @@ That lookup cannot be written as `km[item_at(1, route), item_at(2, route)]`,
 because `km` is an ordinary R matrix and the stops are not known yet. Instead,
 `lookup_table()` adds the matrix to the model, under a name, and indexing it
 with expressions builds a lookup that the service carries out for whatever
-order it is considering:
+ordering it is considering:
 
 ```{r}
 dist <- lookup_table(m, "dist", km)
@@ -145,7 +146,7 @@ res$objective
 
 The route is the same, and its expected time is about 4 × 1.25 = 5, since the
 average slowdown is 1.25. To check the figure on new scenarios, `resample()`
-keeps the order fixed and redraws the traffic:
+keeps the route fixed and redraws the traffic:
 
 ```{r}
 resample(m, res, seed = 4)$objective
@@ -208,13 +209,13 @@ solve(m)$solution
 
 ## More about permutations
 
-* `perm_var(m, "route", 5, start = ...)` sets the order the search starts
-  from, and `set_start()` takes the order from an earlier result.
-* `evaluate()` and `resample()` keep a permutation fixed at the order in a
+* `perm_var(m, "route", 5, start = ...)` sets the ordering the search
+  starts from, and `set_start()` takes the ordering from an earlier result.
+* `evaluate()` and `resample()` keep a permutation fixed at the ordering in a
   result, as with `resample()` above.
 * `precede()` can be called several times on one permutation. A set of
   requirements that contradicts itself, such as 1 before 2 and 2 before 1,
   is an error.
 * A model with a permutation is solved by a search, so its status is
   `"heuristic"`.
-* The search runs for as long as the service decides. `solve(m, time_limit = 60)` lets it run for 60 seconds, which can find a better order for a large model.
+* The search runs for as long as the service decides. `solve(m, time_limit = 60)` lets it run for 60 seconds, which can find a better ordering for a large model.
