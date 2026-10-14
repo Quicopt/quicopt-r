@@ -54,16 +54,16 @@ e <- min(v, 3)        ; check("min", e$nodes[[1]]$op == "min")
 # A plain number first: base R would pick its numeric method from the first
 # argument and stop, so the package's own sum/prod/max/min read the call.
 const_then <- function(e, op, value) {
-  n <- e$nodes[[1]]
-  n$op == op && n$args[[1]]$kind == "const" && n$args[[1]]$value == value
+  node <- e$nodes[[1]]
+  node$op == op && node$args[[1]]$kind == "const" && node$args[[1]]$value == value
 }
 check("max(0, e) is the catalog's max", const_then(max(0, v - w), "max", 0))
 check("min(1, e) is the catalog's min", const_then(min(1, v), "min", 1))
 check("sum(2, e) is one + node", const_then(sum(2, v), "+", 2))
 check("prod(2, e) is the catalog's *", const_then(prod(2, v), "*", 2))
 check("max(c(0, 1), e) folds every element", {
-  n <- max(c(0, 1), v)$nodes[[1]]
-  n$op == "max" && n$args[[1]]$op == "max" && n$args[[2]]$kind == "var"
+  node <- max(c(0, 1), v)$nodes[[1]]
+  node$op == "max" && node$args[[1]]$op == "max" && node$args[[2]]$kind == "var"
 })
 shock <- rand_var(m, "shock", normal(0, 1))
 check("a number first works on random variables too", max(0, shock - v)$nodes[[1]]$op == "max")
@@ -116,7 +116,7 @@ add(m, 1 <= xs)                     # on either side
 p <- as_program(m)
 check("a family lowers to flat scalar declarations",
       length(p$vars) == 3 && p$vars[[2]]$name == "xs[2]")
-check("an elementwise relation lands as n rows, a scalar side broadcasting",
+check("an elementwise relation lands as one row per element, a scalar side broadcasting",
       length(p$constraints) == 10)
 check("the broadcast rows name each element",
       p$constraints[[7]]$f$args[[1]]$name == "xs[3]" && p$constraints[[10]]$f$args[[1]]$name == "xs[3]")
