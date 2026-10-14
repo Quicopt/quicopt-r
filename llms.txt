@@ -140,8 +140,8 @@ and
   arrives](https://quicopt.github.io/quicopt-r/articles/stochastic.html):
   random variables, expected costs, chance constraints, and checking a
   solution on new scenarios.
-- [Choosing an
-  order](https://quicopt.github.io/quicopt-r/articles/permutations.html):
+- [Orderings and
+  assignments](https://quicopt.github.io/quicopt-r/articles/permutations.html):
   routes, schedules and assignments.
 - [Reference](https://quicopt.github.io/quicopt-r/reference/): every
   function.
@@ -217,11 +217,11 @@ Apache License 2.0 — see
 - [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)
   : Does an expression vary across scenarios?
 
-## Orders, groups and lookups
+## Orderings, groups and lookups
 
 - [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
   [`add_perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
-  : Declare an order as a decision
+  : Declare an ordering as a decision
 - [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
   [`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
   : The item in a slot, and the slot of an item
@@ -314,7 +314,7 @@ Apache License 2.0 — see
 
 - [Deciding before the data
   arrives](https://quicopt.github.io/quicopt-r/articles/stochastic.md):
-- [Choosing an
-  order](https://quicopt.github.io/quicopt-r/articles/permutations.md):
+- [Orderings and
+  assignments](https://quicopt.github.io/quicopt-r/articles/permutations.md):
 - [Deliveries, fees and
   teams](https://quicopt.github.io/quicopt-r/articles/deliveries.md):

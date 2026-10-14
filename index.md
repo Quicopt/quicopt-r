@@ -140,8 +140,8 @@ and
   arrives](https://quicopt.github.io/quicopt-r/articles/stochastic.html):
   random variables, expected costs, chance constraints, and checking a
   solution on new scenarios.
-- [Choosing an
-  order](https://quicopt.github.io/quicopt-r/articles/permutations.html):
+- [Orderings and
+  assignments](https://quicopt.github.io/quicopt-r/articles/permutations.html):
   routes, schedules and assignments.
 - [Reference](https://quicopt.github.io/quicopt-r/reference/): every
   function.

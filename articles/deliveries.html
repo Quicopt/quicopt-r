@@ -207,12 +207,11 @@ warehouses 1 and 3. The status of a model with <code><a href="../reference/holds
 and a team of two. The teams should be as evenly matched as possible, so
 the stronger team should be as weak as it can be.</p>
 <p>Dividing things into groups is a decision of its own, a
-<em>partition</em>: each of <code>n</code> items goes into exactly one
-of <code>parts</code> groups, called parts. <code><a href="../reference/part_var.html">part_var()</a></code>
-declares it. <code>part_of(i, teams)</code> is the part of item
-<code>i</code>, and <code>size_of(t, teams)</code> is how many items
-part <code>t</code> holds; both are expressions whose values the service
-chooses.</p>
+<em>partition</em>: each item goes into exactly one of several groups,
+called parts. <code><a href="../reference/part_var.html">part_var()</a></code> declares it.
+<code>part_of(i, teams)</code> is the part of item <code>i</code>, and
+<code>size_of(t, teams)</code> is how many items part <code>t</code>
+holds; both are expressions whose values the service chooses.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">strength</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span>, <span class="fl">5</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>                         <span class="co"># of players 1 to 6</span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>

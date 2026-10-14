@@ -1,10 +1,11 @@
-# Choosing an order
+# Orderings and assignments
 
-Some decisions are not amounts but arrangements: the order in which a
-courier visits its stops, the order of jobs on a machine, which
-department moves into which office. quicopt has a decision variable for
-this, the *permutation*. This article introduces it with two examples, a
-delivery route and an office plan. It assumes you have read
+Some decisions are not amounts but arrangements: an ordering, such as
+the stops of a courier’s route or the jobs on a machine, or a one-to-one
+assignment, such as which department moves into which office. quicopt
+has a decision variable for this, the *permutation*. This article
+introduces it with two examples, a delivery route and an office plan. It
+assumes you have read
 [`vignette("quicopt")`](https://quicopt.github.io/quicopt-r/articles/quicopt.md).
 
 ## A delivery route
@@ -33,10 +34,10 @@ km
 
 ## Items and slots
 
-A permutation arranges *n* things, called **items**, in *n* numbered
+A permutation arranges things, called **items**, in as many numbered
 places, called **slots**, with exactly one item in each slot. Items and
-slots are both numbered from 1 to *n*. What they stand for depends on
-the problem:
+slots are both numbered from 1. What they stand for depends on the
+problem:
 
 | Problem | Items | Slots |
 |----|----|----|
@@ -79,7 +80,7 @@ R matrix and the stops are not known yet. Instead,
 [`lookup_table()`](https://quicopt.github.io/quicopt-r/reference/lookup_table.md)
 adds the matrix to the model, under a name, and indexing it with
 expressions builds a lookup that the service carries out for whatever
-order it is considering:
+ordering it is considering:
 
 ``` r
 
@@ -156,7 +157,7 @@ The route is the same, and its expected time is about 4 × 1.25 = 5,
 since the average slowdown is 1.25. To check the figure on new
 scenarios,
 [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
-keeps the order fixed and redraws the traffic:
+keeps the route fixed and redraws the traffic:
 
 ``` r
 
@@ -234,14 +235,14 @@ solve(m)$solution
 
 ## More about permutations
 
-- `perm_var(m, "route", 5, start = ...)` sets the order the search
+- `perm_var(m, "route", 5, start = ...)` sets the ordering the search
   starts from, and
   [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md)
-  takes the order from an earlier result.
+  takes the ordering from an earlier result.
 - [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
   and
   [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
-  keep a permutation fixed at the order in a result, as with
+  keep a permutation fixed at the ordering in a result, as with
   [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
   above.
 - [`precede()`](https://quicopt.github.io/quicopt-r/reference/precede.md)
@@ -252,4 +253,4 @@ solve(m)$solution
   `"heuristic"`.
 - The search runs for as long as the service decides.
   `solve(m, time_limit = 60)` lets it run for 60 seconds, which can find
-  a better order for a large model.
+  a better ordering for a large model.

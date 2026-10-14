@@ -208,9 +208,9 @@ answer you have:</p>
 <p><code>feasible</code> says whether the solution meets every
 constraint. <code>status</code> says how it was found:
 <code>"optimal"</code> means the service has proved that no better
-solution exists. Some models, those with uncertain data or with an order
-to decide (the other two articles), are solved by a search that returns
-the best solution it finds, without that proof. Their status is
+solution exists. Some models, those with uncertain data or with an
+ordering to decide (the other two articles), are solved by a search that
+returns the best solution it finds, without that proof. Their status is
 <code>"heuristic"</code>.</p>
 <p>Printing <code>res</code> shows a summary prepared by the
 service.</p>
@@ -286,7 +286,7 @@ constraints, ready for <code>solve(m)</code>.</p>
 data, such as demand or travel times, is uncertain.</li>
 <li>
 <code><a href="../articles/permutations.html">vignette("permutations", package = "quicopt")</a></code>,
-<em>Choosing an order</em>: decisions that are a sequence or an
+<em>Orderings and assignments</em>: decisions that are a sequence or an
 assignment, such as a delivery route.</li>
 <li>
 <code><a href="https://quicopt.github.io/quicopt-r/reference">help(package = "quicopt")</a></code> lists every function.</li>

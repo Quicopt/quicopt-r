@@ -22,7 +22,7 @@ An empty model, an object of class `quicopt_model`.
   [`int_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
   [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
   [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
-  for an order and
+  for an ordering and
   [`part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md)
   for a division into groups;
 

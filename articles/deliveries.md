@@ -164,7 +164,7 @@ team of two. The teams should be as evenly matched as possible, so the
 stronger team should be as weak as it can be.
 
 Dividing things into groups is a decision of its own, a *partition*:
-each of `n` items goes into exactly one of `parts` groups, called parts.
+each item goes into exactly one of several groups, called parts.
 [`part_var()`](https://quicopt.github.io/quicopt-r/reference/part_var.md)
 declares it. `part_of(i, teams)` is the part of item `i`, and
 `size_of(t, teams)` is how many items part `t` holds; both are

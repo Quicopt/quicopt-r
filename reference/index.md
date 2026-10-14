@@ -63,11 +63,11 @@
 - [`is_random()`](https://quicopt.github.io/quicopt-r/reference/is_random.md)
   : Does an expression vary across scenarios?
 
-## Orders, groups and lookups
+## Orderings, groups and lookups
 
 - [`perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
   [`add_perm_var()`](https://quicopt.github.io/quicopt-r/reference/perm_var.md)
-  : Declare an order as a decision
+  : Declare an ordering as a decision
 - [`item_at()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
   [`slot_of()`](https://quicopt.github.io/quicopt-r/reference/item_at.md)
   : The item in a slot, and the slot of an item

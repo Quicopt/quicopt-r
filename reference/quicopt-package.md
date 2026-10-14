@@ -7,7 +7,7 @@ to the service, so no solver needs to be installed. Uncertain data, such
 as demand or prices, is described by probability distributions or taken
 from the rows of a data frame, and the model can then minimize an
 expected cost, guard against bad outcomes, or require a condition to
-hold with a given probability. Decisions that are an order or an
+hold with a given probability. Decisions that are an ordering or an
 assignment, such as a delivery route, can be stated directly.
 
 ## See also

@@ -1,8 +1,9 @@
-# Declare an order as a decision
+# Declare an ordering as a decision
 
-Some decisions are an arrangement: the order in which a courier visits
-its stops, the order of jobs on a machine, which department moves into
-which office. `perm_var()` declares such a decision, a *permutation*.
+Some decisions are an arrangement: an ordering, such as the stops of a
+courier's route or the jobs on a machine, or a one-to-one assignment,
+such as which department moves into which office. `perm_var()` declares
+such a decision, a *permutation*.
 
 ## Usage
 
@@ -44,10 +45,10 @@ and
 
 ## Items and slots
 
-A permutation of size `n` arranges `n` things, called *items*, in `n`
-numbered places, called *slots*, with exactly one item in each slot.
-Items and slots are both numbered from 1 to `n`. What they stand for
-depends on the problem:
+A permutation arranges `n` things, called *items*, in as many numbered
+places, called *slots*, with exactly one item in each slot. Items and
+slots are both numbered from 1 to `n`. What they stand for depends on
+the problem:
 
 - for a route, the items are the stops and the slots are the visits:
   slot 1 is the first stop visited, slot 2 the second, and so on;

@@ -162,9 +162,9 @@ res$feasible
 `feasible` says whether the solution meets every constraint. `status`
 says how it was found: `"optimal"` means the service has proved that no
 better solution exists. Some models, those with uncertain data or with
-an order to decide (the other two articles), are solved by a search that
-returns the best solution it finds, without that proof. Their status is
-`"heuristic"`.
+an ordering to decide (the other two articles), are solved by a search
+that returns the best solution it finds, without that proof. Their
+status is `"heuristic"`.
 
 Printing `res` shows a summary prepared by the service.
 
@@ -251,7 +251,7 @@ holds both variables, the objective and both constraints, ready for
   *Deciding before the data arrives*: models in which some of the data,
   such as demand or travel times, is uncertain.
 - [`vignette("permutations", package = "quicopt")`](https://quicopt.github.io/quicopt-r/articles/permutations.md),
-  *Choosing an order*: decisions that are a sequence or an assignment,
-  such as a delivery route.
+  *Orderings and assignments*: decisions that are a sequence or an
+  assignment, such as a delivery route.
 - [`help(package = "quicopt")`](https://quicopt.github.io/quicopt-r/reference)
   lists every function.
