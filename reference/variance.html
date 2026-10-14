@@ -13,7 +13,7 @@ add(m, variance(cost) &amp;lt;= 100) limits the variation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,11 +72,11 @@ that trades a low average cost against a steady one, and
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>By default the scenarios count as the whole distribution, each with weight
-<code>1 / n</code>, so <code>variance(x)</code> is <code>expectation(x^2) - expectation(x)^2</code>. R's
-<code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var()</a></code> and <code><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd()</a></code> divide by <code>n - 1</code> instead, because they estimate the
-variance of a population from a sample of it; <code>sample = TRUE</code> does the
-same. The two differ by a factor <code>n / (n - 1)</code>, which changes the value
-reported but not which decision is best.</p>
+<code>1 / n_scenarios</code>, so <code>variance(x)</code> is <code>expectation(x^2) - expectation(x)^2</code>.
+R's <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var()</a></code> and <code><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd()</a></code> divide by <code>n_scenarios - 1</code> instead, because they
+estimate the variance of a population from a sample of it; <code>sample = TRUE</code>
+does the same. The two differ by a factor <code>n_scenarios / (n_scenarios - 1)</code>,
+which changes the value reported but not which decision is best.</p>
 <p>Unlike <code><a href="cvar.html">cvar()</a></code>, these measure variation in both directions: a scenario
 far better than average increases them as much as one far worse.</p>
     </div>

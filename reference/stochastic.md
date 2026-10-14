@@ -83,6 +83,6 @@ res <- solve(m)
 res$solution
 
 # Does the requirement still hold on 1000 new scenarios?
-resample(m, res, seed = 7, scenarios = 1000)$feasible
+resample(m, res, seed = 7, n_scenarios = 1000)$feasible
 } # }
 ```

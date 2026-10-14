@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -167,7 +167,7 @@ contractor accept?</p>
 <span><span class="va">hours</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">5</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>      <span class="co"># how long each job takes</span></span>
 <span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">take</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"take"</span>, n <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="va">take</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"take"</span>, length <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/minimize.html">maximize</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">pay</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/add.html">add</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="../reference/summaries.html">sum</a></span><span class="op">(</span><span class="va">hours</span> <span class="op">*</span> <span class="va">take</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">12</span><span class="op">)</span></span>
@@ -177,8 +177,8 @@ contractor accept?</p>
 <span><span class="co">#&gt; take[1] take[2] take[3] take[4] take[5] take[6] </span></span>
 <span><span class="co">#&gt;       1       0       1       0       0       1</span></span></code></pre></div>
 <p><code><a href="../reference/num_var.html">bin_var()</a></code> declares a yes-or-no decision: a variable that
-is either 0 or 1. With <code>n = 6</code> it declares six of them at
-once, one per job, and <code>take</code> behaves like an R vector of
+is either 0 or 1. With <code>length = 6</code> it declares six of them
+at once, one per job, and <code>take</code> behaves like an R vector of
 length 6. <code>pay * take</code> multiplies element by element, as it
 would for two numeric vectors, and <code><a href="../reference/summaries.html">sum()</a></code> adds the six
 products up. So <code>sum(pay * take)</code> is the pay of the accepted

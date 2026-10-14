@@ -33,13 +33,14 @@ An expression of the same length as `x`, no longer random.
 ## Details
 
 By default the scenarios count as the whole distribution, each with
-weight `1 / n`, so `variance(x)` is
+weight `1 / n_scenarios`, so `variance(x)` is
 `expectation(x^2) - expectation(x)^2`. R's
 [`var()`](https://rdrr.io/r/stats/cor.html) and
-[`sd()`](https://rdrr.io/r/stats/sd.html) divide by `n - 1` instead,
-because they estimate the variance of a population from a sample of it;
-`sample = TRUE` does the same. The two differ by a factor `n / (n - 1)`,
-which changes the value reported but not which decision is best.
+[`sd()`](https://rdrr.io/r/stats/sd.html) divide by `n_scenarios - 1`
+instead, because they estimate the variance of a population from a
+sample of it; `sample = TRUE` does the same. The two differ by a factor
+`n_scenarios / (n_scenarios - 1)`, which changes the value reported but
+not which decision is best.
 
 Unlike
 [`cvar()`](https://quicopt.github.io/quicopt-r/reference/cvar.md), these

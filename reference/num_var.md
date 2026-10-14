@@ -8,21 +8,40 @@ is either 0 or 1.
 ## Usage
 
 ``` r
-num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
+num_var(
+  m,
+  name,
+  lower = -Inf,
+  upper = Inf,
+  length = 1,
+  start = 0,
+  semi = FALSE,
+  n
+)
 
-int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
+int_var(
+  m,
+  name,
+  lower = -Inf,
+  upper = Inf,
+  length = 1,
+  start = 0,
+  semi = FALSE,
+  n
+)
 
-bin_var(m, name, n = 1, start = 0)
+bin_var(m, name, length = 1, start = 0, n)
 
 add_var(
   m,
   name,
   lower = -Inf,
   upper = Inf,
-  n = 1,
+  length = 1,
   start = 0,
   domain = c("num", "int", "bin"),
-  semi = FALSE
+  semi = FALSE,
+  n
 )
 ```
 
@@ -42,7 +61,7 @@ add_var(
   The smallest and the largest value allowed. `-Inf` and `Inf`, the
   defaults, leave that side open.
 
-- n:
+- length:
 
   How many variables to declare under this name.
 
@@ -56,6 +75,10 @@ add_var(
   Whether the variable may also be 0 when 0 lies outside its bounds (see
   above).
 
+- n:
+
+  The former name of `length`, still accepted for now, with a warning.
+
 - domain:
 
   For `add_var()`: `"num"`, `"int"` or `"bin"`, to declare the variable
@@ -63,7 +86,7 @@ add_var(
 
 ## Value
 
-The variable, an expression of length `n`.
+The variable, an expression with `length` elements.
 
 `add_var()` returns the model, invisibly.
 
@@ -85,20 +108,20 @@ finite. When 0 already lies between them, `semi` changes nothing.
 1 when such a variable is not 0, which is how a fixed fee per delivery
 is written: `fee * active(delivery)`.
 
-With `n` greater than 1, one call declares `n` variables under one name,
-and they behave like an R vector: `x[3]` is the third, arithmetic works
-element by element, and `sum(x)` adds them up. `lower`, `upper` and
-`start` may then be vectors of length `n`, one value per element. In the
-answer the elements are named `"x[1]"`, `"x[2]"`, and so on; a single
-variable is named `"x"`.
+With `length` greater than 1, one call declares that many variables
+under one name, and they behave like an R vector: `x[3]` is the third,
+arithmetic works element by element, and `sum(x)` adds them up. `lower`,
+`upper` and `start` may then be vectors with one value per element. In
+the answer the elements are named `"x[1]"`, `"x[2]"`, and so on; a
+single variable is named `"x"`.
 
 ## Examples
 
 ``` r
 m <- model()
 tables <- int_var(m, "tables", lower = 0)
-take   <- bin_var(m, "take", n = 6)                         # six yes-or-no decisions
-share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
+take   <- bin_var(m, "take", length = 6)                    # six yes-or-no decisions
+share  <- num_var(m, "share", lower = 0, upper = 1, length = 3)
 sum(share)
 #> (share[1] + share[2] + share[3])
 take[2]

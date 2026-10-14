@@ -11,9 +11,9 @@ independently.
 ## Usage
 
 ``` r
-rand_var(m, name, dist = NULL, n = NULL)
+rand_var(m, name, dist = NULL, length = NULL, n)
 
-add_rand_var(m, name, dist = NULL, n = NULL)
+add_rand_var(m, name, dist = NULL, length = NULL, n)
 ```
 
 ## Arguments
@@ -36,14 +36,19 @@ add_rand_var(m, name, dist = NULL, n = NULL)
   with
   [`set_distribution()`](https://quicopt.github.io/quicopt-r/reference/set_distribution.md).
 
-- n:
+- length:
 
   How many random variables to declare under this name. Left `NULL`, the
   number follows from the length of the distribution's parameters.
 
+- n:
+
+  The former name of `length`, still accepted for now, with a warning.
+
 ## Value
 
-The random variable, an expression of length `n`.
+The random variable, an expression with one element per random variable
+declared.
 
 `add_rand_var()` returns the model, invisibly.
 
@@ -55,8 +60,8 @@ can take.
 A distribution with vector parameters declares several random variables
 under one name, which behave like an R vector:
 `rand_var(m, "hours", normal(c(6, 5, 4), 1))` declares `hours[1]`,
-`hours[2]` and `hours[3]`. With scalar parameters and `n` given, it
-declares `n` variables with the same distribution. Either way, the
+`hours[2]` and `hours[3]`. With scalar parameters and `length` given, it
+declares that many variables with the same distribution. Either way, the
 elements are drawn independently of each other. Random variables that
 move together, such as demand and price, are best declared from observed
 data with
@@ -71,5 +76,5 @@ model, for use in a pipe; `m$name` then retrieves the variable.
 m <- model()
 demand <- rand_var(m, "demand", normal(100, 15))
 hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
-delay  <- rand_var(m, "delay", uniform(1, 1.5), n = 4)   # four with the same distribution
+delay  <- rand_var(m, "delay", uniform(1, 1.5), length = 4)   # four with the same distribution
 ```

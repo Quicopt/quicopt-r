@@ -17,7 +17,7 @@ and computes the model's objective and constraints on them."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ and computes the model's objective and constraints on them.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">resample</span><span class="op">(</span><span class="va">m</span>, <span class="va">solution</span>, <span class="va">seed</span>, scenarios <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">resample</span><span class="op">(</span><span class="va">m</span>, <span class="va">solution</span>, <span class="va">seed</span>, n_scenarios <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span>, <span class="va">scenarios</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -74,13 +74,18 @@ value for every decision variable (see <code><a href="evaluate.html">evaluate()<
 own.</p></dd>
 
 
-<dt id="arg-scenarios">scenarios<a class="anchor" aria-label="anchor" href="#arg-scenarios"></a></dt>
+<dt id="arg-n-scenarios">n_scenarios<a class="anchor" aria-label="anchor" href="#arg-n-scenarios"></a></dt>
 <dd><p>How many new scenarios to draw. Left <code>NULL</code>, as many as
 the model has. More scenarios give a more precise check.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Settings for the request, as for <code><a href="solve_model.html">solve_model()</a></code>.</p></dd>
+
+
+<dt id="arg-scenarios">scenarios<a class="anchor" aria-label="anchor" href="#arg-scenarios"></a></dt>
+<dd><p>The former name of <code>n_scenarios</code>, still accepted for now,
+with a warning.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -105,7 +110,7 @@ the service.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span>                                        <span class="co"># m as in ?evaluate</span></span></span>
-<span class="r-in"><span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu">resample</span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu">resample</span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">7</span>, n_scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">chk</span><span class="op">$</span><span class="va">feasible</span>                                           <span class="co"># does every constraint still hold?</span></span></span>
 <span class="r-in"><span><span class="va">chk</span><span class="op">$</span><span class="va">solver_data</span><span class="op">$</span><span class="va">max_violation</span>                          <span class="co"># if not, by how much</span></span></span>
 <span class="r-in"><span><span class="va">chk</span><span class="op">$</span><span class="va">objective</span>                                          <span class="co"># the objective on the new scenarios</span></span></span>

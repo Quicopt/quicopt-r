@@ -8,9 +8,9 @@ such a decision, a *permutation*.
 ## Usage
 
 ``` r
-perm_var(m, name, n, start = NULL)
+perm_var(m, name, n_items, start = NULL)
 
-add_perm_var(m, name, n, start = NULL)
+add_perm_var(m, name, n_items, start = NULL)
 ```
 
 ## Arguments
@@ -23,15 +23,15 @@ add_perm_var(m, name, n, start = NULL)
 
   The permutation's name, unique within the model.
 
-- n:
+- n_items:
 
   How many items, and so how many slots; at least 2.
 
 - start:
 
   The arrangement the service's search starts from: `start[i]` is the
-  slot of item `i`, so `start` contains each of the numbers 1 to `n`
-  once. Left `NULL`, item `i` starts in slot `i`.
+  slot of item `i`, so `start` contains each of the numbers 1 to
+  `n_items` once. Left `NULL`, item `i` starts in slot `i`.
 
 ## Value
 
@@ -45,10 +45,10 @@ and
 
 ## Items and slots
 
-A permutation arranges `n` things, called *items*, in as many numbered
-places, called *slots*, with exactly one item in each slot. Items and
-slots are both numbered from 1 to `n`. What they stand for depends on
-the problem:
+A permutation arranges things, called *items*, in numbered places,
+called *slots*, with exactly one item in each slot and one slot for each
+item. Items and slots are both numbered from 1 to `n_items`. What they
+stand for depends on the problem:
 
 - for a route, the items are the stops and the slots are the visits:
   slot 1 is the first stop visited, slot 2 the second, and so on;

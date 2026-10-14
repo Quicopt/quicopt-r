@@ -34,7 +34,7 @@ when `x` is not 0, but the model is then solved by a search.
 
 ``` r
 m <- model()
-delivery <- int_var(m, "delivery", lower = 10, upper = 25, n = 3, semi = TRUE)
+delivery <- int_var(m, "delivery", lower = 10, upper = 25, length = 3, semi = TRUE)
 fee <- c(30, 10, 5)
 minimize(m, sum(c(1, 2, 3) * delivery) + sum(fee * active(delivery)))
 add(m, sum(delivery) >= 40)                     # the customer needs 40 units

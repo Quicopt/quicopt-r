@@ -13,7 +13,7 @@ decision, a permutation."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,9 +47,9 @@ decision, a <em>permutation</em>.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">perm_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, <span class="va">n</span>, start <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">perm_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, <span class="va">n_items</span>, start <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">add_perm_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, <span class="va">n</span>, start <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">add_perm_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, <span class="va">n_items</span>, start <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -64,14 +64,14 @@ decision, a <em>permutation</em>.</p>
 <dd><p>The permutation's name, unique within the model.</p></dd>
 
 
-<dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
+<dt id="arg-n-items">n_items<a class="anchor" aria-label="anchor" href="#arg-n-items"></a></dt>
 <dd><p>How many items, and so how many slots; at least 2.</p></dd>
 
 
 <dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
 <dd><p>The arrangement the service's search starts from: <code>start[i]</code>
-is the slot of item <code>i</code>, so <code>start</code> contains each of the numbers 1 to <code>n</code>
-once. Left <code>NULL</code>, item <code>i</code> starts in slot <code>i</code>.</p></dd>
+is the slot of item <code>i</code>, so <code>start</code> contains each of the numbers 1 to
+<code>n_items</code> once. Left <code>NULL</code>, item <code>i</code> starts in slot <code>i</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -84,9 +84,10 @@ once. Left <code>NULL</code>, item <code>i</code> starts in slot <code>i</code>.
     <h2 id="items-and-slots">Items and slots<a class="anchor" aria-label="anchor" href="#items-and-slots"></a></h2>
 
 
-<p>A permutation arranges <code>n</code> things, called <em>items</em>, in as many numbered
-places, called <em>slots</em>, with exactly one item in each slot. Items and slots
-are both numbered from 1 to <code>n</code>. What they stand for depends on the problem:</p><ul><li><p>for a route, the items are the stops and the slots are the visits: slot
+<p>A permutation arranges things, called <em>items</em>, in numbered places, called
+<em>slots</em>, with exactly one item in each slot and one slot for each item.
+Items and slots are both numbered from 1 to <code>n_items</code>. What they stand for
+depends on the problem:</p><ul><li><p>for a route, the items are the stops and the slots are the visits: slot
 1 is the first stop visited, slot 2 the second, and so on;</p></li>
 <li><p>for a machine, the items are the jobs and the slots are the positions in
 the queue;</p></li>

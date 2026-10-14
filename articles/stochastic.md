@@ -166,7 +166,7 @@ sample than the original gives a more precise check:
 
 ``` r
 
-evaluate(m, res, met, seed = 7, scenarios = 1000)
+evaluate(m, res, met, seed = 7, n_scenarios = 1000)
 #> [1] 0.896
 ```
 
@@ -193,7 +193,7 @@ still hold:
 
 ``` r
 
-chk <- resample(m, res, seed = 7, scenarios = 1000)
+chk <- resample(m, res, seed = 7, n_scenarios = 1000)
 chk$feasible
 #> [1] FALSE
 chk$solver_data$max_violation
@@ -239,9 +239,9 @@ original target of 90%, on the same 1000 new days as before:
 
 ``` r
 
-evaluate(m, res_safe, met, seed = 7, scenarios = 1000)
+evaluate(m, res_safe, met, seed = 7, n_scenarios = 1000)
 #> [1] 0.924
-resample(m, res_safe, seed = 7, scenarios = 1000)$feasible
+resample(m, res_safe, seed = 7, n_scenarios = 1000)$feasible
 #> [1] TRUE
 pnorm(res_safe$solution[["stock"]], 100, 15)
 #> [1] 0.9196016
@@ -266,7 +266,7 @@ pay      <- c(9, 6, 7, 4, 3, 2)     # what each job pays
 estimate <- c(6, 5, 4, 3, 3, 2)     # how long each job is expected to take
 
 m <- model()
-take  <- bin_var(m, "take", n = 6)
+take  <- bin_var(m, "take", length = 6)
 hours <- rand_var(m, "hours", normal(estimate, 1))
 set_scenarios(m, 500, seed = 1)
 

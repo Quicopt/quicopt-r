@@ -36,8 +36,8 @@ An expression of the same length as `x`, no longer random.
   quantity where large is good, such as a profit.
 
 - `scenario_quantile(x, prob)` is the value that the share `prob` of the
-  scenarios stays at or below. With `n` scenarios it is the
-  `ceiling(prob * n)`-th smallest value, which is what
+  scenarios stays at or below. With `n_scenarios` scenarios it is the
+  `ceiling(prob * n_scenarios)`-th smallest value, which is what
   `quantile(x, prob, type = 1)` returns for a sample.
   `scenario_quantile(x, 1)` is `scenario_max(x)`. For a cost it is also
   known as the *value at risk*;

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -196,7 +196,7 @@ days on which demand is met:</p>
 those instead. A larger sample than the original gives a more precise
 check:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">met</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, <span class="va">met</span>, seed <span class="op">=</span> <span class="fl">7</span>, n_scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.896</span></span></code></pre></div>
 <p>On new days the stock meets demand only 89.6% of the time. In this
 example we can also compute the exact answer, because demand is
@@ -214,7 +214,7 @@ training data better than new data.</p>
 It keeps the solution fixed, draws new scenarios, and reports whether
 the model’s constraints still hold:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res</span>, seed <span class="op">=</span> <span class="fl">7</span>, n_scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="va">chk</span><span class="op">$</span><span class="va">feasible</span></span>
 <span><span class="co">#&gt; [1] FALSE</span></span>
 <span><span class="va">chk</span><span class="op">$</span><span class="va">solver_data</span><span class="op">$</span><span class="va">max_violation</span></span>
@@ -254,9 +254,9 @@ it in the original model <code>m</code>, since the question is whether
 it meets the original target of 90%, on the same 1000 new days as
 before:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res_safe</span>, <span class="va">met</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/evaluate.html">evaluate</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res_safe</span>, <span class="va">met</span>, seed <span class="op">=</span> <span class="fl">7</span>, n_scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.924</span></span>
-<span><span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res_safe</span>, seed <span class="op">=</span> <span class="fl">7</span>, scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">$</span><span class="va">feasible</span></span>
+<span><span class="fu"><a href="../reference/resample.html">resample</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">res_safe</span>, seed <span class="op">=</span> <span class="fl">7</span>, n_scenarios <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">$</span><span class="va">feasible</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="va">res_safe</span><span class="op">$</span><span class="va">solution</span><span class="op">[[</span><span class="st">"stock"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.9196016</span></span></code></pre></div>
@@ -277,7 +277,7 @@ least 90% of scenarios:</p>
 <span><span class="va">estimate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">5</span>, <span class="fl">4</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">2</span><span class="op">)</span>     <span class="co"># how long each job is expected to take</span></span>
 <span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model.html">model</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">take</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"take"</span>, n <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
+<span><span class="va">take</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/num_var.html">bin_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"take"</span>, length <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="va">hours</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"hours"</span>, <span class="fu"><a href="../reference/distribution.html">normal</a></span><span class="op">(</span><span class="va">estimate</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>

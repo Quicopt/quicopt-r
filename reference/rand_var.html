@@ -17,7 +17,7 @@ variables declared separately are drawn independently."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,9 +53,9 @@ variables declared separately are drawn independently.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span>, n <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span>, length <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">n</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">add_rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span>, n <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">add_rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="va">name</span>, dist <span class="op">=</span> <span class="cn">NULL</span>, length <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">n</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -76,14 +76,21 @@ or an <code><a href="empirical.html">empirical()</a></code> sample with one valu
 and given later with <code><a href="set_distribution.html">set_distribution()</a></code>.</p></dd>
 
 
+<dt id="arg-length">length<a class="anchor" aria-label="anchor" href="#arg-length"></a></dt>
+<dd><p>How many random variables to declare under this name. Left
+<code>NULL</code>, the number follows from the length of the distribution's
+parameters.</p></dd>
+
+
 <dt id="arg-n">n<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>How many random variables to declare under this name. Left <code>NULL</code>,
-the number follows from the length of the distribution's parameters.</p></dd>
+<dd><p>The former name of <code>length</code>, still accepted for now, with a
+warning.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The random variable, an expression of length <code>n</code>.</p>
+    <p>The random variable, an expression with one element per random
+variable declared.</p>
 <p><code>add_rand_var()</code> returns the model, invisibly.</p>
     </div>
     <div class="section level2">
@@ -92,8 +99,8 @@ the number follows from the length of the distribution's parameters.</p></dd>
 can take.</p>
 <p>A distribution with vector parameters declares several random variables
 under one name, which behave like an R vector: <code>rand_var(m, "hours", normal(c(6, 5, 4), 1))</code> declares <code>hours[1]</code>, <code>hours[2]</code> and <code>hours[3]</code>.
-With scalar parameters and <code>n</code> given, it declares <code>n</code> variables with the
-same distribution. Either way, the elements are drawn independently of each
+With scalar parameters and <code>length</code> given, it declares that many variables
+with the same distribution. Either way, the elements are drawn independently of each
 other. Random variables that move together, such as demand and price, are
 best declared from observed data with <code><a href="set_empirical.html">set_empirical()</a></code>.</p>
 <p><code>add_rand_var()</code> declares the variable in the same way but returns the
@@ -105,7 +112,7 @@ model, for use in a pipe; <code>m$name</code> then retrieves the variable.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="model.html">model</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">demand</span> <span class="op">&lt;-</span> <span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="st">"demand"</span>, <span class="fu"><a href="distribution.html">normal</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">15</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">hours</span>  <span class="op">&lt;-</span> <span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="st">"hours"</span>, <span class="fu"><a href="distribution.html">normal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">5</span>, <span class="fl">4</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span>    <span class="co"># three, one per job</span></span></span>
-<span class="r-in"><span><span class="va">delay</span>  <span class="op">&lt;-</span> <span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="st">"delay"</span>, <span class="fu"><a href="distribution.html">uniform</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span><span class="op">)</span>, n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>   <span class="co"># four with the same distribution</span></span></span>
+<span class="r-in"><span><span class="va">delay</span>  <span class="op">&lt;-</span> <span class="fu">rand_var</span><span class="op">(</span><span class="va">m</span>, <span class="st">"delay"</span>, <span class="fu"><a href="distribution.html">uniform</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span><span class="op">)</span>, length <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>   <span class="co"># four with the same distribution</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

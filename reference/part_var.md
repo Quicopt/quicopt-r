@@ -2,16 +2,16 @@
 
 Some decisions put things into groups: people into teams, jobs onto
 machines, parcels into vans. `part_var()` declares such a decision, a
-*partition*: each of `n` items goes into exactly one of `parts` groups,
-called *parts*. Items are numbered from 1 to `n` and parts from 1 to
-`parts`. A part may stay empty.
+*partition*: each of `n_items` items goes into exactly one of `n_parts`
+groups, called *parts*. Items are numbered from 1 to `n_items` and parts
+from 1 to `n_parts`. A part may stay empty.
 
 ## Usage
 
 ``` r
-part_var(m, name, n, parts, start = NULL)
+part_var(m, name, n_items, n_parts, start = NULL)
 
-add_part_var(m, name, n, parts, start = NULL)
+add_part_var(m, name, n_items, n_parts, start = NULL)
 ```
 
 ## Arguments
@@ -24,18 +24,18 @@ add_part_var(m, name, n, parts, start = NULL)
 
   The partition's name, unique within the model.
 
-- n:
+- n_items:
 
   How many items; at least 1.
 
-- parts:
+- n_parts:
 
   How many parts; at least 2.
 
 - start:
 
   The division the service's search starts from: `start[i]` is the part
-  of item `i`, a whole number from 1 to `parts`. Left `NULL`, the
+  of item `i`, a whole number from 1 to `n_parts`. Left `NULL`, the
   service chooses one.
 
 ## Value

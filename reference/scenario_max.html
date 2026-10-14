@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,8 +69,8 @@ Minimizing it makes the worst scenario as good as possible.</p></li>
 <li><p><code>scenario_min(x)</code> is the smallest. Maximizing it does the same for a
 quantity where large is good, such as a profit.</p></li>
 <li><p><code>scenario_quantile(x, prob)</code> is the value that the share <code>prob</code> of the
-scenarios stays at or below. With <code>n</code> scenarios it is the
-<code>ceiling(prob * n)</code>-th smallest value, which is what
+scenarios stays at or below. With <code>n_scenarios</code> scenarios it is the
+<code>ceiling(prob * n_scenarios)</code>-th smallest value, which is what
 <code>quantile(x, prob, type = 1)</code> returns for a sample.
 <code>scenario_quantile(x, 1)</code> is <code>scenario_max(x)</code>. For a cost it is also
 known as the <em>value at risk</em>; <code><a href="cvar.html">cvar()</a></code> at the same level is the average

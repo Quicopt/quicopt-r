@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -222,7 +222,7 @@ objective:</p>
 <span><span class="va">dist</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lookup_table.html">lookup_table</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"dist"</span>, <span class="va">km</span><span class="op">)</span></span>
 <span><span class="va">route</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/perm_var.html">perm_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"route"</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/precede.html">precede</a></span><span class="op">(</span><span class="va">route</span>, <span class="fl">4</span>, <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">traffic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"traffic"</span>, <span class="fu"><a href="../reference/distribution.html">uniform</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span><span class="op">)</span>, n <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>    <span class="co"># slowdown on each leg</span></span>
+<span><span class="va">traffic</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rand_var.html">rand_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"traffic"</span>, <span class="fu"><a href="../reference/distribution.html">uniform</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span><span class="op">)</span>, length <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>    <span class="co"># slowdown on each leg</span></span>
 <span><span class="fu"><a href="../reference/set_scenarios.html">set_scenarios</a></span><span class="op">(</span><span class="va">m</span>, <span class="fl">256</span>, seed <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">legs</span> <span class="op">&lt;-</span> <span class="va">dist</span><span class="op">[</span><span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, <span class="va">route</span><span class="op">)</span>, <span class="fu"><a href="../reference/item_at.html">item_at</a></span><span class="op">(</span><span class="fl">2</span><span class="op">:</span><span class="fl">5</span>, <span class="va">route</span><span class="op">)</span><span class="op">]</span></span>

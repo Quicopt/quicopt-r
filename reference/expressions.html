@@ -15,7 +15,7 @@ ordinary R code, with these operators and functions:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@ built.</p>
     <h2 id="expressions-are-vectors">Expressions are vectors<a class="anchor" aria-label="anchor" href="#expressions-are-vectors"></a></h2>
 
 
-<p>A variable declared with <code>n = 10</code> is an expression of length 10, and
+<p>A variable declared with <code>length = 10</code> is an expression of length 10, and
 expressions behave like numeric vectors in most ways: arithmetic works
 element by element, <code>x[3]</code> picks one element, <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> combines expressions
 and numbers into a longer expression, and <code><a href="https://rdrr.io/r/base/length.html" class="external-link">length()</a></code> counts the elements.</p>
@@ -115,7 +115,7 @@ a linear model exact.</p>
 <span class="r-in"><span><span class="va">tables</span> <span class="op">+</span> <span class="va">chairs</span> <span class="op">&lt;=</span> <span class="fl">18</span>                     <span class="co"># a comparison, not TRUE or FALSE</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (tables + chairs) &lt;= 18 </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"x"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">1</span>, n <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="num_var.html">num_var</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"x"</span>, lower <span class="op">=</span> <span class="fl">0</span>, upper <span class="op">=</span> <span class="fl">1</span>, length <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fl">2</span> <span class="op">*</span> <span class="va">x</span>                                     <span class="co"># element by element</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] (2 * x[1])</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [2] (2 * x[2])</span>

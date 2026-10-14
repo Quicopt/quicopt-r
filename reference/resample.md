@@ -11,7 +11,7 @@ them.
 ## Usage
 
 ``` r
-resample(m, solution, seed, scenarios = NULL, ...)
+resample(m, solution, seed, n_scenarios = NULL, ..., scenarios)
 ```
 
 ## Arguments
@@ -30,7 +30,7 @@ resample(m, solution, seed, scenarios = NULL, ...)
 
   The seed for the new scenarios, different from the model's own.
 
-- scenarios:
+- n_scenarios:
 
   How many new scenarios to draw. Left `NULL`, as many as the model has.
   More scenarios give a more precise check.
@@ -39,6 +39,11 @@ resample(m, solution, seed, scenarios = NULL, ...)
 
   Settings for the request, as for
   [`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md).
+
+- scenarios:
+
+  The former name of `n_scenarios`, still accepted for now, with a
+  warning.
 
 ## Value
 
@@ -66,7 +71,7 @@ is one request to the service.
 ``` r
 if (FALSE) { # \dontrun{
 res <- solve(m)                                        # m as in ?evaluate
-chk <- resample(m, res, seed = 7, scenarios = 1000)
+chk <- resample(m, res, seed = 7, n_scenarios = 1000)
 chk$feasible                                           # does every constraint still hold?
 chk$solver_data$max_violation                          # if not, by how much
 chk$objective                                          # the objective on the new scenarios

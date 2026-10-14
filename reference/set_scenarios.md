@@ -1,16 +1,16 @@
 # Set how many scenarios are drawn, and from which seed
 
-The service draws `n` scenarios: `n` possible outcomes of the model's
-random variables. More scenarios describe the uncertainty more
-accurately, and take longer to solve. A model whose scenarios are never
-set is solved over a single scenario, unless an
+The service draws `n_scenarios` scenarios, each a possible outcome of
+the model's random variables. More scenarios describe the uncertainty
+more accurately, and take longer to solve. A model whose scenarios are
+never set is solved over a single scenario, unless an
 [`empirical()`](https://quicopt.github.io/quicopt-r/reference/empirical.md)
 sample sets the number by its length.
 
 ## Usage
 
 ``` r
-set_scenarios(m, n, seed = NULL)
+set_scenarios(m, n_scenarios, seed = NULL)
 ```
 
 ## Arguments
@@ -19,7 +19,7 @@ set_scenarios(m, n, seed = NULL)
 
   A [`model()`](https://quicopt.github.io/quicopt-r/reference/model.md).
 
-- n:
+- n_scenarios:
 
   How many scenarios to draw, at least 1.
 

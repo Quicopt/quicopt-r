@@ -32,7 +32,7 @@ delivery:
 ``` r
 
 m <- model()
-delivery <- int_var(m, "delivery", lower = 10, upper = 25, n = 3, semi = TRUE)
+delivery <- int_var(m, "delivery", lower = 10, upper = 25, length = 3, semi = TRUE)
 ```
 
 `delivery[1]` can be 0, 10, 11, …, 25, but not 5. The fee is due only
@@ -93,7 +93,7 @@ warehouse:
 ``` r
 
 m <- model()
-ship <- int_var(m, "ship", lower = 10, upper = 25, n = 9, semi = TRUE)
+ship <- int_var(m, "ship", lower = 10, upper = 25, length = 9, semi = TRUE)
 to   <- function(c) ship[3 * (c - 1) + 1:3]             # to customer c, from warehouses 1 to 3
 from <- function(w) ship[w + c(0, 3, 6)]                # from warehouse w, to customers 1 to 3
 ```

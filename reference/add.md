@@ -4,8 +4,8 @@ A comparison of expressions, written with `<=`, `>=` or `==`, becomes a
 requirement that every solution must meet:
 `add(m, tables + chairs <= 18)`. Here the comparison is not a test that
 returns `TRUE` or `FALSE`. A comparison of two vectors adds one
-constraint per element, so with `x` and `cap` of length `n`,
-`add(m, x <= cap)` adds `n` constraints.
+constraint per element: with `x` and `cap` of length 3,
+`add(m, x <= cap)` adds 3 constraints.
 
 ## Usage
 
@@ -53,11 +53,11 @@ requirement on a probability, such as
 ## A safety margin on a chance constraint
 
 The probability in a chance constraint is estimated from the scenarios,
-so it carries sampling error. For a target `p` and `n` scenarios, its
-standard error is `sqrt(p * (1 - p) / n)`, about 0.013 for `p = 0.9` and
-`n = 512`. A solution chosen to just meet the target on its own
-scenarios therefore misses the target on new scenarios about half the
-time (see
+so it carries sampling error. For a target `p` and `n_scenarios`
+scenarios, its standard error is `sqrt(p * (1 - p) / n_scenarios)`,
+about 0.013 for `p = 0.9` and `n_scenarios = 512`. A solution chosen to
+just meet the target on its own scenarios therefore misses the target on
+new scenarios about half the time (see
 [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)).
 
 `margin = k` raises the target by `k` standard errors, so that the true

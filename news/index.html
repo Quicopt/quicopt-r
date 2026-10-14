@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,12 @@
       <small>Source: <a href="https://github.com/Quicopt/quicopt-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.0" id="quicopt-070">quicopt 0.7.0<a class="anchor" aria-label="anchor" href="#quicopt-070"></a></h2>
+<ul><li>Counts are named for what they count. The number of items of a permutation or a partition is <code>n_items</code> (<code>perm_var(m, "tour", n_items)</code>, <code>part_var(m, "teams", n_items, n_parts)</code>), the number of parts <code>n_parts</code>, and the number of scenarios <code>n_scenarios</code> (<code>set_scenarios(m, n_scenarios, seed)</code>, and <code>n_scenarios =</code> in <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code>). The handles read the counts back as <code>$n_items</code> and <code>$n_parts</code>. Calls that pass the counts by position work as before; <code>perm_var(m, "tour", n = 5)</code>, <code>part_var(m, "teams", 6, parts = 2)</code> and <code>$n</code> or <code>$parts</code> on a handle need the new names.</li>
+<li>The length of a vector variable is <code>length</code>, as in <code>numeric(length = 3)</code>: <code>bin_var(m, "take", length = 6)</code> declares six yes-or-no decisions. The same holds for <code><a href="../reference/num_var.html">num_var()</a></code>, <code><a href="../reference/num_var.html">int_var()</a></code>, <code><a href="../reference/num_var.html">add_var()</a></code>, <code><a href="../reference/rand_var.html">rand_var()</a></code> and <code><a href="../reference/rand_var.html">add_rand_var()</a></code>.</li>
+<li>The former names, <code>n =</code> for the length and <code>scenarios =</code> in <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code>, still work, with a warning, and will stop working in a later release. Giving a former name together with its new one is an error.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.1" id="quicopt-061">quicopt 0.6.1<a class="anchor" aria-label="anchor" href="#quicopt-061"></a></h2>
 <ul><li>

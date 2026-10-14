@@ -10,7 +10,7 @@ solution's value, so each call is one request.
 ## Usage
 
 ``` r
-evaluate(m, solution, expr, seed = NULL, scenarios = NULL, ...)
+evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios)
 ```
 
 ## Arguments
@@ -36,7 +36,7 @@ evaluate(m, solution, expr, seed = NULL, scenarios = NULL, ...)
   Left `NULL`, the model's own scenarios are used. Otherwise, the seed
   for new scenarios, different from the model's own.
 
-- scenarios:
+- n_scenarios:
 
   With `seed`: how many new scenarios to draw. Left `NULL`, as many as
   the model has. More scenarios give a more precise value.
@@ -47,6 +47,11 @@ evaluate(m, solution, expr, seed = NULL, scenarios = NULL, ...)
   [`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md):
   `base_url`, `api_key`, `project`, `config`, `gzip`, `timeout` and
   `transport`.
+
+- scenarios:
+
+  The former name of `n_scenarios`, still accepted for now, with a
+  warning.
 
 ## Value
 
@@ -80,7 +85,7 @@ res <- solve(m)
 
 met <- prob(demand <= stock)
 evaluate(m, res, met)                                  # on the model's scenarios
-evaluate(m, res, met, seed = 7, scenarios = 1000)      # on 1000 new ones
+evaluate(m, res, met, seed = 7, n_scenarios = 1000)    # on 1000 new ones
 evaluate(m, c(stock = 110), met)                       # for a stock of 110
 } # }
 ```

@@ -110,7 +110,7 @@ pay   <- c(9, 6, 7, 4, 3, 2)      # what each job pays
 hours <- c(6, 5, 4, 3, 3, 2)      # how long each job takes
 
 m <- model()
-take <- bin_var(m, "take", n = 6)
+take <- bin_var(m, "take", length = 6)
 
 maximize(m, sum(pay * take))
 add(m, sum(hours * take) <= 12)
@@ -123,8 +123,8 @@ res$solution
 
 [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md)
 declares a yes-or-no decision: a variable that is either 0 or 1. With
-`n = 6` it declares six of them at once, one per job, and `take` behaves
-like an R vector of length 6. `pay * take` multiplies element by
+`length = 6` it declares six of them at once, one per job, and `take`
+behaves like an R vector of length 6. `pay * take` multiplies element by
 element, as it would for two numeric vectors, and
 [`sum()`](https://quicopt.github.io/quicopt-r/reference/summaries.md)
 adds the six products up. So `sum(pay * take)` is the pay of the
