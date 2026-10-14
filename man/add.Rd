@@ -23,8 +23,8 @@ The model, invisibly.
 A comparison of expressions, written with \code{<=}, \code{>=} or \code{==}, becomes a
 requirement that every solution must meet: \code{add(m, tables + chairs <= 18)}.
 Here the comparison is not a test that returns \code{TRUE} or \code{FALSE}. A
-comparison of two vectors adds one constraint per element, so with \code{x} and
-\code{cap} of length \code{n}, \code{add(m, x <= cap)} adds \code{n} constraints.
+comparison of two vectors adds one constraint per element: with \code{x} and
+\code{cap} of length 3, \code{add(m, x <= cap)} adds 3 constraints.
 }
 \details{
 \code{<} and \code{>} are not accepted, because for a quantity that can take any
@@ -39,11 +39,11 @@ number, not one per scenario: summarize it first, for example with
 \section{A safety margin on a chance constraint}{
 
 The probability in a chance constraint is estimated from the scenarios, so
-it carries sampling error. For a target \code{p} and \code{n} scenarios, its standard
-error is \code{sqrt(p * (1 - p) / n)}, about 0.013 for \code{p = 0.9} and
-\code{n = 512}. A solution chosen to just meet the target on its own scenarios
-therefore misses the target on new scenarios about half the time (see
-\code{\link[=resample]{resample()}}).
+it carries sampling error. For a target \code{p} and \code{n_scenarios} scenarios,
+its standard error is \code{sqrt(p * (1 - p) / n_scenarios)}, about 0.013 for
+\code{p = 0.9} and \code{n_scenarios = 512}. A solution chosen to just meet the
+target on its own scenarios therefore misses the target on new scenarios
+about half the time (see \code{\link[=resample]{resample()}}).
 
 \code{margin = k} raises the target by \code{k} standard errors, so that the true
 probability meets the original target with a confidence of about

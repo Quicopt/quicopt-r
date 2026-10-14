@@ -17,7 +17,7 @@
 #' built.
 #'
 #' @section Expressions are vectors:
-#' A variable declared with `n = 10` is an expression of length 10, and
+#' A variable declared with `length = 10` is an expression of length 10, and
 #' expressions behave like numeric vectors in most ways: arithmetic works
 #' element by element, `x[3]` picks one element, `c()` combines expressions
 #' and numbers into a longer expression, and `length()` counts the elements.
@@ -62,7 +62,7 @@
 #' 50 * tables + 20 * chairs                 # an expression, not a number
 #' tables + chairs <= 18                     # a comparison, not TRUE or FALSE
 #'
-#' x <- num_var(m, "x", lower = 0, upper = 1, n = 3)
+#' x <- num_var(m, "x", lower = 0, upper = 1, length = 3)
 #' 2 * x                                     # element by element
 #' sum(x)                                    # one expression
 #' max(x, 0.5)                               # the largest of all four

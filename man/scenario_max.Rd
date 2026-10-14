@@ -30,8 +30,8 @@ Minimizing it makes the worst scenario as good as possible.
 \item \code{scenario_min(x)} is the smallest. Maximizing it does the same for a
 quantity where large is good, such as a profit.
 \item \code{scenario_quantile(x, prob)} is the value that the share \code{prob} of the
-scenarios stays at or below. With \code{n} scenarios it is the
-\code{ceiling(prob * n)}-th smallest value, which is what
+scenarios stays at or below. With \code{n_scenarios} scenarios it is the
+\code{ceiling(prob * n_scenarios)}-th smallest value, which is what
 \code{quantile(x, prob, type = 1)} returns for a sample.
 \code{scenario_quantile(x, 1)} is \code{scenario_max(x)}. For a cost it is also
 known as the \emph{value at risk}; \code{\link[=cvar]{cvar()}} at the same level is the average

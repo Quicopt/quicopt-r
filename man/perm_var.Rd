@@ -5,20 +5,20 @@
 \alias{add_perm_var}
 \title{Declare an ordering as a decision}
 \usage{
-perm_var(m, name, n, start = NULL)
+perm_var(m, name, n_items, start = NULL)
 
-add_perm_var(m, name, n, start = NULL)
+add_perm_var(m, name, n_items, start = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
 \item{name}{The permutation's name, unique within the model.}
 
-\item{n}{How many items, and so how many slots; at least 2.}
+\item{n_items}{How many items, and so how many slots; at least 2.}
 
 \item{start}{The arrangement the service's search starts from: \code{start[i]}
-is the slot of item \code{i}, so \code{start} contains each of the numbers 1 to \code{n}
-once. Left \code{NULL}, item \code{i} starts in slot \code{i}.}
+is the slot of item \code{i}, so \code{start} contains each of the numbers 1 to
+\code{n_items} once. Left \code{NULL}, item \code{i} starts in slot \code{i}.}
 }
 \value{
 The permutation, for use with \code{\link[=item_at]{item_at()}}, \code{\link[=slot_of]{slot_of()}} and
@@ -34,9 +34,10 @@ decision, a \emph{permutation}.
 }
 \section{Items and slots}{
 
-A permutation arranges \code{n} things, called \emph{items}, in as many numbered
-places, called \emph{slots}, with exactly one item in each slot. Items and slots
-are both numbered from 1 to \code{n}. What they stand for depends on the problem:
+A permutation arranges things, called \emph{items}, in numbered places, called
+\emph{slots}, with exactly one item in each slot and one slot for each item.
+Items and slots are both numbered from 1 to \code{n_items}. What they stand for
+depends on the problem:
 \itemize{
 \item for a route, the items are the stops and the slots are the visits: slot
 1 is the first stop visited, slot 2 the second, and so on;

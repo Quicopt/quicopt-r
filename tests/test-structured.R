@@ -30,7 +30,7 @@ tour_model <- function() {
 
 m <- model()
 tour <- perm_var(m, "tour", 5)
-check("a permutation handle knows its model and size", identical(tour$model, m) && tour$n == 5L)
+check("a permutation handle knows its model and size", identical(tour$model, m) && tour$n_items == 5L)
 check("the handle is retrievable from the model", identical(m$tour$name, "tour"))
 expect_error_like("a permutation needs at least two items", perm_var(m, "p", 1), "at least 2")
 expect_error_like("a fractional size is refused", perm_var(m, "p", 2.5), "whole number")

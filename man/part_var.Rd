@@ -5,21 +5,21 @@
 \alias{add_part_var}
 \title{Divide items into groups as a decision}
 \usage{
-part_var(m, name, n, parts, start = NULL)
+part_var(m, name, n_items, n_parts, start = NULL)
 
-add_part_var(m, name, n, parts, start = NULL)
+add_part_var(m, name, n_items, n_parts, start = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
 \item{name}{The partition's name, unique within the model.}
 
-\item{n}{How many items; at least 1.}
+\item{n_items}{How many items; at least 1.}
 
-\item{parts}{How many parts; at least 2.}
+\item{n_parts}{How many parts; at least 2.}
 
 \item{start}{The division the service's search starts from: \code{start[i]} is
-the part of item \code{i}, a whole number from 1 to \code{parts}. Left \code{NULL}, the
+the part of item \code{i}, a whole number from 1 to \code{n_parts}. Left \code{NULL}, the
 service chooses one.}
 }
 \value{
@@ -30,9 +30,9 @@ The partition, for use with \code{\link[=part_of]{part_of()}} and \code{\link[=s
 \description{
 Some decisions put things into groups: people into teams, jobs onto
 machines, parcels into vans. \code{part_var()} declares such a decision, a
-\emph{partition}: each of \code{n} items goes into exactly one of \code{parts} groups,
-called \emph{parts}. Items are numbered from 1 to \code{n} and parts from 1 to
-\code{parts}. A part may stay empty.
+\emph{partition}: each of \code{n_items} items goes into exactly one of \code{n_parts}
+groups, called \emph{parts}. Items are numbered from 1 to \code{n_items} and parts
+from 1 to \code{n_parts}. A part may stay empty.
 }
 \details{
 \code{\link[=part_of]{part_of()}} gives the part an item is in, and \code{\link[=size_of]{size_of()}} how many items a

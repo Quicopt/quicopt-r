@@ -59,10 +59,17 @@ want$objective <- prob(m$demand - m$x <= 0)$nodes[[1]]; want$sense <- "min"; wan
 check("it sends the pinned program with the expression as objective and no constraints",
       identical(req$body, encode(want)))
 check("it carries the front-end tag", grepl("source_language=quicopt-r", req$url, fixed = TRUE))
-v <- evaluate(m, c(x = 118.7, k = 2), prob(m$demand - m$x <= 0), seed = 2, scenarios = 1000, transport = rec$fn)
+v <- evaluate(m, c(x = 118.7, k = 2), prob(m$demand - m$x <= 0), seed = 2, n_scenarios = 1000, transport = rec$fn)
 want$scenario_seed <- 2; want$scenarios <- 1000
 check("with a seed it evaluates on fresh scenarios", identical(rec$requests[[2]]$body, encode(want)))
-expect_error_like("scenarios needs a seed", evaluate(m, c(x = 1, k = 1), m$x, scenarios = 10), "seed")
+expect_error_like("n_scenarios needs a seed", evaluate(m, c(x = 1, k = 1), m$x, n_scenarios = 10), "seed")
+warned <- NULL
+v <- withCallingHandlers(
+  evaluate(m, c(x = 118.7, k = 2), prob(m$demand - m$x <= 0), seed = 2, scenarios = 1000, transport = rec$fn),
+  warning = function(w) { warned <<- conditionMessage(w); invokeRestart("muffleWarning") })
+check("the former name scenarios still sets the count, with a warning",
+      identical(rec$requests[[3]]$body, encode(want)) &&
+        grepl("`scenarios` is now called `n_scenarios`", warned))
 expect_error_like("a random expression cannot be evaluated",
                   evaluate(m, c(x = 1, k = 1), m$demand - m$x, transport = rec$fn), "still random")
 expect_error_like("a vector expression cannot be evaluated",
@@ -77,7 +84,7 @@ check("resample returns the full result", inherits(res, "quicopt_result") && !re
 want <- p; want$fix[[2]]$value <- 2; want$scenario_seed <- 7
 check("it sends the pinned program under the new seed, constraints kept",
       identical(rec$requests[[1]]$body, encode(want)))
-res <- resample(m, c(x = 118.7, k = 2), seed = 7, scenarios = 1000, transport = rec$fn)
+res <- resample(m, c(x = 118.7, k = 2), seed = 7, n_scenarios = 1000, transport = rec$fn)
 want$scenarios <- 1000
 check("a larger sample can be asked for", identical(rec$requests[[2]]$body, encode(want)))
 
@@ -95,6 +102,6 @@ set_empirical(m4, data.frame(d = c(1, 2, 3)))
 r4 <- rand_var(m4, "r", normal(0, 1))
 minimize(m4, expectation(m4$d * x4 + r4))
 expect_error_like("the count is fixed by an empirical column",
-                  resample(m4, c(x = 1), seed = 2, scenarios = 10), "empirical")
+                  resample(m4, c(x = 1), seed = 2, n_scenarios = 10), "empirical")
 
 cat("solution: all green\n")

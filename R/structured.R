@@ -9,9 +9,10 @@
 #' decision, a *permutation*.
 #'
 #' @section Items and slots:
-#' A permutation arranges `n` things, called *items*, in as many numbered
-#' places, called *slots*, with exactly one item in each slot. Items and slots
-#' are both numbered from 1 to `n`. What they stand for depends on the problem:
+#' A permutation arranges things, called *items*, in numbered places, called
+#' *slots*, with exactly one item in each slot and one slot for each item.
+#' Items and slots are both numbered from 1 to `n_items`. What they stand for
+#' depends on the problem:
 #'
 #' * for a route, the items are the stops and the slots are the visits: slot
 #'   1 is the first stop visited, slot 2 the second, and so on;
@@ -48,10 +49,10 @@
 #'
 #' @param m A [model()].
 #' @param name The permutation's name, unique within the model.
-#' @param n How many items, and so how many slots; at least 2.
+#' @param n_items How many items, and so how many slots; at least 2.
 #' @param start The arrangement the service's search starts from: `start[i]`
-#'   is the slot of item `i`, so `start` contains each of the numbers 1 to `n`
-#'   once. Left `NULL`, item `i` starts in slot `i`.
+#'   is the slot of item `i`, so `start` contains each of the numbers 1 to
+#'   `n_items` once. Left `NULL`, item `i` starts in slot `i`.
 #' @return The permutation, for use with [item_at()], [slot_of()] and
 #'   [precede()].
 #' @examples
@@ -68,31 +69,34 @@
 #' res$structures$route$item_at                      # the stops in the order visited
 #' }
 #' @export
-perm_var <- function(m, name, n, start = NULL) {
+perm_var <- function(m, name, n_items, start = NULL) {
   .check_model(m, "perm_var")
   .check_name(m, name)
-  if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 2 || n != trunc(n))
+  if (!is.numeric(n_items) || length(n_items) != 1L || is.na(n_items) || n_items < 2 ||
+      n_items != trunc(n_items))
     stop("a permutation needs a whole number of items, at least 2")
-  n <- as.integer(n)
-  start <- .check_perm_start(start, n, name)
+  n_items <- as.integer(n_items)
+  start <- .check_perm_start(start, n_items, name)
   # "quicopt" routes arithmetic on the bare handle into the group generics,
   # where .nodes_of names the right way to read it
-  P <- structure(list(name = name, n = n, model = m), class = c("quicopt_perm", "quicopt"))
+  P <- structure(list(name = name, n_items = n_items, model = m),
+                 class = c("quicopt_perm", "quicopt"))
   vars <- .m_get(m, "vars")
   vars[[name]] <- P
   .m_set(m, "vars", vars)
   structs <- .m_get(m, "structures")
-  structs[[name]] <- list(kind = "permutation", n = n, start = start, precede = list())
+  structs[[name]] <- list(kind = "permutation", n_items = n_items, start = start, precede = list())
   .m_set(m, "structures", structs)
   P
 }
 
-# A start for a permutation of n items: NULL, or a permutation of 1:n.
-.check_perm_start <- function(start, n, name) {
+# A start for a permutation of n_items items: NULL, or a permutation of
+# 1:n_items.
+.check_perm_start <- function(start, n_items, name) {
   if (is.null(start)) return(integer(0))
-  if (!is.numeric(start) || anyNA(start) || length(start) != n ||
-      any(start != trunc(start)) || !setequal(start, seq_len(n)))
-    stop("'", name, "': start must be a permutation of 1:", n,
+  if (!is.numeric(start) || anyNA(start) || length(start) != n_items ||
+      any(start != trunc(start)) || !setequal(start, seq_len(n_items)))
+    stop("'", name, "': start must be a permutation of 1:", n_items,
          " (start[i] is the slot item i starts in)")
   as.integer(start)
 }
@@ -100,8 +104,8 @@ perm_var <- function(m, name, n, start = NULL) {
 #' @rdname perm_var
 #' @return `add_perm_var()` returns the model, invisibly.
 #' @export
-add_perm_var <- function(m, name, n, start = NULL) {
-  perm_var(m, name, n, start)
+add_perm_var <- function(m, name, n_items, start = NULL) {
+  perm_var(m, name, n_items, start)
   invisible(m)
 }
 
@@ -112,11 +116,12 @@ add_perm_var <- function(m, name, n, start = NULL) {
   P
 }
 
-# Positions into a permutation of n: whole numbers in 1..n, vectorized.
-.check_positions <- function(k, n, what, caller) {
+# Positions into a structure with `extent` of them, such as the slots of a
+# permutation: whole numbers in 1..extent, vectorized.
+.check_positions <- function(k, extent, what, caller) {
   if (!is.numeric(k) || length(k) == 0L || anyNA(k) || any(k != trunc(k)) ||
-      any(k < 1) || any(k > n))
-    stop(caller, ": ", what, " must be whole numbers from 1 to ", n)
+      any(k < 1) || any(k > extent))
+    stop(caller, ": ", what, " must be whole numbers from 1 to ", extent)
   as.integer(k)
 }
 
@@ -149,7 +154,7 @@ add_perm_var <- function(m, name, n, start = NULL) {
 #' @export
 item_at <- function(slot, P) {
   .check_perm(P, "item_at")
-  slot <- .check_positions(slot, P$n, "slots", "item_at")
+  slot <- .check_positions(slot, P$n_items, "slots", "item_at")
   .qexpr(lapply(slot, function(k) ir_apply("item_at", list(ir_const(k), ir_struct_ref(P$name)))))
 }
 
@@ -157,7 +162,7 @@ item_at <- function(slot, P) {
 #' @export
 slot_of <- function(item, P) {
   .check_perm(P, "slot_of")
-  item <- .check_positions(item, P$n, "items", "slot_of")
+  item <- .check_positions(item, P$n_items, "items", "slot_of")
   .qexpr(lapply(item, function(i) ir_apply("slot_of", list(ir_const(i), ir_struct_ref(P$name)))))
 }
 
@@ -185,15 +190,15 @@ slot_of <- function(item, P) {
 #' @export
 precede <- function(P, before, after) {
   .check_perm(P, "precede")
-  before <- .check_positions(before, P$n, "items", "precede")
-  after <- .check_positions(after, P$n, "items", "precede")
+  before <- .check_positions(before, P$n_items, "items", "precede")
+  after <- .check_positions(after, P$n_items, "items", "precede")
   if (length(before) != 1L || length(after) != 1L)
     stop("precede takes one item before one other; call it once per requirement")
   if (before == after) stop("an item cannot precede itself")
   m <- P$model
   structs <- .m_get(m, "structures")
   edges <- c(structs[[P$name]]$precede, list(c(before, after)))
-  if (.has_cycle(edges, P$n))
+  if (.has_cycle(edges, P$n_items))
     stop("requiring ", before, " before ", after, " contradicts the requirements ",
          "already given for '", P$name, "'")
   structs[[P$name]]$precede <- edges
@@ -201,10 +206,11 @@ precede <- function(P, before, after) {
   invisible(P)
 }
 
-# Whether the edges (a list of c(before, after)) over 1..n contain a cycle:
-# Kahn's algorithm leaves a node unplaced exactly when they do.
-.has_cycle <- function(edges, n) {
-  indeg <- integer(n)
+# Whether the edges (a list of c(before, after)) over items 1..n_items
+# contain a cycle: Kahn's algorithm leaves an item unplaced exactly when they
+# do.
+.has_cycle <- function(edges, n_items) {
+  indeg <- integer(n_items)
   for (e in edges) indeg[[e[[2L]]]] <- indeg[[e[[2L]]]] + 1L
   ready <- which(indeg == 0L)
   placed <- 0L
@@ -216,7 +222,7 @@ precede <- function(P, before, after) {
       if (indeg[[e[[2L]]]] == 0L) ready <- c(ready, e[[2L]])
     }
   }
-  placed < n
+  placed < n_items
 }
 
 #' A table of data indexed by decisions
@@ -323,9 +329,9 @@ lookup_table <- function(m, name, values) {
 #'
 #' Some decisions put things into groups: people into teams, jobs onto
 #' machines, parcels into vans. `part_var()` declares such a decision, a
-#' *partition*: each of `n` items goes into exactly one of `parts` groups,
-#' called *parts*. Items are numbered from 1 to `n` and parts from 1 to
-#' `parts`. A part may stay empty.
+#' *partition*: each of `n_items` items goes into exactly one of `n_parts`
+#' groups, called *parts*. Items are numbered from 1 to `n_items` and parts
+#' from 1 to `n_parts`. A part may stay empty.
 #'
 #' [part_of()] gives the part an item is in, and [size_of()] how many items a
 #' part holds. Both are expressions whose values the service chooses, like the
@@ -349,10 +355,10 @@ lookup_table <- function(m, name, values) {
 #'
 #' @param m A [model()].
 #' @param name The partition's name, unique within the model.
-#' @param n How many items; at least 1.
-#' @param parts How many parts; at least 2.
+#' @param n_items How many items; at least 1.
+#' @param n_parts How many parts; at least 2.
 #' @param start The division the service's search starts from: `start[i]` is
-#'   the part of item `i`, a whole number from 1 to `parts`. Left `NULL`, the
+#'   the part of item `i`, a whole number from 1 to `n_parts`. Left `NULL`, the
 #'   service chooses one.
 #' @return The partition, for use with [part_of()] and [size_of()].
 #' @examples
@@ -371,42 +377,44 @@ lookup_table <- function(m, name, values) {
 #' res$structures$teams$size_of                            # 4 2
 #' }
 #' @export
-part_var <- function(m, name, n, parts, start = NULL) {
+part_var <- function(m, name, n_items, n_parts, start = NULL) {
   .check_model(m, "part_var")
   .check_name(m, name)
-  if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != trunc(n))
+  if (!is.numeric(n_items) || length(n_items) != 1L || is.na(n_items) || n_items < 1 ||
+      n_items != trunc(n_items))
     stop("a partition needs a whole number of items, at least 1")
-  if (!is.numeric(parts) || length(parts) != 1L || is.na(parts) || parts < 2 ||
-      parts != trunc(parts))
+  if (!is.numeric(n_parts) || length(n_parts) != 1L || is.na(n_parts) || n_parts < 2 ||
+      n_parts != trunc(n_parts))
     stop("a partition needs a whole number of parts, at least 2")
-  n <- as.integer(n); parts <- as.integer(parts)
-  start <- .check_part_start(start, n, parts, name)
-  P <- structure(list(name = name, n = n, parts = parts, model = m),
+  n_items <- as.integer(n_items); n_parts <- as.integer(n_parts)
+  start <- .check_part_start(start, n_items, n_parts, name)
+  P <- structure(list(name = name, n_items = n_items, n_parts = n_parts, model = m),
                  class = c("quicopt_partition", "quicopt"))
   vars <- .m_get(m, "vars")
   vars[[name]] <- P
   .m_set(m, "vars", vars)
   structs <- .m_get(m, "structures")
-  structs[[name]] <- list(kind = "partition", n = n, parts = parts, start = start)
+  structs[[name]] <- list(kind = "partition", n_items = n_items, n_parts = n_parts, start = start)
   .m_set(m, "structures", structs)
   P
 }
 
-# A start for a partition of n items into parts: NULL, or one part per item.
-.check_part_start <- function(start, n, parts, name) {
+# A start for a partition of n_items items into n_parts parts: NULL, or one
+# part per item.
+.check_part_start <- function(start, n_items, n_parts, name) {
   if (is.null(start)) return(integer(0))
-  if (!is.numeric(start) || anyNA(start) || length(start) != n ||
-      any(start != trunc(start)) || any(start < 1) || any(start > parts))
-    stop("'", name, "': start must give each of the ", n, " items a part from 1 to ",
-         parts, " (start[i] is the part item i starts in)")
+  if (!is.numeric(start) || anyNA(start) || length(start) != n_items ||
+      any(start != trunc(start)) || any(start < 1) || any(start > n_parts))
+    stop("'", name, "': start must give each of the ", n_items, " items a part from 1 to ",
+         n_parts, " (start[i] is the part item i starts in)")
   as.integer(start)
 }
 
 #' @rdname part_var
 #' @return `add_part_var()` returns the model, invisibly.
 #' @export
-add_part_var <- function(m, name, n, parts, start = NULL) {
-  part_var(m, name, n, parts, start)
+add_part_var <- function(m, name, n_items, n_parts, start = NULL) {
+  part_var(m, name, n_items, n_parts, start)
   invisible(m)
 }
 
@@ -447,7 +455,7 @@ add_part_var <- function(m, name, n, parts, start = NULL) {
 #' @export
 part_of <- function(item, P) {
   .check_partition(P, "part_of")
-  item <- .check_positions(item, P$n, "items", "part_of")
+  item <- .check_positions(item, P$n_items, "items", "part_of")
   .qexpr(lapply(item, function(i) ir_apply("part_of", list(ir_const(i), ir_struct_ref(P$name)))))
 }
 
@@ -455,7 +463,7 @@ part_of <- function(item, P) {
 #' @export
 size_of <- function(part, P) {
   .check_partition(P, "size_of")
-  part <- .check_positions(part, P$parts, "parts", "size_of")
+  part <- .check_positions(part, P$n_parts, "parts", "size_of")
   .qexpr(lapply(part, function(b) ir_apply("size_of", list(ir_const(b), ir_struct_ref(P$name)))))
 }
 
@@ -464,7 +472,7 @@ size_of <- function(part, P) {
 #' @export
 print.quicopt_perm <- function(x, ...) {
   s <- .m_get(x$model, "structures")[[x$name]]
-  cat("permutation '", x$name, "': ", x$n, " items in ", x$n, " slots", sep = "")
+  cat("permutation '", x$name, "': ", x$n_items, " items in ", x$n_items, " slots", sep = "")
   if (length(s$precede))
     cat(", ", length(s$precede), " precedence", if (length(s$precede) != 1L) "s", sep = "")
   cat("\n")
@@ -473,8 +481,8 @@ print.quicopt_perm <- function(x, ...) {
 
 #' @export
 print.quicopt_partition <- function(x, ...) {
-  cat("partition '", x$name, "': ", x$n, " item", if (x$n != 1L) "s", " in ",
-      x$parts, " parts\n", sep = "")
+  cat("partition '", x$name, "': ", x$n_items, " item", if (x$n_items != 1L) "s", " in ",
+      x$n_parts, " parts\n", sep = "")
   invisible(x)
 }
 
@@ -489,8 +497,8 @@ print.quicopt_table <- function(x, ...) {
 # The model's permutations and partitions as program declarations.
 .structure_decls <- function(m)
   lapply(.m_get(m, "structures"), function(s)
-    if (identical(s$kind, "partition")) partition_decl(s$n, s$parts, s$start, FALSE)
-    else permutation_decl(s$n, s$start, FALSE, s$precede))
+    if (identical(s$kind, "partition")) partition_decl(s$n_items, s$n_parts, s$start, FALSE)
+    else permutation_decl(s$n_items, s$start, FALSE, s$precede))
 
 # The model's lookup tables as parameter tables: one entry per cell, keyed by
 # its position (one or two indices).
@@ -521,11 +529,11 @@ print.quicopt_table <- function(x, ...) {
     if (identical(decl$kind, "partition")) {
       if (is.null(s) || is.null(s$part_of))
         stop(caller, ": the result carries no division for the partition '", name, "'")
-      out[[name]] <- .check_part_start(as.integer(s$part_of), decl$n, decl$parts, name)
+      out[[name]] <- .check_part_start(as.integer(s$part_of), decl$n_items, decl$n_parts, name)
     } else {
       if (is.null(s) || is.null(s$slot_of))
         stop(caller, ": the result carries no ordering for the permutation '", name, "'")
-      out[[name]] <- .check_perm_start(as.integer(s$slot_of), decl$n, name)
+      out[[name]] <- .check_perm_start(as.integer(s$slot_of), decl$n_items, name)
     }
   }
   out

@@ -57,7 +57,7 @@
 #' res$solution
 #'
 #' # Does the requirement still hold on 1000 new scenarios?
-#' resample(m, res, seed = 7, scenarios = 1000)$feasible
+#' resample(m, res, seed = 7, n_scenarios = 1000)$feasible
 #' }
 #' @name stochastic
 NULL
@@ -285,8 +285,8 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 #' A distribution with vector parameters declares several random variables
 #' under one name, which behave like an R vector: `rand_var(m, "hours",
 #' normal(c(6, 5, 4), 1))` declares `hours[1]`, `hours[2]` and `hours[3]`.
-#' With scalar parameters and `n` given, it declares `n` variables with the
-#' same distribution. Either way, the elements are drawn independently of each
+#' With scalar parameters and `length` given, it declares that many variables
+#' with the same distribution. Either way, the elements are drawn independently of each
 #' other. Random variables that move together, such as demand and price, are
 #' best declared from observed data with [set_empirical()].
 #'
@@ -298,23 +298,28 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 #' @param dist A distribution such as `normal(100, 15)` (see [distribution()]),
 #'   or an [empirical()] sample with one value per scenario. It may be left out
 #'   and given later with [set_distribution()].
-#' @param n How many random variables to declare under this name. Left `NULL`,
-#'   the number follows from the length of the distribution's parameters.
-#' @return The random variable, an expression of length `n`.
+#' @param length How many random variables to declare under this name. Left
+#'   `NULL`, the number follows from the length of the distribution's
+#'   parameters.
+#' @param n The former name of `length`, still accepted for now, with a
+#'   warning.
+#' @return The random variable, an expression with one element per random
+#'   variable declared.
 #' @examples
 #' m <- model()
 #' demand <- rand_var(m, "demand", normal(100, 15))
 #' hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
-#' delay  <- rand_var(m, "delay", uniform(1, 1.5), n = 4)   # four with the same distribution
+#' delay  <- rand_var(m, "delay", uniform(1, 1.5), length = 4)   # four with the same distribution
 #' @export
-rand_var <- function(m, name, dist = NULL, n = NULL) {
+rand_var <- function(m, name, dist = NULL, length = NULL, n) {
+  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "rand_var")
   .check_model(m, "rand_var")
   .check_name(m, name)
   if (!is.null(dist)) .check_dist(dist)
-  n <- .rv_length(dist, n, name)
-  flat <- if (n == 1L) name else sprintf("%s[%d]", name, seq_len(n))
+  n_elements <- .rv_length(dist, length, name)
+  flat <- if (n_elements == 1L) name else sprintf("%s[%d]", name, seq_len(n_elements))
   v <- .qexpr(lapply(flat, ir_source_ref), class = "quicopt_rv")
-  v$name <- name; v$n <- n; v$flat <- flat
+  v$name <- name; v$n_elements <- n_elements; v$flat <- flat
   v$model <- m
   vars <- .m_get(m, "vars")
   vars[[name]] <- v
@@ -325,20 +330,22 @@ rand_var <- function(m, name, dist = NULL, n = NULL) {
   v
 }
 
-# The length a random variable gets from its distribution and an explicit n:
-# they must agree, and an empirical column is one random variable.
-.rv_length <- function(dist, n, name) {
-  if (!is.null(n) && (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != trunc(n)))
-    stop("n must be a whole number of at least 1")
+# The length a random variable gets from its distribution and an explicit
+# length: they must agree, and an empirical column is one random variable.
+.rv_length <- function(dist, n_elements, name) {
+  if (!is.null(n_elements) &&
+      (!is.numeric(n_elements) || length(n_elements) != 1L || is.na(n_elements) ||
+       n_elements < 1 || n_elements != trunc(n_elements)))
+    stop("length must be a whole number of at least 1")
   from_dist <- if (inherits(dist, "quicopt_distribution")) .dist_length(dist$params) else 1L
-  if (is.null(n)) return(as.integer(from_dist))
-  n <- as.integer(n)
-  if (inherits(dist, "quicopt_empirical") && n != 1L)
+  if (is.null(n_elements)) return(as.integer(from_dist))
+  n_elements <- as.integer(n_elements)
+  if (inherits(dist, "quicopt_empirical") && n_elements != 1L)
     stop("'", name, "': an empirical column is one random variable (declare one per column)")
-  if (from_dist != 1L && from_dist != n)
+  if (from_dist != 1L && from_dist != n_elements)
     stop("'", name, "': the distribution's parameters have length ", from_dist,
-         ", but n is ", n)
-  n
+         ", but the variable is declared with length ", n_elements)
+  n_elements
 }
 
 # A distribution argument: a quicopt_distribution or an empirical column.
@@ -378,7 +385,7 @@ set_distribution <- function(m, v, dist) {
   .check_dist(dist)
   if (!identical(v$model, m))
     stop("the random variable '", v$name, "' belongs to a different model")
-  .rv_length(dist, v$n, v$name)
+  .rv_length(dist, v$n_elements, v$name)
   sources <- .m_get(m, "sources")
   sources[[v$name]] <- dist
   .m_set(m, "sources", sources)
@@ -388,16 +395,17 @@ set_distribution <- function(m, v, dist) {
 #' @rdname rand_var
 #' @return `add_rand_var()` returns the model, invisibly.
 #' @export
-add_rand_var <- function(m, name, dist = NULL, n = NULL) {
-  rand_var(m, name, dist, n)
+add_rand_var <- function(m, name, dist = NULL, length = NULL, n) {
+  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "add_rand_var")
+  rand_var(m, name, dist, length)
   invisible(m)
 }
 
 #' Set how many scenarios are drawn, and from which seed
 #'
-#' The service draws `n` scenarios: `n` possible outcomes of the model's
-#' random variables. More scenarios describe the uncertainty more accurately,
-#' and take longer to solve. A model whose scenarios are never set is solved
+#' The service draws `n_scenarios` scenarios, each a possible outcome of the
+#' model's random variables. More scenarios describe the uncertainty more
+#' accurately, and take longer to solve. A model whose scenarios are never set is solved
 #' over a single scenario, unless an [empirical()] sample sets the number by
 #' its length.
 #'
@@ -410,7 +418,7 @@ add_rand_var <- function(m, name, dist = NULL, n = NULL) {
 #' refused when it is solved, with a message that states the limit.
 #'
 #' @param m A [model()].
-#' @param n How many scenarios to draw, at least 1.
+#' @param n_scenarios How many scenarios to draw, at least 1.
 #' @param seed The seed for the draws, at least 1. Left `NULL`, the model
 #'   keeps its current seed.
 #' @return The model, invisibly.
@@ -419,13 +427,14 @@ add_rand_var <- function(m, name, dist = NULL, n = NULL) {
 #' demand <- rand_var(m, "demand", normal(100, 15))
 #' set_scenarios(m, 512, seed = 42)
 #' @export
-set_scenarios <- function(m, n, seed = NULL) {
+set_scenarios <- function(m, n_scenarios, seed = NULL) {
   .check_model(m, "set_scenarios")
   # 1 is the floor rather than 0 because the wire cannot carry a 0: protobuf
   # conflates it with an absent field, which the service reads as its default.
-  if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != trunc(n))
+  if (!is.numeric(n_scenarios) || length(n_scenarios) != 1L || is.na(n_scenarios) ||
+      n_scenarios < 1 || n_scenarios != trunc(n_scenarios))
     stop("a model is solved over a whole number of scenarios, at least 1")
-  .m_set(m, "scenarios", as.numeric(n))
+  .m_set(m, "scenarios", as.numeric(n_scenarios))
   .m_set(m, "scen_set", TRUE)
   if (!is.null(seed)) {
     if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) || seed < 1 || seed != trunc(seed))
@@ -552,11 +561,11 @@ cvar <- function(x, alpha) {
 #' `add(m, variance(cost) <= 100)` limits the variation.
 #'
 #' By default the scenarios count as the whole distribution, each with weight
-#' `1 / n`, so `variance(x)` is `expectation(x^2) - expectation(x)^2`. R's
-#' `var()` and `sd()` divide by `n - 1` instead, because they estimate the
-#' variance of a population from a sample of it; `sample = TRUE` does the
-#' same. The two differ by a factor `n / (n - 1)`, which changes the value
-#' reported but not which decision is best.
+#' `1 / n_scenarios`, so `variance(x)` is `expectation(x^2) - expectation(x)^2`.
+#' R's `var()` and `sd()` divide by `n_scenarios - 1` instead, because they
+#' estimate the variance of a population from a sample of it; `sample = TRUE`
+#' does the same. The two differ by a factor `n_scenarios / (n_scenarios - 1)`,
+#' which changes the value reported but not which decision is best.
 #'
 #' Unlike [cvar()], these measure variation in both directions: a scenario
 #' far better than average increases them as much as one far worse.
@@ -604,8 +613,8 @@ std_dev <- function(x, sample = FALSE) {
 #' * `scenario_min(x)` is the smallest. Maximizing it does the same for a
 #'   quantity where large is good, such as a profit.
 #' * `scenario_quantile(x, prob)` is the value that the share `prob` of the
-#'   scenarios stays at or below. With `n` scenarios it is the
-#'   `ceiling(prob * n)`-th smallest value, which is what
+#'   scenarios stays at or below. With `n_scenarios` scenarios it is the
+#'   `ceiling(prob * n_scenarios)`-th smallest value, which is what
 #'   `quantile(x, prob, type = 1)` returns for a sample.
 #'   `scenario_quantile(x, 1)` is `scenario_max(x)`. For a cost it is also
 #'   known as the *value at risk*; [cvar()] at the same level is the average

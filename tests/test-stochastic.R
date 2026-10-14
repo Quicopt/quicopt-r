@@ -271,7 +271,7 @@ check("an equality with tolerance is step(tol - abs(a - b))",
       n$args[[1]]$args[[2]]$op == "abs")
 check("holds of a random comparison is random, and expectation closes it",
       is_random(holds(d <= x)) && !is_random(expectation(holds(d <= x))))
-check("holds is elementwise", length(holds(num_var(m, "v", n = 3) <= 1)) == 3)
+check("holds is elementwise", length(holds(num_var(m, "v", length = 3) <= 1)) == 3)
 expect_error_like("holds takes a comparison", holds(x), "comparison")
 expect_error_like("tol is non-negative", holds(d <= x, tol = -1), "non-negative")
 
@@ -280,28 +280,28 @@ cat("stochastic (continued): all green\n")
 # ── vector random variables ─────────────────────────────────────────────────
 
 m <- model()
-packed <- bin_var(m, "packed", n = 3)
+packed <- bin_var(m, "packed", length = 3)
 w <- rand_var(m, "weight", normal(c(6, 5, 4), 1))
-check("vector parameters declare a vector random variable", length(w) == 3 && w$n == 3)
+check("vector parameters declare a vector random variable", length(w) == 3 && w$n_elements == 3)
 check("its elements are flat sources", w$nodes[[2]]$name == "weight[2]")
 minimize(m, expectation(sum(packed * w)))
 p <- as_program(m)
 check("one wire source per element, with its own parameters",
       identical(names(p$sources), c("weight[1]", "weight[2]", "weight[3]")) &&
       p$sources[["weight[2]"]]$params[[1]]$value == 5 && p$sources[["weight[3]"]]$params[[2]]$value == 1)
-w2 <- rand_var(m, "noise", normal(0, 1), n = 2)
+w2 <- rand_var(m, "noise", normal(0, 1), length = 2)
 check("n with scalar parameters gives independent copies",
       length(as_program(m)$sources) == 5 && as_program(m)$sources[["noise[2]"]]$params[[2]]$value == 1)
 expect_error_like("n must agree with the parameters",
-                  rand_var(m, "bad", normal(c(1, 2), 1), n = 3), "length 2")
+                  rand_var(m, "bad", normal(c(1, 2), 1), length = 3), "length 2")
 expect_error_like("parameters must agree among themselves", normal(c(1, 2), c(1, 2, 3)), "disagree")
 expect_error_like("an empirical column is one random variable",
-                  rand_var(m, "e", empirical(c(1, 2, 3)), n = 2), "one random variable")
+                  rand_var(m, "e", empirical(c(1, 2, 3)), length = 2), "one random variable")
 price <- num_var(m, "price", 1, 10)
 dm <- rand_var(m, "dm", normal(100 - c(5, 6) * price, 10))
 check("a vector expression parameter lowers elementwise",
       as_program(m)$sources[["dm[2]"]]$params[[1]]$args[[2]]$args[[1]]$value == 6)
-lat <- rand_var(m, "lat", n = 2)
+lat <- rand_var(m, "lat", length = 2)
 expect_error_like("set_distribution checks the length", set_distribution(m, lat, normal(c(1, 2, 3), 1)), "length 3")
 set_distribution(m, lat, normal(c(1, 2), 1))
 check("and accepts a matching one", as_program(m)$sources[["lat[2]"]]$params[[1]]$value == 2)

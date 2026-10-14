@@ -145,7 +145,7 @@ m <- model()
 dist  <- lookup_table(m, "dist", km)
 route <- perm_var(m, "route", 5)
 precede(route, 4, 1)
-traffic <- rand_var(m, "traffic", uniform(1, 1.5), n = 4)    # slowdown on each leg
+traffic <- rand_var(m, "traffic", uniform(1, 1.5), length = 4)    # slowdown on each leg
 set_scenarios(m, 256, seed = 3)
 
 legs <- dist[item_at(1:4, route), item_at(2:5, route)]

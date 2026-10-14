@@ -61,7 +61,7 @@ model <- function() {
   assign("scenarios", 1, envir = m)
   assign("seed", 1, envir = m)
   assign("scen_set", FALSE, envir = m)
-  assign("structures", list(), envir = m)    # name -> list(kind, n, start, ...), see structured.R
+  assign("structures", list(), envir = m)    # name -> list(kind, n_items, start, ...), see structured.R
   assign("tables", list(), envir = m)        # name -> numeric vector or matrix
   assign("blocks", list(), envir = m)        # name -> the members' flat names, see blocks.R
   class(m) <- "quicopt_model"
@@ -98,25 +98,35 @@ model <- function() {
 
 # Recycle a per-element setting (bounds, start) to a family's length, refusing
 # anything between scalar and exact.
-.per_element <- function(x, n, what, name) {
+.per_element <- function(x, n_elements, what, name) {
   if (!is.numeric(x) || anyNA(x)) stop("the ", what, " of '", name, "' must be numeric")
-  if (length(x) == 1L) return(rep(as.numeric(x), n))
-  if (length(x) == n) return(as.numeric(x))
+  if (length(x) == 1L) return(rep(as.numeric(x), n_elements))
+  if (length(x) == n_elements) return(as.numeric(x))
   stop("the ", what, " of '", name, "' has length ", length(x),
-       ", but the variable has length ", n)
+       ", but the variable has length ", n_elements)
 }
 
-.new_var <- function(m, name, domain, lower, upper, n, start, caller, semi = FALSE) {
+# An argument under its former name: still accepted, with a warning, unless
+# the new name is given too.
+.renamed_arg <- function(value, new_given, old, new, caller) {
+  if (new_given) stop(caller, "(): give `", new, "` only; `", old, "` is its former name")
+  warning(caller, "(): `", old, "` is now called `", new, "`; the old name will stop ",
+          "working in a later release", call. = FALSE)
+  value
+}
+
+.new_var <- function(m, name, domain, lower, upper, n_elements, start, caller, semi = FALSE) {
   .check_model(m, caller)
   .check_name(m, name)
-  if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != trunc(n))
-    stop("n must be a whole number of at least 1")
+  if (!is.numeric(n_elements) || length(n_elements) != 1L || is.na(n_elements) ||
+      n_elements < 1 || n_elements != trunc(n_elements))
+    stop("length must be a whole number of at least 1")
   if (!is.logical(semi) || length(semi) != 1L || is.na(semi))
     stop("semi is TRUE or FALSE")
-  n <- as.integer(n)
-  lower <- .per_element(lower, n, "lower bound", name)
-  upper <- .per_element(upper, n, "upper bound", name)
-  start <- .per_element(start, n, "start", name)
+  n_elements <- as.integer(n_elements)
+  lower <- .per_element(lower, n_elements, "lower bound", name)
+  upper <- .per_element(upper, n_elements, "upper bound", name)
+  start <- .per_element(start, n_elements, "start", name)
   if (any(lower > upper))
     stop("'", name, "': a lower bound exceeds its upper bound")
   if (semi) {
@@ -126,9 +136,9 @@ model <- function() {
   }
   # A family lowers to flat scalar variables named name[i] — the well-trodden
   # wire subset every client emits. Solutions come back under these names.
-  flat <- if (n == 1L) name else sprintf("%s[%d]", name, seq_len(n))
+  flat <- if (n_elements == 1L) name else sprintf("%s[%d]", name, seq_len(n_elements))
   v <- .qexpr(lapply(flat, ir_var), class = "quicopt_var")
-  v$name <- name; v$n <- n; v$flat <- flat
+  v$name <- name; v$n_elements <- n_elements; v$flat <- flat
   v$domain <- domain; v$lower <- lower; v$upper <- upper; v$start <- start
   v$model <- m                                 # the environment, by reference
   vars <- .m_get(m, "vars")
@@ -158,10 +168,10 @@ model <- function() {
 #' is 1 when such a variable is not 0, which is how a fixed fee per delivery is
 #' written: `fee * active(delivery)`.
 #'
-#' With `n` greater than 1, one call declares `n` variables under one name,
-#' and they behave like an R vector: `x[3]` is the third, arithmetic works
-#' element by element, and `sum(x)` adds them up. `lower`, `upper` and `start`
-#' may then be vectors of length `n`, one value per element. In the answer the
+#' With `length` greater than 1, one call declares that many variables under
+#' one name, and they behave like an R vector: `x[3]` is the third, arithmetic
+#' works element by element, and `sum(x)` adds them up. `lower`, `upper` and
+#' `start` may then be vectors with one value per element. In the answer the
 #' elements are named `"x[1]"`, `"x[2]"`, and so on; a single variable is
 #' named `"x"`.
 #'
@@ -170,45 +180,54 @@ model <- function() {
 #'   unique within the model.
 #' @param lower,upper The smallest and the largest value allowed. `-Inf` and
 #'   `Inf`, the defaults, leave that side open.
-#' @param n How many variables to declare under this name.
+#' @param length How many variables to declare under this name.
 #' @param start The value the service's search starts from (see
 #'   [set_start()]).
 #' @param semi Whether the variable may also be 0 when 0 lies outside its
 #'   bounds (see above).
-#' @return The variable, an expression of length `n`.
+#' @param n The former name of `length`, still accepted for now, with a
+#'   warning.
+#' @return The variable, an expression with `length` elements.
 #' @examples
 #' m <- model()
 #' tables <- int_var(m, "tables", lower = 0)
-#' take   <- bin_var(m, "take", n = 6)                         # six yes-or-no decisions
-#' share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
+#' take   <- bin_var(m, "take", length = 6)                    # six yes-or-no decisions
+#' share  <- num_var(m, "share", lower = 0, upper = 1, length = 3)
 #' sum(share)
 #' take[2]
 #' delivery <- int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)   # none, or 10 to 25
 #' @export
-num_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
-  .new_var(m, name, CONTINUOUS, lower, upper, n, start, "num_var", semi)
+num_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0, semi = FALSE, n) {
+  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "num_var")
+  .new_var(m, name, CONTINUOUS, lower, upper, length, start, "num_var", semi)
+}
 
 #' @rdname num_var
 #' @export
-int_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
-  .new_var(m, name, INTEGER, lower, upper, n, start, "int_var", semi)
+int_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0, semi = FALSE, n) {
+  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "int_var")
+  .new_var(m, name, INTEGER, lower, upper, length, start, "int_var", semi)
+}
 
 #' @rdname num_var
 #' @export
-bin_var <- function(m, name, n = 1, start = 0)
-  .new_var(m, name, BINARY, 0, 1, n, start, "bin_var")
+bin_var <- function(m, name, length = 1, start = 0, n) {
+  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "bin_var")
+  .new_var(m, name, BINARY, 0, 1, length, start, "bin_var")
+}
 
 #' @rdname num_var
 #' @param domain For `add_var()`: `"num"`, `"int"` or `"bin"`, to declare the
 #'   variable as `num_var()`, `int_var()` or `bin_var()` would.
 #' @return `add_var()` returns the model, invisibly.
 #' @export
-add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
-                    domain = c("num", "int", "bin"), semi = FALSE) {
+add_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0,
+                    domain = c("num", "int", "bin"), semi = FALSE, n) {
+  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "add_var")
   switch(match.arg(domain),
-         num = num_var(m, name, lower, upper, n, start, semi),
-         int = int_var(m, name, lower, upper, n, start, semi),
-         bin = bin_var(m, name, n, start))
+         num = num_var(m, name, lower, upper, length, start, semi),
+         int = int_var(m, name, lower, upper, length, start, semi),
+         bin = bin_var(m, name, length, start))
   invisible(m)
 }
 
@@ -220,7 +239,7 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, n = 1, start = 0,
   out <- list()
   for (v in .m_get(m, "vars")) {
     if (!.is_decision(v)) next
-    for (i in seq_len(v$n)) out[[v$flat[[i]]]] <- list(var = v$name, i = i)
+    for (i in seq_len(v$n_elements)) out[[v$flat[[i]]]] <- list(var = v$name, i = i)
   }
   out
 }
@@ -355,8 +374,8 @@ maximize <- function(m, e) .set_objective(m, e, "max", "maximize")
 #' A comparison of expressions, written with `<=`, `>=` or `==`, becomes a
 #' requirement that every solution must meet: `add(m, tables + chairs <= 18)`.
 #' Here the comparison is not a test that returns `TRUE` or `FALSE`. A
-#' comparison of two vectors adds one constraint per element, so with `x` and
-#' `cap` of length `n`, `add(m, x <= cap)` adds `n` constraints.
+#' comparison of two vectors adds one constraint per element: with `x` and
+#' `cap` of length 3, `add(m, x <= cap)` adds 3 constraints.
 #'
 #' `<` and `>` are not accepted, because for a quantity that can take any
 #' value they mean the same as `<=` and `>=`. `!=` is not accepted either;
@@ -369,11 +388,11 @@ maximize <- function(m, e) .set_objective(m, e, "max", "maximize")
 #'
 #' @section A safety margin on a chance constraint:
 #' The probability in a chance constraint is estimated from the scenarios, so
-#' it carries sampling error. For a target `p` and `n` scenarios, its standard
-#' error is `sqrt(p * (1 - p) / n)`, about 0.013 for `p = 0.9` and
-#' `n = 512`. A solution chosen to just meet the target on its own scenarios
-#' therefore misses the target on new scenarios about half the time (see
-#' [resample()]).
+#' it carries sampling error. For a target `p` and `n_scenarios` scenarios,
+#' its standard error is `sqrt(p * (1 - p) / n_scenarios)`, about 0.013 for
+#' `p = 0.9` and `n_scenarios = 512`. A solution chosen to just meet the
+#' target on its own scenarios therefore misses the target on new scenarios
+#' about half the time (see [resample()]).
 #'
 #' `margin = k` raises the target by `k` standard errors, so that the true
 #' probability meets the original target with a confidence of about
@@ -433,8 +452,8 @@ add <- function(m, rel, margin = 0, when = NULL) {
     if (!inherits(when, "quicopt_var") || when$domain != BINARY)
       stop("when= takes a binary variable from bin_var(); got ",
            if (inherits(when, "quicopt_var")) "a non-binary variable" else class(when)[[1L]])
-    if (when$n != 1L && when$n != rel$n)
-      stop("when= has ", when$n, " elements, but the comparison has ", rel$n, " rows")
+    if (when$n_elements != 1L && when$n_elements != rel$n)
+      stop("when= has ", when$n_elements, " elements, but the comparison has ", rel$n, " rows")
     if (!identical(when$model, m))
       stop("the switch '", when$name, "' belongs to a different model")
   }
@@ -452,7 +471,7 @@ add <- function(m, rel, margin = 0, when = NULL) {
       f <- switch(rel$op, "<=" = .difference(rhs, lhs), .difference(lhs, rhs))
       list(f = f, set = if (rel$op == "==") zero() else nonneg())
     }
-    if (!is.null(when)) row$when <- when$flat[[if (when$n == 1L) 1L else i]]
+    if (!is.null(when)) row$when <- when$flat[[if (when$n_elements == 1L) 1L else i]]
     cons[[length(cons) + 1L]] <- row
   }
   .m_set(m, "constraints", cons)
@@ -527,7 +546,7 @@ print.quicopt_model <- function(x, ...) {
   perms <- Filter(function(v) inherits(v, "quicopt_perm"), vars)
   parts <- Filter(function(v) inherits(v, "quicopt_partition"), vars)
   blocks <- get("blocks", envir = x, inherits = FALSE)
-  nflat <- sum(vapply(decision, function(v) v$n, 0L))
+  nflat <- sum(vapply(decision, function(v) v$n_elements, 0L))
   obj <- get("objective", envir = x, inherits = FALSE)
   cat("quicopt model: ", nflat, " variable", if (nflat != 1L) "s", sep = "")
   if (length(random)) {
@@ -571,7 +590,7 @@ as_program <- function(m) {
   decls <- list()
   for (v in vars) {
     if (!.is_decision(v)) next
-    for (i in seq_len(v$n))
+    for (i in seq_len(v$n_elements))
       decls[[length(decls) + 1L]] <-
         var_decl(v$flat[[i]], character(), v$domain, v$lower[[i]], v$upper[[i]], v$start[[i]])
   }
@@ -605,7 +624,7 @@ as_program <- function(m) {
            "with set_distribution(), or declare it as rand_var(m, name, dist)")
     rv <- vars[[name]]
     if (inherits(spec, "quicopt_empirical")) sources[[name]] <- spec
-    else for (i in seq_len(rv$n))
+    else for (i in seq_len(rv$n_elements))
       sources[[rv$flat[[i]]]] <-
         parametric(spec$head, lapply(spec$params, .param_node, i = i))
   }

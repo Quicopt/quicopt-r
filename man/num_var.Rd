@@ -7,21 +7,40 @@
 \alias{add_var}
 \title{Declare decision variables}
 \usage{
-num_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
+num_var(
+  m,
+  name,
+  lower = -Inf,
+  upper = Inf,
+  length = 1,
+  start = 0,
+  semi = FALSE,
+  n
+)
 
-int_var(m, name, lower = -Inf, upper = Inf, n = 1, start = 0, semi = FALSE)
+int_var(
+  m,
+  name,
+  lower = -Inf,
+  upper = Inf,
+  length = 1,
+  start = 0,
+  semi = FALSE,
+  n
+)
 
-bin_var(m, name, n = 1, start = 0)
+bin_var(m, name, length = 1, start = 0, n)
 
 add_var(
   m,
   name,
   lower = -Inf,
   upper = Inf,
-  n = 1,
+  length = 1,
   start = 0,
   domain = c("num", "int", "bin"),
-  semi = FALSE
+  semi = FALSE,
+  n
 )
 }
 \arguments{
@@ -33,7 +52,7 @@ unique within the model.}
 \item{lower, upper}{The smallest and the largest value allowed. \code{-Inf} and
 \code{Inf}, the defaults, leave that side open.}
 
-\item{n}{How many variables to declare under this name.}
+\item{length}{How many variables to declare under this name.}
 
 \item{start}{The value the service's search starts from (see
 \code{\link[=set_start]{set_start()}}).}
@@ -41,11 +60,14 @@ unique within the model.}
 \item{semi}{Whether the variable may also be 0 when 0 lies outside its
 bounds (see above).}
 
+\item{n}{The former name of \code{length}, still accepted for now, with a
+warning.}
+
 \item{domain}{For \code{add_var()}: \code{"num"}, \code{"int"} or \code{"bin"}, to declare the
 variable as \code{num_var()}, \code{int_var()} or \code{bin_var()} would.}
 }
 \value{
-The variable, an expression of length \code{n}.
+The variable, an expression with \code{length} elements.
 
 \code{add_var()} returns the model, invisibly.
 }
@@ -70,18 +92,18 @@ finite. When 0 already lies between them, \code{semi} changes nothing. \code{\li
 is 1 when such a variable is not 0, which is how a fixed fee per delivery is
 written: \code{fee * active(delivery)}.
 
-With \code{n} greater than 1, one call declares \code{n} variables under one name,
-and they behave like an R vector: \code{x[3]} is the third, arithmetic works
-element by element, and \code{sum(x)} adds them up. \code{lower}, \code{upper} and \code{start}
-may then be vectors of length \code{n}, one value per element. In the answer the
+With \code{length} greater than 1, one call declares that many variables under
+one name, and they behave like an R vector: \code{x[3]} is the third, arithmetic
+works element by element, and \code{sum(x)} adds them up. \code{lower}, \code{upper} and
+\code{start} may then be vectors with one value per element. In the answer the
 elements are named \code{"x[1]"}, \code{"x[2]"}, and so on; a single variable is
 named \code{"x"}.
 }
 \examples{
 m <- model()
 tables <- int_var(m, "tables", lower = 0)
-take   <- bin_var(m, "take", n = 6)                         # six yes-or-no decisions
-share  <- num_var(m, "share", lower = 0, upper = 1, n = 3)
+take   <- bin_var(m, "take", length = 6)                    # six yes-or-no decisions
+share  <- num_var(m, "share", lower = 0, upper = 1, length = 3)
 sum(share)
 take[2]
 delivery <- int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)   # none, or 10 to 25

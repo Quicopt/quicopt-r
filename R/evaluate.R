@@ -67,10 +67,13 @@
 #' @param expr The quantity to compute: one expression that is not random.
 #' @param seed Left `NULL`, the model's own scenarios are used. Otherwise, the
 #'   seed for new scenarios, different from the model's own.
-#' @param scenarios With `seed`: how many new scenarios to draw. Left `NULL`,
-#'   as many as the model has. More scenarios give a more precise value.
+#' @param n_scenarios With `seed`: how many new scenarios to draw. Left
+#'   `NULL`, as many as the model has. More scenarios give a more precise
+#'   value.
 #' @param ... Settings for the request, as for [solve_model()]: `base_url`,
 #'   `api_key`, `project`, `config`, `gzip`, `timeout` and `transport`.
+#' @param scenarios The former name of `n_scenarios`, still accepted for now,
+#'   with a warning.
 #' @return The value of `expr`, a number.
 #' @examples
 #' \dontrun{
@@ -84,16 +87,19 @@
 #'
 #' met <- prob(demand <= stock)
 #' evaluate(m, res, met)                                  # on the model's scenarios
-#' evaluate(m, res, met, seed = 7, scenarios = 1000)      # on 1000 new ones
+#' evaluate(m, res, met, seed = 7, n_scenarios = 1000)    # on 1000 new ones
 #' evaluate(m, c(stock = 110), met)                       # for a stock of 110
 #' }
 #' @export
-evaluate <- function(m, solution, expr, seed = NULL, scenarios = NULL, ...) {
+evaluate <- function(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios) {
+  if (!missing(scenarios))
+    n_scenarios <- .renamed_arg(scenarios, !missing(n_scenarios), "scenarios", "n_scenarios",
+                                "evaluate")
   .check_model(m, "evaluate")
   node <- .need_closed(.scalar_node(expr, "expression"), "expression")
   prog <- .pinned_program(m, solution, "evaluate")
-  if (!is.null(seed)) prog <- .fresh_scenarios(m, prog, seed, scenarios)
-  else if (!is.null(scenarios)) stop("scenarios goes with a seed for fresh draws")
+  if (!is.null(seed)) prog <- .fresh_scenarios(m, prog, seed, n_scenarios)
+  else if (!is.null(n_scenarios)) stop("n_scenarios goes with a seed for fresh draws")
   prog$objective <- node
   prog$sense <- "min"
   prog$constraints <- list()
@@ -121,9 +127,11 @@ evaluate <- function(m, solution, expr, seed = NULL, scenarios = NULL, ...) {
 #'   value for every decision variable (see [evaluate()]).
 #' @param seed The seed for the new scenarios, different from the model's
 #'   own.
-#' @param scenarios How many new scenarios to draw. Left `NULL`, as many as
+#' @param n_scenarios How many new scenarios to draw. Left `NULL`, as many as
 #'   the model has. More scenarios give a more precise check.
 #' @param ... Settings for the request, as for [solve_model()].
+#' @param scenarios The former name of `n_scenarios`, still accepted for now,
+#'   with a warning.
 #' @return A result in the same form as from [solve()], for the fixed solution
 #'   on the new scenarios. `objective` is the objective on them, `feasible`
 #'   says whether every constraint still holds, and
@@ -132,22 +140,25 @@ evaluate <- function(m, solution, expr, seed = NULL, scenarios = NULL, ...) {
 #' @examples
 #' \dontrun{
 #' res <- solve(m)                                        # m as in ?evaluate
-#' chk <- resample(m, res, seed = 7, scenarios = 1000)
+#' chk <- resample(m, res, seed = 7, n_scenarios = 1000)
 #' chk$feasible                                           # does every constraint still hold?
 #' chk$solver_data$max_violation                          # if not, by how much
 #' chk$objective                                          # the objective on the new scenarios
 #' }
 #' @export
-resample <- function(m, solution, seed, scenarios = NULL, ...) {
+resample <- function(m, solution, seed, n_scenarios = NULL, ..., scenarios) {
+  if (!missing(scenarios))
+    n_scenarios <- .renamed_arg(scenarios, !missing(n_scenarios), "scenarios", "n_scenarios",
+                                "resample")
   .check_model(m, "resample")
-  prog <- .fresh_scenarios(m, .pinned_program(m, solution, "resample"), seed, scenarios)
+  prog <- .fresh_scenarios(m, .pinned_program(m, solution, "resample"), seed, n_scenarios)
   .solve_tagged(prog, ...)
 }
 
 # A pinned program on fresh scenarios: a new seed, and optionally a new count.
 # Only distributions are redrawn, so a model without one has nothing fresh to
 # offer, and an empirical column fixes the count.
-.fresh_scenarios <- function(m, prog, seed, scenarios) {
+.fresh_scenarios <- function(m, prog, seed, n_scenarios) {
   if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) || seed < 1 || seed != trunc(seed))
     stop("the seed is a whole number of at least 1")
   specs <- .m_get(m, "sources")
@@ -156,15 +167,15 @@ resample <- function(m, solution, seed, scenarios = NULL, ...) {
     stop("nothing to redraw: ",
          if (length(specs)) "every random variable is an empirical column, which is data, not draws"
          else "the model has no random variable")
-  if (!is.null(scenarios)) {
-    if (!is.numeric(scenarios) || length(scenarios) != 1L || is.na(scenarios) ||
-        scenarios < 1 || scenarios != trunc(scenarios))
+  if (!is.null(n_scenarios)) {
+    if (!is.numeric(n_scenarios) || length(n_scenarios) != 1L || is.na(n_scenarios) ||
+        n_scenarios < 1 || n_scenarios != trunc(n_scenarios))
       stop("a model is solved over a whole number of scenarios, at least 1")
     if (!all(parametric))
       stop("the scenario count is fixed by the model's empirical columns and cannot change")
-    prog$scenarios <- as.numeric(scenarios)
+    prog$scenarios <- as.numeric(n_scenarios)
   }
-  if (seed == prog$scenario_seed && is.null(scenarios))
+  if (seed == prog$scenario_seed && is.null(n_scenarios))
     stop("the seed ", seed, " is the model's own; fresh scenarios need a different one")
   prog$scenario_seed <- as.numeric(seed)
   prog

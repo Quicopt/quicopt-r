@@ -18,7 +18,7 @@ internal <- function(name) {
 # ── a variable that is 0 or between its bounds ──────────────────────────────
 
 m <- model()
-d <- int_var(m, "d", lower = 10, upper = 25, n = 2, semi = TRUE)
+d <- int_var(m, "d", lower = 10, upper = 25, length = 2, semi = TRUE)
 r <- num_var(m, "r", lower = 2.5, upper = 8, semi = TRUE)
 z <- num_var(m, "z", lower = -1, upper = 3, semi = TRUE)        # 0 lies between: no hole
 minimize(m, sum(d) + r + z)
@@ -67,7 +67,7 @@ check("min() is the catalog's binary min",
 # ── blocks ──────────────────────────────────────────────────────────────────
 
 m <- model()
-ship <- int_var(m, "ship", lower = 10, upper = 25, n = 4, semi = TRUE)
+ship <- int_var(m, "ship", lower = 10, upper = 25, length = 4, semi = TRUE)
 open <- bin_var(m, "open")
 free <- num_var(m, "free", lower = 0)
 block(m, "south", c(ship[3:4], open))
@@ -95,7 +95,7 @@ check("printing counts the blocks", any(grepl("2 blocks", capture.output(print(m
 
 m <- model()
 teams <- part_var(m, "teams", 5, 2, start = c(1, 2, 1, 2, 1))
-check("a partition handle knows its sizes", teams$n == 5L && teams$parts == 2L)
+check("a partition handle knows its sizes", teams$n_items == 5L && teams$n_parts == 2L)
 check("the handle is retrievable from the model", identical(m$teams$name, "teams"))
 expect_error_like("a partition needs an item", part_var(m, "p", 0, 2), "at least 1")
 expect_error_like("a partition needs two parts", part_var(m, "p", 3, 1), "at least 2")

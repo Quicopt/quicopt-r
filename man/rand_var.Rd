@@ -5,9 +5,9 @@
 \alias{add_rand_var}
 \title{Declare a random variable}
 \usage{
-rand_var(m, name, dist = NULL, n = NULL)
+rand_var(m, name, dist = NULL, length = NULL, n)
 
-add_rand_var(m, name, dist = NULL, n = NULL)
+add_rand_var(m, name, dist = NULL, length = NULL, n)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -18,11 +18,16 @@ add_rand_var(m, name, dist = NULL, n = NULL)
 or an \code{\link[=empirical]{empirical()}} sample with one value per scenario. It may be left out
 and given later with \code{\link[=set_distribution]{set_distribution()}}.}
 
-\item{n}{How many random variables to declare under this name. Left \code{NULL},
-the number follows from the length of the distribution's parameters.}
+\item{length}{How many random variables to declare under this name. Left
+\code{NULL}, the number follows from the length of the distribution's
+parameters.}
+
+\item{n}{The former name of \code{length}, still accepted for now, with a
+warning.}
 }
 \value{
-The random variable, an expression of length \code{n}.
+The random variable, an expression with one element per random
+variable declared.
 
 \code{add_rand_var()} returns the model, invisibly.
 }
@@ -40,8 +45,8 @@ can take.
 
 A distribution with vector parameters declares several random variables
 under one name, which behave like an R vector: \code{rand_var(m, "hours", normal(c(6, 5, 4), 1))} declares \code{hours[1]}, \code{hours[2]} and \code{hours[3]}.
-With scalar parameters and \code{n} given, it declares \code{n} variables with the
-same distribution. Either way, the elements are drawn independently of each
+With scalar parameters and \code{length} given, it declares that many variables
+with the same distribution. Either way, the elements are drawn independently of each
 other. Random variables that move together, such as demand and price, are
 best declared from observed data with \code{\link[=set_empirical]{set_empirical()}}.
 
@@ -52,5 +57,5 @@ model, for use in a pipe; \code{m$name} then retrieves the variable.
 m <- model()
 demand <- rand_var(m, "demand", normal(100, 15))
 hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
-delay  <- rand_var(m, "delay", uniform(1, 1.5), n = 4)   # four with the same distribution
+delay  <- rand_var(m, "delay", uniform(1, 1.5), length = 4)   # four with the same distribution
 }
