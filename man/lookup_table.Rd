@@ -30,7 +30,7 @@ position.
 \description{
 Sometimes a model needs a number from a table at a position that is not
 known yet: the distance between the first and the second stop of a route
-whose order the service is still choosing, or the price of an option that
+whose ordering the service is still choosing, or the price of an option that
 an integer variable picks. An ordinary R vector or matrix cannot be indexed
 this way. \code{lookup_table()} adds the data to the model under a name, and
 indexing the result with expressions, such as \code{\link[=item_at]{item_at()}} or an integer

@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
-#' Declare an order as a decision
+#' Declare an ordering as a decision
 #'
-#' Some decisions are an arrangement: the order in which a courier visits its
-#' stops, the order of jobs on a machine, which department moves into which
-#' office. `perm_var()` declares such a decision, a *permutation*.
+#' Some decisions are an arrangement: an ordering, such as the stops of a
+#' courier's route or the jobs on a machine, or a one-to-one assignment, such
+#' as which department moves into which office. `perm_var()` declares such a
+#' decision, a *permutation*.
 #'
 #' @section Items and slots:
-#' A permutation of size `n` arranges `n` things, called *items*, in `n`
-#' numbered places, called *slots*, with exactly one item in each slot. Items
-#' and slots are both numbered from 1 to `n`. What they stand for depends on
-#' the problem:
+#' A permutation arranges `n` things, called *items*, in as many numbered
+#' places, called *slots*, with exactly one item in each slot. Items and slots
+#' are both numbered from 1 to `n`. What they stand for depends on the problem:
 #'
 #' * for a route, the items are the stops and the slots are the visits: slot
 #'   1 is the first stop visited, slot 2 the second, and so on;
@@ -223,7 +223,7 @@ precede <- function(P, before, after) {
 #'
 #' Sometimes a model needs a number from a table at a position that is not
 #' known yet: the distance between the first and the second stop of a route
-#' whose order the service is still choosing, or the price of an option that
+#' whose ordering the service is still choosing, or the price of an option that
 #' an integer variable picks. An ordinary R vector or matrix cannot be indexed
 #' this way. `lookup_table()` adds the data to the model under a name, and
 #' indexing the result with expressions, such as [item_at()] or an integer
@@ -524,7 +524,7 @@ print.quicopt_table <- function(x, ...) {
       out[[name]] <- .check_part_start(as.integer(s$part_of), decl$n, decl$parts, name)
     } else {
       if (is.null(s) || is.null(s$slot_of))
-        stop(caller, ": the result carries no order for the permutation '", name, "'")
+        stop(caller, ": the result carries no ordering for the permutation '", name, "'")
       out[[name]] <- .check_perm_start(as.integer(s$slot_of), decl$n, name)
     }
   }
