@@ -27,9 +27,9 @@
 #' @export
 active <- function(x) {
   nodes <- .nodes_of(x, "active()")
-  if (!all(vapply(nodes, function(n) identical(n$kind, "var"), NA)))
+  if (!all(vapply(nodes, function(node) identical(node$kind, "var"), NA)))
     stop("active() takes a decision variable, or elements of one, such as x or x[2]")
-  .qexpr(lapply(nodes, function(n) ir_apply("indicator", list(n))))
+  .qexpr(lapply(nodes, function(node) ir_apply("indicator", list(node))))
 }
 
 #' Group the variables of a subproblem
@@ -93,9 +93,9 @@ block <- function(m, name, vars) {
   if (inherits(vars, "quicopt_var") && !identical(vars$model, m))
     stop("the variable '", vars$name, "' belongs to a different model")
   nodes <- .nodes_of(vars, "block")
-  if (!all(vapply(nodes, function(n) identical(n$kind, "var"), NA)))
+  if (!all(vapply(nodes, function(node) identical(node$kind, "var"), NA)))
     stop("block() takes decision variables, or elements of them, such as x or x[1:3]")
-  flat <- vapply(nodes, function(n) n$name, "")
+  flat <- vapply(nodes, function(node) node$name, "")
   lookup <- .flat_lookup(m)
   unknown <- setdiff(flat, names(lookup))
   if (length(unknown))

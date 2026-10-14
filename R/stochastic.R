@@ -161,8 +161,8 @@ bernoulli <- function(prob) {
 .check_dist_param <- function(p) {
   if (is.numeric(p) && length(p) >= 1L && !anyNA(p)) return(invisible(p))
   if (inherits(p, "quicopt_expr")) {
-    for (n in p$nodes)
-      if (.has_source(n))
+    for (node in p$nodes)
+      if (.has_source(node))
         stop("a distribution's parameters are data, not draws: ",
              "a random variable cannot appear inside one")
     return(invisible(p))
@@ -194,12 +194,12 @@ bernoulli <- function(prob) {
 # Whether an IR node's tree contains a random-variable reference anywhere,
 # closed or not. A distribution parameter must have none: its draws would
 # depend on other draws.
-.has_source <- function(n) {
-  switch(n$kind,
+.has_source <- function(node) {
+  switch(node$kind,
     source = TRUE,
-    apply = any(vapply(n$args, .has_source, NA)),
-    reduce = .has_source(n$body) || (!is.null(n$cond) && .has_source(n$cond)),
-    table = any(vapply(n$index, .has_source, NA)),     # a lookup at a random position
+    apply = any(vapply(node$args, .has_source, NA)),
+    reduce = .has_source(node$body) || (!is.null(node$cond) && .has_source(node$cond)),
+    table = any(vapply(node$index, .has_source, NA)),     # a lookup at a random position
     FALSE)
 }
 
@@ -213,12 +213,12 @@ bernoulli <- function(prob) {
 
 # Whether a node still varies across scenarios: it references a random
 # variable that no aggregator above it has closed.
-.is_random_node <- function(n) {
-  switch(n$kind,
+.is_random_node <- function(node) {
+  switch(node$kind,
     source = TRUE,
-    apply = if (n$op %in% .AGGREGATORS) FALSE else any(vapply(n$args, .is_random_node, NA)),
-    reduce = .is_random_node(n$body) || (!is.null(n$cond) && .is_random_node(n$cond)),
-    table = any(vapply(n$index, .is_random_node, NA)),  # random exactly when an index is
+    apply = if (node$op %in% .AGGREGATORS) FALSE else any(vapply(node$args, .is_random_node, NA)),
+    reduce = .is_random_node(node$body) || (!is.null(node$cond) && .is_random_node(node$cond)),
+    table = any(vapply(node$index, .is_random_node, NA)),  # random exactly when an index is
     FALSE)
 }
 
@@ -253,19 +253,19 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 # operators the user never typed.
 .need_random <- function(x, what) {
   nodes <- .nodes_of(x)
-  for (n in nodes)
-    if (!.is_random_node(n))
-      stop(what, " aggregates over the scenarios, but '", .render(n),
+  for (node in nodes)
+    if (!.is_random_node(node))
+      stop(what, " aggregates over the scenarios, but '", .render(node),
            "' contains no random variable: it is the same number in every scenario")
   nodes
 }
 
-.need_closed <- function(n, what) {
-  if (.is_random_node(n))
-    stop("the ", what, " '", .render(n), "' is still random: it contains a ",
+.need_closed <- function(node, what) {
+  if (.is_random_node(node))
+    stop("the ", what, " '", .render(node), "' is still random: it contains a ",
          "random variable that no aggregator (expectation(), cvar(), prob(), ...) ",
          "has closed over the scenarios")
-  n
+  node
 }
 
 # ── declaring a model's random variables ────────────────────────────────────
@@ -434,7 +434,7 @@ set_scenarios <- function(m, n_scenarios, seed = NULL) {
   if (!is.numeric(n_scenarios) || length(n_scenarios) != 1L || is.na(n_scenarios) ||
       n_scenarios < 1 || n_scenarios != trunc(n_scenarios))
     stop("a model is solved over a whole number of scenarios, at least 1")
-  .m_set(m, "scenarios", as.numeric(n_scenarios))
+  .m_set(m, "n_scenarios", as.numeric(n_scenarios))
   .m_set(m, "scen_set", TRUE)
   if (!is.null(seed)) {
     if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) || seed < 1 || seed != trunc(seed))
@@ -488,8 +488,8 @@ set_empirical <- function(m, data, cols = NULL) {
       stop("the column '", col, "' is ", class(data[[col]])[[1L]], ", not numeric; ",
            "a random variable is a number per scenario (select with cols= if ",
            "this column is not part of the uncertainty)")
-  if (.m_get(m, "scen_set") && .m_get(m, "scenarios") != nrow(data))
-    stop("the model is set to ", .m_get(m, "scenarios"), " scenarios, but the ",
+  if (.m_get(m, "scen_set") && .m_get(m, "n_scenarios") != nrow(data))
+    stop("the model is set to ", .m_get(m, "n_scenarios"), " scenarios, but the ",
          "data has ", nrow(data), " rows")
   for (col in cols) rand_var(m, col, empirical(data[[col]]))
   set_scenarios(m, nrow(data))
@@ -519,7 +519,7 @@ set_empirical <- function(m, data, cols = NULL) {
 #' minimize(m, 3 * stock + 10 * expectation(shortfall))
 #' @export
 expectation <- function(x)
-  .qexpr(lapply(.need_random(x, "expectation()"), function(n) ir_apply("smean", list(n))))
+  .qexpr(lapply(.need_random(x, "expectation()"), function(node) ir_apply("smean", list(node))))
 
 #' The average over the worst scenarios
 #'
@@ -550,7 +550,7 @@ cvar <- function(x, alpha) {
   if (alpha <= 0 || alpha >= 1)
     stop("the tail level must lie strictly between 0 and 1, got ", alpha)
   .qexpr(lapply(.need_random(x, "cvar()"),
-                function(n) ir_apply("scvar", list(n, ir_const(alpha)))))
+                function(node) ir_apply("scvar", list(node, ir_const(alpha)))))
 }
 
 #' The variance and the standard deviation over the scenarios
@@ -584,16 +584,16 @@ cvar <- function(x, alpha) {
 #' @export
 variance <- function(x, sample = FALSE) {
   head <- if (.flag(sample, "sample")) "svar_sample" else "svar"
-  .qexpr(lapply(.need_random(x, "variance()"), function(n) ir_apply(head, list(n))))
+  .qexpr(lapply(.need_random(x, "variance()"), function(node) ir_apply(head, list(node))))
 }
 
 #' @rdname variance
 #' @export
 std_dev <- function(x, sample = FALSE) {
   node <- if (.flag(sample, "sample"))
-    function(n) ir_apply("sqrt", list(ir_apply("svar_sample", list(n))))
+    function(node) ir_apply("sqrt", list(ir_apply("svar_sample", list(node))))
   else
-    function(n) ir_apply("sstd", list(n))
+    function(node) ir_apply("sstd", list(node))
   .qexpr(lapply(.need_random(x, "std_dev()"), node))
 }
 
@@ -643,12 +643,12 @@ std_dev <- function(x, sample = FALSE) {
 #' add(m, scenario_quantile(cost, 0.95) <= 500)     # at most 500 in 95% of scenarios
 #' @export
 scenario_max <- function(x)
-  .qexpr(lapply(.need_random(x, "scenario_max()"), function(n) ir_apply("smax", list(n))))
+  .qexpr(lapply(.need_random(x, "scenario_max()"), function(node) ir_apply("smax", list(node))))
 
 #' @rdname scenario_max
 #' @export
 scenario_min <- function(x)
-  .qexpr(lapply(.need_random(x, "scenario_min()"), function(n) ir_apply("smin", list(n))))
+  .qexpr(lapply(.need_random(x, "scenario_min()"), function(node) ir_apply("smin", list(node))))
 
 #' @rdname scenario_max
 #' @export
@@ -658,7 +658,7 @@ scenario_quantile <- function(x, prob) {
   if (prob <= 0 || prob > 1)
     stop("the quantile's level must lie above 0 and at most 1, got ", prob)
   .qexpr(lapply(.need_random(x, "scenario_quantile()"),
-                function(n) ir_apply("squantile", list(n, ir_const(prob)))))
+                function(node) ir_apply("squantile", list(node, ir_const(prob)))))
 }
 
 #' The probability that a comparison holds
@@ -707,7 +707,7 @@ prob <- function(rel) {
   if (rel$op %in% c("<", ">", "!="))
     stop("prob measures an event written with <= or >= (for a continuous ",
          "quantity '", rel$op, "' means the same thing)")
-  for (i in seq_len(rel$n))
+  for (i in seq_len(rel$n_rows))
     if (!.is_random_node(rel$lhs[[i]]) && !.is_random_node(rel$rhs[[i]]))
       stop("prob measures how often an event happens across the scenarios, but '",
            .render(rel$lhs[[i]]), " ", rel$op, " ", .render(rel$rhs[[i]]),

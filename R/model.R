@@ -58,7 +58,7 @@ model <- function() {
   assign("sense", "min", envir = m)
   assign("constraints", list(), envir = m)   # list(f = node, set = conset)
   assign("sources", list(), envir = m)       # name -> distribution / empirical / NULL
-  assign("scenarios", 1, envir = m)
+  assign("n_scenarios", 1, envir = m)
   assign("seed", 1, envir = m)
   assign("scen_set", FALSE, envir = m)
   assign("structures", list(), envir = m)    # name -> list(kind, n_items, start, ...), see structured.R
@@ -452,13 +452,13 @@ add <- function(m, rel, margin = 0, when = NULL) {
     if (!inherits(when, "quicopt_var") || when$domain != BINARY)
       stop("when= takes a binary variable from bin_var(); got ",
            if (inherits(when, "quicopt_var")) "a non-binary variable" else class(when)[[1L]])
-    if (when$n_elements != 1L && when$n_elements != rel$n)
-      stop("when= has ", when$n_elements, " elements, but the comparison has ", rel$n, " rows")
+    if (when$n_elements != 1L && when$n_elements != rel$n_rows)
+      stop("when= has ", when$n_elements, " elements, but the comparison has ", rel$n_rows, " rows")
     if (!identical(when$model, m))
       stop("the switch '", when$name, "' belongs to a different model")
   }
   cons <- .m_get(m, "constraints")
-  for (i in seq_len(rel$n)) {
+  for (i in seq_len(rel$n_rows)) {
     lhs <- rel$lhs[[i]]; rhs <- rel$rhs[[i]]
     if (.is_random_node(lhs) || .is_random_node(rhs))
       stop("the constraint '", .render(lhs), " ", rel$op, " ", .render(rhs),
@@ -486,7 +486,7 @@ add <- function(m, rel, margin = 0, when = NULL) {
 # the level, the direction) because the tightened level depends on the
 # scenario count, which may still change; .row_constraint resolves it.
 .chance_row <- function(lhs, rhs, op, margin) {
-  is_prob <- function(n) n$kind == "apply" && n$op %in% c("sfreq_leq", "sfreq_geq")
+  is_prob <- function(node) node$kind == "apply" && node$op %in% c("sfreq_leq", "sfreq_geq")
   if (op == "==" || !(is_prob(lhs) && rhs$kind == "const" || is_prob(rhs) && lhs$kind == "const"))
     stop("margin applies to a chance constraint: a prob() on one side of <= or >= ",
          "and a probability level on the other")
@@ -501,9 +501,9 @@ add <- function(m, rel, margin = 0, when = NULL) {
 # One stored row as a wire constraint. The margin moves a lower bound on a
 # probability up, and an upper bound down, by margin standard errors of the
 # scenario estimate, and clamps into [0, 1]; a switch wraps the set.
-.row_constraint <- function(row, n_scen) {
+.row_constraint <- function(row, n_scenarios) {
   if (is.null(row$prob)) { f <- row$f; set <- row$set } else {
-    se <- sqrt(row$level * (1 - row$level) / n_scen)
+    se <- sqrt(row$level * (1 - row$level) / n_scenarios)
     level <- min(max(row$level + (if (row$tighten_up) 1 else -1) * row$margin * se, 0), 1)
     f <- if (row$tighten_up) ir_apply("-", list(row$prob, ir_const(level)))
          else ir_apply("-", list(ir_const(level), row$prob))
@@ -551,7 +551,7 @@ print.quicopt_model <- function(x, ...) {
   cat("quicopt model: ", nflat, " variable", if (nflat != 1L) "s", sep = "")
   if (length(random)) {
     cat(", ", length(random), " random (",
-        get("scenarios", envir = x, inherits = FALSE), " scenarios)", sep = "")
+        get("n_scenarios", envir = x, inherits = FALSE), " scenarios)", sep = "")
   }
   if (length(perms))
     cat(", ", length(perms), " permutation", if (length(perms) != 1L) "s", sep = "")
@@ -596,7 +596,7 @@ as_program <- function(m) {
   }
 
   specs <- .m_get(m, "sources")
-  scen <- .m_get(m, "scenarios")
+  n_scenarios <- .m_get(m, "n_scenarios")
   scen_set <- .m_get(m, "scen_set")
   # An empirical column carries its own scenario count. When set_scenarios was
   # never called, the columns' shared length is adopted; when it was, every
@@ -607,9 +607,9 @@ as_program <- function(m) {
     stop("empirical columns disagree on the number of scenarios: ",
          paste(sort(emp_len), collapse = " vs "))
   if (length(emp_len) == 1L) {
-    if (!scen_set) scen <- emp_len
-    else if (scen != emp_len)
-      stop("the model is set to ", scen, " scenarios, but its empirical column",
+    if (!scen_set) n_scenarios <- emp_len
+    else if (n_scenarios != emp_len)
+      stop("the model is set to ", n_scenarios, " scenarios, but its empirical column",
            if (sum(vapply(specs, inherits, NA, "quicopt_empirical")) > 1L) "s carry " else " carries ",
            emp_len, " values")
   }
@@ -634,8 +634,8 @@ as_program <- function(m) {
           vars = decls,
           objective = if (is.null(obj)) ir_const(0) else obj,
           sense = .m_get(m, "sense"),
-          constraints = lapply(.m_get(m, "constraints"), .row_constraint, n_scen = scen),
-          scenarios = scen,
+          constraints = lapply(.m_get(m, "constraints"), .row_constraint, n_scenarios = n_scenarios),
+          scenarios = n_scenarios,
           scenario_seed = .m_get(m, "seed"),
           sources = sources,
           structures = .structure_decls(m),
