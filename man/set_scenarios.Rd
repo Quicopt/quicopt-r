@@ -4,12 +4,12 @@
 \alias{set_scenarios}
 \title{Set how many scenarios are drawn, and from which seed}
 \usage{
-set_scenarios(m, n, seed = NULL)
+set_scenarios(m, n_scenarios, seed = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
 
-\item{n}{How many scenarios to draw, at least 1.}
+\item{n_scenarios}{How many scenarios to draw, at least 1.}
 
 \item{seed}{The seed for the draws, at least 1. Left \code{NULL}, the model
 keeps its current seed.}
@@ -18,9 +18,9 @@ keeps its current seed.}
 The model, invisibly.
 }
 \description{
-The service draws \code{n} scenarios: \code{n} possible outcomes of the model's
-random variables. More scenarios describe the uncertainty more accurately,
-and take longer to solve. A model whose scenarios are never set is solved
+The service draws \code{n_scenarios} scenarios, each a possible outcome of the
+model's random variables. More scenarios describe the uncertainty more
+accurately, and take longer to solve. A model whose scenarios are never set is solved
 over a single scenario, unless an \code{\link[=empirical]{empirical()}} sample sets the number by
 its length.
 }

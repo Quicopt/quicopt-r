@@ -30,21 +30,21 @@ NULL
 .sink <- function() {
   e <- new.env(parent = emptyenv())
   e$chunks <- vector("list", 32L)
-  e$n <- 0L
+  e$n_chunks <- 0L
   e
 }
 
 .put <- function(io, r) {
-  n <- io$n + 1L
-  if (n > length(io$chunks)) io$chunks <- c(io$chunks, vector("list", length(io$chunks)))
-  io$chunks[[n]] <- r
-  io$n <- n
+  n_chunks <- io$n_chunks + 1L
+  if (n_chunks > length(io$chunks)) io$chunks <- c(io$chunks, vector("list", length(io$chunks)))
+  io$chunks[[n_chunks]] <- r
+  io$n_chunks <- n_chunks
   invisible(NULL)
 }
 
 .bytes <- function(io) {
-  if (io$n == 0L) return(raw(0))
-  unlist(io$chunks[seq_len(io$n)], use.names = FALSE)
+  if (io$n_chunks == 0L) return(raw(0))
+  unlist(io$chunks[seq_len(io$n_chunks)], use.names = FALSE)
 }
 
 # ── low-level writers ───────────────────────────────────────────────────────
@@ -112,13 +112,13 @@ NULL
 # Order a list of index tuples canonically: build one sort column per tuple
 # position (kind, number, text), pad short tuples so length is the primary key.
 .idx_order <- function(keys) {
-  n <- length(keys)
-  if (n <= 1L) return(seq_len(n))
+  n_keys <- length(keys)
+  if (n_keys <= 1L) return(seq_len(n_keys))
   lens <- vapply(keys, length, 0L)
   cols <- list(lens)
   for (p in seq_len(max(lens, 0L))) {
-    kind <- integer(n); num <- numeric(n); txt <- character(n)
-    for (i in seq_len(n)) {
+    kind <- integer(n_keys); num <- numeric(n_keys); txt <- character(n_keys)
+    for (i in seq_len(n_keys)) {
       if (p > lens[[i]]) { kind[[i]] <- -1L; next }        # padding sorts first,
       e <- keys[[i]][[p]]                                  # consistent with the
       if (.is_int_elem(e)) {                               # length primary key

@@ -26,11 +26,11 @@ that trades a low average cost against a steady one, and
 }
 \details{
 By default the scenarios count as the whole distribution, each with weight
-\code{1 / n}, so \code{variance(x)} is \code{expectation(x^2) - expectation(x)^2}. R's
-\code{var()} and \code{sd()} divide by \code{n - 1} instead, because they estimate the
-variance of a population from a sample of it; \code{sample = TRUE} does the
-same. The two differ by a factor \code{n / (n - 1)}, which changes the value
-reported but not which decision is best.
+\code{1 / n_scenarios}, so \code{variance(x)} is \code{expectation(x^2) - expectation(x)^2}.
+R's \code{var()} and \code{sd()} divide by \code{n_scenarios - 1} instead, because they
+estimate the variance of a population from a sample of it; \code{sample = TRUE}
+does the same. The two differ by a factor \code{n_scenarios / (n_scenarios - 1)},
+which changes the value reported but not which decision is best.
 
 Unlike \code{\link[=cvar]{cvar()}}, these measure variation in both directions: a scenario
 far better than average increases them as much as one far worse.

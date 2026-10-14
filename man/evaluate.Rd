@@ -4,7 +4,7 @@
 \alias{evaluate}
 \title{Compute a quantity at a given solution}
 \usage{
-evaluate(m, solution, expr, seed = NULL, scenarios = NULL, ...)
+evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -19,11 +19,15 @@ needs a result, because only a result holds the arrangement.}
 \item{seed}{Left \code{NULL}, the model's own scenarios are used. Otherwise, the
 seed for new scenarios, different from the model's own.}
 
-\item{scenarios}{With \code{seed}: how many new scenarios to draw. Left \code{NULL},
-as many as the model has. More scenarios give a more precise value.}
+\item{n_scenarios}{With \code{seed}: how many new scenarios to draw. Left
+\code{NULL}, as many as the model has. More scenarios give a more precise
+value.}
 
 \item{...}{Settings for the request, as for \code{\link[=solve_model]{solve_model()}}: \code{base_url},
 \code{api_key}, \code{project}, \code{config}, \code{gzip}, \code{timeout} and \code{transport}.}
+
+\item{scenarios}{The former name of \code{n_scenarios}, still accepted for now,
+with a warning.}
 }
 \value{
 The value of \code{expr}, a number.
@@ -57,7 +61,7 @@ res <- solve(m)
 
 met <- prob(demand <= stock)
 evaluate(m, res, met)                                  # on the model's scenarios
-evaluate(m, res, met, seed = 7, scenarios = 1000)      # on 1000 new ones
+evaluate(m, res, met, seed = 7, n_scenarios = 1000)    # on 1000 new ones
 evaluate(m, c(stock = 110), met)                       # for a stock of 110
 }
 }

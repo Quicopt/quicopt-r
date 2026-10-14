@@ -30,7 +30,7 @@ tour_model <- function() {
 
 m <- model()
 tour <- perm_var(m, "tour", 5)
-check("a permutation handle knows its model and size", identical(tour$model, m) && tour$n == 5L)
+check("a permutation handle knows its model and size", identical(tour$model, m) && tour$n_items == 5L)
 check("the handle is retrievable from the model", identical(m$tour$name, "tour"))
 expect_error_like("a permutation needs at least two items", perm_var(m, "p", 1), "at least 2")
 expect_error_like("a fractional size is refused", perm_var(m, "p", 2.5), "whole number")
@@ -72,10 +72,10 @@ expect_error_like("index lengths broadcast or match", dist[1:2, 1:3], "length mi
 
 e <- item_at(1:4, tour)
 check("item_at is vectorized over the slots", length(e) == 4L)
-n <- e$nodes[[3L]]
+node <- e$nodes[[3L]]
 check("a part is the catalog operator over a constant and a structure reference",
-      n$kind == "apply" && n$op == "item_at" && n$args[[1L]]$kind == "const" &&
-      n$args[[1L]]$value == 3 && identical(n$args[[2L]], ir_struct_ref("tour")))
+      node$kind == "apply" && node$op == "item_at" && node$args[[1L]]$kind == "const" &&
+      node$args[[1L]]$value == 3 && identical(node$args[[2L]], ir_struct_ref("tour")))
 check("slot_of is the other direction", slot_of(2, tour)$nodes[[1L]]$op == "slot_of")
 
 leg <- dist[item_at(1:2, tour), item_at(2:3, tour)]

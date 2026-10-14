@@ -4,7 +4,7 @@
 \alias{resample}
 \title{Check a solution on new scenarios}
 \usage{
-resample(m, solution, seed, scenarios = NULL, ...)
+resample(m, solution, seed, n_scenarios = NULL, ..., scenarios)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -15,10 +15,13 @@ value for every decision variable (see \code{\link[=evaluate]{evaluate()}}).}
 \item{seed}{The seed for the new scenarios, different from the model's
 own.}
 
-\item{scenarios}{How many new scenarios to draw. Left \code{NULL}, as many as
+\item{n_scenarios}{How many new scenarios to draw. Left \code{NULL}, as many as
 the model has. More scenarios give a more precise check.}
 
 \item{...}{Settings for the request, as for \code{\link[=solve_model]{solve_model()}}.}
+
+\item{scenarios}{The former name of \code{n_scenarios}, still accepted for now,
+with a warning.}
 }
 \value{
 A result in the same form as from \code{\link[=solve]{solve()}}, for the fixed solution
@@ -46,7 +49,7 @@ the service.
 \examples{
 \dontrun{
 res <- solve(m)                                        # m as in ?evaluate
-chk <- resample(m, res, seed = 7, scenarios = 1000)
+chk <- resample(m, res, seed = 7, n_scenarios = 1000)
 chk$feasible                                           # does every constraint still hold?
 chk$solver_data$max_violation                          # if not, by how much
 chk$objective                                          # the objective on the new scenarios

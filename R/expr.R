@@ -17,7 +17,7 @@
 #' built.
 #'
 #' @section Expressions are vectors:
-#' A variable declared with `n = 10` is an expression of length 10, and
+#' A variable declared with `length = 10` is an expression of length 10, and
 #' expressions behave like numeric vectors in most ways: arithmetic works
 #' element by element, `x[3]` picks one element, `c()` combines expressions
 #' and numbers into a longer expression, and `length()` counts the elements.
@@ -62,7 +62,7 @@
 #' 50 * tables + 20 * chairs                 # an expression, not a number
 #' tables + chairs <= 18                     # a comparison, not TRUE or FALSE
 #'
-#' x <- num_var(m, "x", lower = 0, upper = 1, n = 3)
+#' x <- num_var(m, "x", lower = 0, upper = 1, length = 3)
 #' 2 * x                                     # element by element
 #' sum(x)                                    # one expression
 #' max(x, 0.5)                               # the largest of all four
@@ -107,7 +107,7 @@ NULL
        "; expected a model expression or a numeric vector")
 }
 
-# Broadcast two node lists to a common length: equal lengths, or 1 against n.
+# Broadcast two node lists to a common length: equal lengths, or 1 against any.
 # R's partial recycling (2 against 10) is refused — in a model it manufactures
 # wrong constraints silently.
 .broadcast <- function(a, b, op) {
@@ -129,7 +129,7 @@ Ops.quicopt <- function(e1, e2) {
     if (op == "+") return(.qexpr(nodes))
     # The catalog's minus is binary, and the service checks arity exactly, so
     # -x is spelled 0 - x on the wire, as the sibling clients spell it.
-    if (op == "-") return(.qexpr(lapply(nodes, function(n) ir_apply("-", list(ir_const(0), n)))))
+    if (op == "-") return(.qexpr(lapply(nodes, function(node) ir_apply("-", list(ir_const(0), node)))))
     stop("unary '", op, "' is not part of a model expression")
   }
   # A comparison is a relation, not a logical. Which relations may become a
@@ -151,7 +151,7 @@ Math.quicopt <- function(x, ...) {
   if (op == "log" && length(list(...)) > 0L)
     stop("log() in a model takes no base; the catalog's log is natural: ",
          "write log(x) / log(b) for another base")
-  .qexpr(lapply(.nodes_of(x), function(n) ir_apply(op, list(n))))
+  .qexpr(lapply(.nodes_of(x), function(node) ir_apply(op, list(node))))
 }
 
 #' @export
@@ -244,7 +244,7 @@ min <- function(..., na.rm = FALSE) .summary_or_base("min", base::min, list(...)
 
 .relation <- function(lhs, rhs, op) {
   bc <- .broadcast(.nodes_of(lhs, "constraint"), .nodes_of(rhs, "constraint"), op)
-  structure(list(lhs = bc[[1L]], rhs = bc[[2L]], op = op, n = bc[[3L]]),
+  structure(list(lhs = bc[[1L]], rhs = bc[[2L]], op = op, n_rows = bc[[3L]]),
             class = "quicopt_relation")
 }
 
@@ -313,10 +313,10 @@ holds <- function(rel, tol = 0) {
 # equality uses indicator; a tolerance folds into the argument of step.
 .holds_node <- function(lhs, rhs, op, tol) {
   minus <- function(a, b) ir_apply("-", list(a, b))
-  step <- function(n) ir_apply("step", list(n))
-  not <- function(n) ir_apply("-", list(ir_const(1), n))
-  widen <- function(n) if (tol > 0) ir_apply("+", list(n, ir_const(tol))) else n
-  gap <- function(n) if (tol > 0) ir_apply("-", list(n, ir_const(tol))) else n
+  step <- function(node) ir_apply("step", list(node))
+  not <- function(node) ir_apply("-", list(ir_const(1), node))
+  widen <- function(node) if (tol > 0) ir_apply("+", list(node, ir_const(tol))) else node
+  gap <- function(node) if (tol > 0) ir_apply("-", list(node, ir_const(tol))) else node
   switch(op,
     "<=" = step(widen(minus(rhs, lhs))),                   # rhs + tol - lhs >= 0
     ">=" = step(widen(minus(lhs, rhs))),
@@ -353,9 +353,9 @@ c.quicopt_expr <- function(...)
 # is expectation(). The plain generic would otherwise return NA with a warning.
 #' @export
 mean.quicopt_expr <- function(x, ...) {
-  n <- length(x$nodes)
-  if (n == 1L) return(.qexpr(x$nodes))
-  .qexpr(list(ir_apply("/", list(ir_apply("+", x$nodes), ir_const(n)))))
+  n_elements <- length(x$nodes)
+  if (n_elements == 1L) return(.qexpr(x$nodes))
+  .qexpr(list(ir_apply("/", list(ir_apply("+", x$nodes), ir_const(n_elements)))))
 }
 
 # ── rendering ───────────────────────────────────────────────────────────────
@@ -365,27 +365,27 @@ mean.quicopt_expr <- function(x, ...) {
   format(v)
 }
 
-.render <- function(n) {
-  switch(n$kind,
-    const = .fmt_num(n$value),
-    var = if (length(n$index)) paste0(n$name, "[", paste(vapply(n$index, as.character, ""),
-                                                         collapse = ","), "]") else n$name,
-    param = n$name,
-    source = paste0("~", n$name),
-    structure = n$name,
-    table = paste0(n$param, "[", paste(vapply(n$index, .render, ""), collapse = ", "), "]"),
+.render <- function(node) {
+  switch(node$kind,
+    const = .fmt_num(node$value),
+    var = if (length(node$index)) paste0(node$name, "[", paste(vapply(node$index, as.character, ""),
+                                                         collapse = ","), "]") else node$name,
+    param = node$name,
+    source = paste0("~", node$name),
+    structure = node$name,
+    table = paste0(node$param, "[", paste(vapply(node$index, .render, ""), collapse = ", "), "]"),
     apply = {
-      args <- vapply(n$args, .render, "")
+      args <- vapply(node$args, .render, "")
       # 0 - x is how the wire spells -x; print it the way it was written.
-      if (n$op == "-" && length(args) == 2L && n$args[[1L]]$kind == "const" &&
-          n$args[[1L]]$value == 0)
+      if (node$op == "-" && length(args) == 2L && node$args[[1L]]$kind == "const" &&
+          node$args[[1L]]$value == 0)
         paste0("-", args[[2L]])
-      else if (n$op %in% c("+", "-", "*", "/", "^") && length(args) >= 2L)
-        paste0("(", paste(args, collapse = paste0(" ", n$op, " ")), ")")
-      else paste0(n$op, "(", paste(args, collapse = ", "), ")")
+      else if (node$op %in% c("+", "-", "*", "/", "^") && length(args) >= 2L)
+        paste0("(", paste(args, collapse = paste0(" ", node$op, " ")), ")")
+      else paste0(node$op, "(", paste(args, collapse = ", "), ")")
     },
-    reduce = paste0(n$op, "_{", n$idx, " in ", n$over$name, "} ", .render(n$body)),
-    paste0("<", n$kind, ">")
+    reduce = paste0(node$op, "_{", node$idx, " in ", node$over$name, "} ", .render(node$body)),
+    paste0("<", node$kind, ">")
   )
 }
 
@@ -399,7 +399,7 @@ print.quicopt_expr <- function(x, ...) {
 
 #' @export
 print.quicopt_relation <- function(x, ...) {
-  for (i in seq_len(x$n))
+  for (i in seq_len(x$n_rows))
     cat(.render(x$lhs[[i]]), x$op, .render(x$rhs[[i]]), "\n")
   invisible(x)
 }

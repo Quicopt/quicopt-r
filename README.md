@@ -95,7 +95,7 @@ price   <- rbind(c(1, 3, 4), c(3, 1, 3), c(4, 2, 1))    # per unit, price[wareho
 opening <- c(60, 50, 40)                                # fee of warehouses 1 to 3
 
 m <- model()
-ship <- int_var(m, "ship", lower = 10, upper = 25, n = 9, semi = TRUE)   # none, or 10 to 25 units
+ship <- int_var(m, "ship", lower = 10, upper = 25, length = 9, semi = TRUE)   # none, or 10 to 25 units
 to   <- function(c) ship[3 * (c - 1) + 1:3]             # to customer c, from warehouses 1 to 3
 from <- function(w) ship[w + c(0, 3, 6)]                # from warehouse w, to customers 1 to 3
 for (c in 1:3) {

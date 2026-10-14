@@ -54,16 +54,16 @@ e <- min(v, 3)        ; check("min", e$nodes[[1]]$op == "min")
 # A plain number first: base R would pick its numeric method from the first
 # argument and stop, so the package's own sum/prod/max/min read the call.
 const_then <- function(e, op, value) {
-  n <- e$nodes[[1]]
-  n$op == op && n$args[[1]]$kind == "const" && n$args[[1]]$value == value
+  node <- e$nodes[[1]]
+  node$op == op && node$args[[1]]$kind == "const" && node$args[[1]]$value == value
 }
 check("max(0, e) is the catalog's max", const_then(max(0, v - w), "max", 0))
 check("min(1, e) is the catalog's min", const_then(min(1, v), "min", 1))
 check("sum(2, e) is one + node", const_then(sum(2, v), "+", 2))
 check("prod(2, e) is the catalog's *", const_then(prod(2, v), "*", 2))
 check("max(c(0, 1), e) folds every element", {
-  n <- max(c(0, 1), v)$nodes[[1]]
-  n$op == "max" && n$args[[1]]$op == "max" && n$args[[2]]$kind == "var"
+  node <- max(c(0, 1), v)$nodes[[1]]
+  node$op == "max" && node$args[[1]]$op == "max" && node$args[[2]]$kind == "var"
 })
 shock <- rand_var(m, "shock", normal(0, 1))
 check("a number first works on random variables too", max(0, shock - v)$nodes[[1]]$op == "max")
@@ -89,10 +89,17 @@ expect_error_like("if (v == 3) errors", if (v == 3) TRUE, ".")
 # ── vector variables ────────────────────────────────────────────────────────
 
 m <- model()
-xs <- num_var(m, "xs", 0, 10, n = 3)
+xs <- num_var(m, "xs", 0, 10, length = 3)
 cost <- c(2, 3, 5)
 
-check("a vector variable has length n", length(xs) == 3)
+check("a vector variable has the length given", length(xs) == 3)
+mo <- model(); warned <- NULL
+xo <- withCallingHandlers(num_var(mo, "xo", 0, 10, n = 2),
+                          warning = function(w) { warned <<- conditionMessage(w); invokeRestart("muffleWarning") })
+check("the former name n still declares the length, with a warning",
+      length(xo) == 2 && grepl("`n` is now called `length`", warned))
+expect_error_like("length and its former name n together are refused",
+                  num_var(mo, "xb", 0, 10, length = 2, n = 2), "give `length` only")
 check("indexing picks the flat element", xs[2]$nodes[[1]]$name == "xs[2]")
 e <- sum(cost * xs)
 check("sum(cost * x) is one n-ary + node",
@@ -109,18 +116,18 @@ add(m, 1 <= xs)                     # on either side
 p <- as_program(m)
 check("a family lowers to flat scalar declarations",
       length(p$vars) == 3 && p$vars[[2]]$name == "xs[2]")
-check("an elementwise relation lands as n rows, a scalar side broadcasting",
+check("an elementwise relation lands as one row per element, a scalar side broadcasting",
       length(p$constraints) == 10)
 check("the broadcast rows name each element",
       p$constraints[[7]]$f$args[[1]]$name == "xs[3]" && p$constraints[[10]]$f$args[[1]]$name == "xs[3]")
 
 # per-element bounds
 m <- model()
-y <- num_var(m, "y", lower = c(0, 1), upper = 5, n = 2)
+y <- num_var(m, "y", lower = c(0, 1), upper = 5, length = 2)
 p <- as_program(m)
 check("per-element bounds", p$vars[[1]]$lower == 0 && p$vars[[2]]$lower == 1)
 expect_error_like("bounds of the wrong length are refused",
-                  num_var(m, "z", lower = c(0, 1, 2), n = 2), "length 3")
+                  num_var(m, "z", lower = c(0, 1, 2), length = 2), "length 3")
 
 # ── model surface ───────────────────────────────────────────────────────────
 
@@ -139,7 +146,7 @@ expect_error_like("m$nothere names the declared variables", m$nothere, "declared
 expect_error_like("assignment into the model is refused", m$c <- 1, "num_var")
 expect_error_like("duplicate names are refused", num_var(m, "a"), "already declared")
 expect_error_like("bracketed names are reserved", num_var(m, "q[1]"), "reserved")
-expect_error_like("a vector objective is refused", minimize(m, 1 * num_var(m, "vv", n = 2)),
+expect_error_like("a vector objective is refused", minimize(m, 1 * num_var(m, "vv", length = 2)),
                   "single expression")
 
 # the pipe and the imperative style are the same functions
@@ -159,7 +166,7 @@ cat("dsl: all green\n")
 
 # ── mean folds the elements ─────────────────────────────────────────────────
 
-m <- model(); xs <- num_var(m, "xs", 0, 10, n = 4)
+m <- model(); xs <- num_var(m, "xs", 0, 10, length = 4)
 e <- mean(xs)
 check("mean(x) is sum(x) / length(x)",
       length(e) == 1 && e$nodes[[1]]$op == "/" && e$nodes[[1]]$args[[1]]$op == "+" &&
@@ -176,7 +183,7 @@ add(m, x >= 0, when = u)
 check("DSL reproduces the indicator golden (x >= 0 when u)",
       identical(encode(m), read_golden("indicator")),
       sprintf("   got  %s\n   want %s\n", as_hex(encode(m)), as_hex(read_golden("indicator"))))
-us <- bin_var(m, "us", n = 2)
+us <- bin_var(m, "us", length = 2)
 add(m, c(x, x) <= 3, when = us)
 p <- as_program(m)
 check("a vector switch applies elementwise",
@@ -189,7 +196,7 @@ expect_error_like("a switch from another model is refused", add(m, x <= 1, when 
 # ── start values ────────────────────────────────────────────────────────────
 
 m <- model()
-x <- num_var(m, "x", 0, 10, n = 2)
+x <- num_var(m, "x", 0, 10, length = 2)
 b <- bin_var(m, "b", start = 1)
 check("bin_var takes a start", as_program(m)$vars[[3]]$start == 1)
 set_start(m, c("x[2]" = 7, b = 0))

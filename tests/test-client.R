@@ -162,14 +162,14 @@ check("an opaque failure still raises cleanly", grepl("HTTP 500", conditionMessa
 forget_session_key()
 rec <- recorder(list(ok_response(
   '{"status":"optimal","solution":{"xs[1]":1.0,"xs[2]":2.0,"xs[3]":3.0}}')))
-mv <- model(); xs <- num_var(mv, "xs", 0, 5, n = 3); minimize(mv, sum(xs));
+mv <- model(); xs <- num_var(mv, "xs", 0, 5, length = 3); minimize(mv, sum(xs));
 res <- solve_model(mv, transport = rec$fn)
 check("family values come back keyed by flat names",
       identical(res$solution, c("xs[1]" = 1.0, "xs[2]" = 2.0, "xs[3]" = 3.0)))
 
 # ... and in the order they were declared, whatever order the answer arrived in
 shuffled <- '{"status":"optimal","solution":{"xs[2]":0.0,"y":7.0,"xs[3]":1.0,"extra":9.0,"xs[1]":1.0}}'
-mo <- model(); xo <- bin_var(mo, "xs", n = 3); yo <- num_var(mo, "y", 0, 9); minimize(mo, sum(xo) + yo)
+mo <- model(); xo <- bin_var(mo, "xs", length = 3); yo <- num_var(mo, "y", 0, 9); minimize(mo, sum(xo) + yo)
 forget_session_key()
 rec <- recorder(list(ok_response(shuffled), ok_response(shuffled),
                      list(status = 202L, headers = list(), body = charToRaw('{"job_id":"j-o"}')),

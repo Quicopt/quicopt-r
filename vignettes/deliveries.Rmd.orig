@@ -35,7 +35,7 @@ A variable that is either 0 or between its bounds is declared with `semi = TRUE`
 
 ```{r}
 m <- model()
-delivery <- int_var(m, "delivery", lower = 10, upper = 25, n = 3, semi = TRUE)
+delivery <- int_var(m, "delivery", lower = 10, upper = 25, length = 3, semi = TRUE)
 ```
 
 `delivery[1]` can be 0, 10, 11, ..., 25, but not 5. The fee is due only for a delivery that takes place, which is what `active()` expresses: `active(x)` is 1 when `x` is not 0, and 0 when it is.
@@ -72,7 +72,7 @@ There are nine possible deliveries, one from each warehouse to each customer. Th
 
 ```{r}
 m <- model()
-ship <- int_var(m, "ship", lower = 10, upper = 25, n = 9, semi = TRUE)
+ship <- int_var(m, "ship", lower = 10, upper = 25, length = 9, semi = TRUE)
 to   <- function(c) ship[3 * (c - 1) + 1:3]             # to customer c, from warehouses 1 to 3
 from <- function(w) ship[w + c(0, 3, 6)]                # from warehouse w, to customers 1 to 3
 ```
