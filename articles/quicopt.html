@@ -252,8 +252,9 @@ collects the answer when it is ready.</p>
 <p>The service decides how long a solve may run.
 <code>solve(m, time_limit = 30)</code> gives it 30 seconds instead. A
 solver that proves its answer sooner still stops sooner; a search, which
-cannot prove that it is done, runs for all of it. The service grants at
-most its maximum, and a warning says so when it granted less.</p>
+cannot prove that it is done, may stop sooner too, once it stops finding
+better answers. The service grants at most its maximum, and a warning
+says so when it granted less.</p>
 </div>
 <div class="section level2">
 <h2 id="writing-a-model-as-a-pipe">Writing a model as a pipe<a class="anchor" aria-label="anchor" href="#writing-a-model-as-a-pipe"></a>

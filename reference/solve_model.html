@@ -153,11 +153,11 @@ longer, <code><a href="submit.html">submit()</a></code> sends it without waiting
 
 <p>The service decides how long a solve may run. <code>time_limit</code> sets that time
 instead, in seconds. A solver that proves its answer sooner still stops
-sooner; a search, which cannot prove it is done, runs for all of it. The
-service grants at most its maximum (120 seconds on the free tier). Asked
-for more, it runs for its maximum, and a warning says that the solve got
-less time than requested. <code>res$solver_data$time_budget_s</code> is the time the
-service granted.</p>
+sooner; a search, which cannot prove it is done, may stop sooner too, once
+it stops finding better answers. The service grants at most its maximum
+(120 seconds on the free tier). Asked for more, it runs for its maximum,
+and a warning says that the solve got less time than requested.
+<code>res$solver_data$time_budget_s</code> is the time the service granted.</p>
 <p><code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> waits for the answer at least <code>time_limit</code> plus a minute, even
 when <code>timeout</code> is shorter.</p>
     </div>

@@ -2,6 +2,9 @@
 
 ## quicopt 0.7.0
 
+- The help for `time_limit` no longer says that a search runs for all of
+  it. The service may end a search sooner, once it stops finding better
+  answers; `time_limit` is the most the search may take.
 - Counts are named for what they count. The number of items of a
   permutation or a partition is `n_items`
   (`perm_var(m, "tour", n_items)`,
@@ -195,6 +198,8 @@ Fixed:
   way the model did.
 
 ## quicopt 0.1.1
+
+CRAN release: 2026-10-14
 
 Documentation: every help topic with a usage section now states its
 value.
