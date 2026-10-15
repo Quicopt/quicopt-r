@@ -87,11 +87,11 @@ longer, \code{\link[=submit]{submit()}} sends it without waiting.
 
 The service decides how long a solve may run. \code{time_limit} sets that time
 instead, in seconds. A solver that proves its answer sooner still stops
-sooner; a search, which cannot prove it is done, runs for all of it. The
-service grants at most its maximum (120 seconds on the free tier). Asked
-for more, it runs for its maximum, and a warning says that the solve got
-less time than requested. \code{res$solver_data$time_budget_s} is the time the
-service granted.
+sooner; a search, which cannot prove it is done, may stop sooner too, once
+it stops finding better answers. The service grants at most its maximum
+(120 seconds on the free tier). Asked for more, it runs for its maximum,
+and a warning says that the solve got less time than requested.
+\code{res$solver_data$time_budget_s} is the time the service granted.
 
 \code{solve()} waits for the answer at least \code{time_limit} plus a minute, even
 when \code{timeout} is shorter.
