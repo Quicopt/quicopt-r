@@ -40,11 +40,11 @@ DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
 #' @section Time limit:
 #' The service decides how long a solve may run. `time_limit` sets that time
 #' instead, in seconds. A solver that proves its answer sooner still stops
-#' sooner; a search, which cannot prove it is done, runs for all of it. The
-#' service grants at most its maximum (120 seconds on the free tier). Asked
-#' for more, it runs for its maximum, and a warning says that the solve got
-#' less time than requested. `res$solver_data$time_budget_s` is the time the
-#' service granted.
+#' sooner; a search, which cannot prove it is done, may stop sooner too, once
+#' it stops finding better answers. The service grants at most its maximum
+#' (120 seconds on the free tier). Asked for more, it runs for its maximum,
+#' and a warning says that the solve got less time than requested.
+#' `res$solver_data$time_budget_s` is the time the service granted.
 #'
 #' `solve()` waits for the answer at least `time_limit` plus a minute, even
 #' when `timeout` is shorter.

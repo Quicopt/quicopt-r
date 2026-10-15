@@ -1,5 +1,6 @@
 # quicopt 0.7.0
 
+* The help for `time_limit` no longer says that a search runs for all of it. The service may end a search sooner, once it stops finding better answers; `time_limit` is the most the search may take.
 * Counts are named for what they count. The number of items of a permutation or a partition is `n_items` (`perm_var(m, "tour", n_items)`, `part_var(m, "teams", n_items, n_parts)`), the number of parts `n_parts`, and the number of scenarios `n_scenarios` (`set_scenarios(m, n_scenarios, seed)`, and `n_scenarios =` in `evaluate()` and `resample()`). The handles read the counts back as `$n_items` and `$n_parts`. Calls that pass the counts by position work as before; `perm_var(m, "tour", n = 5)`, `part_var(m, "teams", 6, parts = 2)` and `$n` or `$parts` on a handle need the new names.
 * The length of a vector variable is `length`, as in `numeric(length = 3)`: `bin_var(m, "take", length = 6)` declares six yes-or-no decisions. The same holds for `num_var()`, `int_var()`, `add_var()`, `rand_var()` and `add_rand_var()`.
 * The former names, `n =` for the length and `scenarios =` in `evaluate()` and `resample()`, still work, with a warning, and will stop working in a later release. Giving a former name together with its new one is an error.
