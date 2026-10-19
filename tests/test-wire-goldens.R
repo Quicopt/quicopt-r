@@ -170,4 +170,78 @@ pd2 <- encode_params(list(
   b = list(list(key = list(1L), value = 2.0))))
 check("encode_params is order-free", identical(pd, pd2))
 
+# A subexpression used in several places is one object in R, shared rather
+# than copied, and encode() writes every use from the bytes of its first
+# encoding. The bytes must be those of the same program with every use a
+# separate copy, which a serialize round trip makes: it does not keep the
+# sharing.
+unshared <- function(prog) unserialize(serialize(prog, NULL))
+
+# Every kind of node shared, in the objective, in constraints and in a
+# distribution's parameter: a stock carried over ten months, each month's
+# loss reading the stock the month starts with. 0 and -0 are separate
+# objects with different bytes, and each is shared.
+demand <- ir_source_ref("demand")
+plus_zero <- ir_const(0); minus_zero <- ir_const(-0)
+price <- ir_param("price", list("i"))
+total <- ir_reduce("+", "i", ir_set_ref("S"),
+                   ir_apply("*", list(price, ir_var("y", list("i")))), price)
+fee <- ir_table_ref("fee", list(ir_var("k")))
+stock <- plus_zero
+losses <- list()
+for (t in 1:10) {                              # loop over the months
+  available <- ir_apply("+", list(stock, ir_var("ship", list(t)), fee))
+  losses[[t]] <- ir_apply("max", list(ir_apply("-", list(demand, available)), plus_zero))
+  stock <- ir_apply("max", list(ir_apply("-", list(available, demand)), minus_zero))
+}   # end loop over the months
+mean_demand <- ir_apply("+", list(total, ir_const(100)))
+shared <- program(
+  sets = list(index_set("S", list(1L, 2L)), index_set("M", as.list(1:10))),
+  params = list(price = list(list(key = list(1L), value = 2.0),
+                             list(key = list(2L), value = 3.0)),
+                fee = list(list(key = list(1L), value = 0.5),
+                           list(key = list(2L), value = 0.25))),
+  vars = list(var_decl("y", "S", CONTINUOUS, 0, 10, 0),
+              var_decl("k", character(), INTEGER, 1, 2, 1),
+              var_decl("ship", "M", CONTINUOUS, 0, 50, 5)),
+  objective = ir_apply("+", c(list(total, ir_apply("smean", list(ir_apply("+", losses)))),
+                              losses[c(3, 7)])),
+  sense = "min",
+  constraints = list(constraint(ir_apply("-", list(mean_demand, stock)), nonneg()),
+                     constraint(ir_apply("-", list(stock, minus_zero)), zero(),
+                                list(list("i", ir_set_ref("S"))))),
+  scenarios = 8,
+  sources = list(demand = parametric("normal", list(mean_demand, ir_const(15)))))
+check("a shared subexpression encodes as separate copies do",
+      identical(encode(shared), encode(unshared(shared))))
+
+# 0 and -0 are identical() in R, but their bytes differ in the sign bit, the
+# last of the eight (80). Writing a shared node from its first encoding must
+# not mistake one for the other, as a memo keyed by value would. The expected
+# bytes are those of the encoder that wrote every use afresh.
+signed_zeros <- program(objective = ir_apply("+", list(plus_zero, minus_zero, plus_zero, minus_zero)))
+check("0 and -0 keep their own bytes when each is shared",
+      identical(as_hex(encode(signed_zeros)),
+                paste0("2a31222f0a012b",
+                       "120909", "0000000000000000", "120909", "0000000000000080",
+                       "120909", "0000000000000000", "120909", "0000000000000080",
+                       "32036d696e")))
+
+# The same through a model: a stock carried over twelve months, each month
+# reading last month's stock twice, once for what is lost and once for what
+# is kept.
+m <- model()
+ship <- num_var(m, "ship", lower = 0, upper = 50, length = 12)
+need <- rand_var(m, "need", normal(20, 5))
+stock <- 0
+lost <- list()
+for (t in 1:12) {                              # loop over the months
+  available <- stock + ship[t]
+  lost[[t]] <- max(need - available, 0)
+  stock <- max(available - need, 0)
+}   # end loop over the months
+minimize(m, sum(ship) + expectation(10 * do.call(sum, lost) + stock))
+check("a model's shared stock encodes as separate copies do",
+      identical(encode(m), encode(unshared(as_program(m)))))
+
 cat("wire goldens: all green\n")
