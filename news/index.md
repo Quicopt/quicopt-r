@@ -33,6 +33,17 @@
   [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md),
   still work, with a warning, and will stop working in a later release.
   Giving a former name together with its new one is an error.
+- Sending a model is faster when it uses one expression in many places,
+  such as a stock carried from month to month and costed in every month.
+  R holds such an expression once, however often it is used, and
+  [`encode()`](https://quicopt.github.io/quicopt-r/reference/encode.md),
+  which [`solve()`](https://rdrr.io/r/base/solve.html) and
+  [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+  call, now turns it into bytes once and repeats those bytes at every
+  use instead of encoding it again each time. A planning model with 82
+  stocks over 20 months took 26.6 s to encode and now takes 1.4 s. The
+  bytes are the same as before. The speedup needs R 4.2 or later; on R
+  4.1, encoding works as before.
 
 ## quicopt 0.6.1
 
