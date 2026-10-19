@@ -162,33 +162,61 @@ NULL
 
 # The oneof case is always emitted, so Const(0.0) survives the round-trip
 # rather than collapsing to an empty message.
-.enc_expr <- function(io, e) {
+.enc_expr <- function(io, e, memo) {
   switch(e$kind,
     const = .w_double(io, 1, e$value),
     param = .w_msg(io, 2, .msg(function(b) .enc_param_ref(b, e))),
     var = .w_msg(io, 3, .msg(function(b) .enc_var_ref(b, e))),
     apply = .w_msg(io, 4, .msg(function(b) {
       .w_str(b, 1, e$op)
-      for (a in e$args) .w_msg(b, 2, .expr_msg(a))
+      for (a in e$args) .w_msg(b, 2, .expr_msg(a, memo))
     })),
     reduce = .w_msg(io, 5, .msg(function(b) {
       .w_str(b, 1, e$op)
       .w_str(b, 2, e$idx)
       .w_msg(b, 3, .msg(function(cc) .enc_set_ref(cc, e$over)))
-      .w_msg(b, 4, .expr_msg(e$body))
-      if (!is.null(e$cond)) .w_msg(b, 5, .expr_msg(e$cond))
+      .w_msg(b, 4, .expr_msg(e$body, memo))
+      if (!is.null(e$cond)) .w_msg(b, 5, .expr_msg(e$cond, memo))
     })),
     source = .w_msg(io, 6, .msg(function(b) .w_str(b, 1, e$name))),
     structure = .w_msg(io, 7, .msg(function(b) .w_str(b, 1, e$name))),
     table = .w_msg(io, 8, .msg(function(b) {
       .w_str(b, 1, e$param)
-      for (i in e$index) .w_msg(b, 2, .expr_msg(i))
+      for (i in e$index) .w_msg(b, 2, .expr_msg(i, memo))
     })),
     stop("wire: not an expression node: ", e$kind)
   )
 }
 
-.expr_msg <- function(e) .msg(function(b) .enc_expr(b, e))
+# Repeated subexpressions. A model that uses one subexpression in many
+# places, such as a stock carried from month to month and costed in every
+# month, holds it once: R shares the object instead of copying it. The bytes
+# still spell it out at every use, since the format has no references, but
+# each shared object needs encoding only once. The memo holds the bytes of
+# every expression encoded so far, keyed by the object itself; a node's bytes
+# depend on the node alone, never on where it sits, so a hit is exact. On a
+# model whose objective has 311,202 nodes but 31,984 distinct objects, this
+# cut encoding from 26.6 s to 1.4 s.
+
+# A fresh memo for one encode() call. Keying by identity needs a table keyed
+# by address, utils::hashtab(), which R has from 4.2 on; before that the memo
+# is NULL and every use is encoded afresh, to the same bytes. One memo per
+# call, never kept: every node it holds belongs to the program being encoded
+# and so stays alive, and no freed node's address can come back as another's.
+.expr_memo <- function()
+  if (getRversion() >= "4.2.0") utils::hashtab("address") else NULL
+
+# An expression's message: the memo's bytes when this object was encoded
+# before in the same call, else encoded now and remembered.
+.expr_msg <- function(e, memo) {
+  if (is.null(memo)) return(.msg(function(b) .enc_expr(b, e, memo)))
+  bytes <- utils::gethash(memo, e)
+  if (is.null(bytes)) {
+    bytes <- .msg(function(b) .enc_expr(b, e, memo))
+    utils::sethash(memo, e, bytes)
+  }
+  bytes
+}
 
 .enc_conset <- function(io, s) {
   switch(s$kind,
@@ -202,8 +230,8 @@ NULL
   )
 }
 
-.enc_constraint <- function(io, cn) {
-  .w_msg(io, 1, .expr_msg(cn$f))
+.enc_constraint <- function(io, cn, memo) {
+  .w_msg(io, 1, .expr_msg(cn$f, memo))
   .w_msg(io, 2, .msg(function(b) .enc_conset(b, cn$set)))
   for (q in cn$over)
     .w_msg(io, 3, .msg(function(b) {
@@ -255,12 +283,12 @@ NULL
   }
 }
 
-.enc_source <- function(io, name, s) {
+.enc_source <- function(io, name, s, memo) {
   .w_str(io, 1, name)
   if (s$kind == "parametric") {
     .w_msg(io, 2, .msg(function(b) {
       .w_str(b, 1, s$head)
-      for (p in s$params) .w_msg(b, 2, .expr_msg(p))
+      for (p in s$params) .w_msg(b, 2, .expr_msg(p, memo))
     }))
   } else if (s$kind == "empirical") {
     # Packed: one length-delimited field of 8*R little-endian doubles — what a
@@ -324,15 +352,16 @@ encode <- function(prog) {
   # why the default is 1 and not 0: protobuf cannot tell a zero from an absent
   # field, so a 0 here would reach the service as "use your default".
   io <- .sink()
+  memo <- .expr_memo()
   for (s in prog$sets) .w_msg(io, 1, .msg(function(b) .enc_index_set(b, s)))
   for (name in .sort_names(names2(prog$indexed_sets)))
     .w_msg(io, 2, .msg(function(b) .enc_indexed_set(b, name, prog$indexed_sets[[name]])))
   for (name in .sort_names(names2(prog$params)))
     .w_msg(io, 3, .msg(function(b) .enc_param_table(b, name, prog$params[[name]])))
   for (vd in prog$vars) .w_msg(io, 4, .msg(function(b) .enc_var_decl(b, vd)))
-  .w_msg(io, 5, .expr_msg(prog$objective))
+  .w_msg(io, 5, .expr_msg(prog$objective, memo))
   .w_str(io, 6, prog$sense)
-  for (cn in prog$constraints) .w_msg(io, 7, .msg(function(b) .enc_constraint(b, cn)))
+  for (cn in prog$constraints) .w_msg(io, 7, .msg(function(b) .enc_constraint(b, cn, memo)))
   if (length(prog$fix)) {
     vars <- vapply(prog$fix, `[[`, "", "var")
     keys <- lapply(prog$fix, `[[`, "index")
@@ -349,7 +378,7 @@ encode <- function(prog) {
   if (prog$scenarios != 1) .w_varint(io, 9, prog$scenarios)
   if (prog$scenario_seed != 1) .w_varint(io, 10, prog$scenario_seed)
   for (name in .sort_names(names2(prog$sources)))
-    .w_msg(io, 11, .msg(function(b) .enc_source(b, name, prog$sources[[name]])))
+    .w_msg(io, 11, .msg(function(b) .enc_source(b, name, prog$sources[[name]], memo)))
   for (name in .sort_names(names2(prog$structures)))
     .w_msg(io, 12, .msg(function(b) .enc_structure(b, name, prog$structures[[name]])))
   for (name in .sort_names(names2(prog$blocks)))
