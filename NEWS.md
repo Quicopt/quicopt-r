@@ -1,3 +1,8 @@
+# quicopt 0.8.0
+
+* `DEFAULT_BASE_URL`, where `solve()` and `submit()` send a model unless given another `base_url`, is now `https://quicoptapi.pgi.fz-juelich.de`. The service there issues keys to registered users only: register at https://quicopt.com/signup/ and the key arrives by email. A call without a key is refused with a message that links to the sign-up page.
+* When no `api_key` is passed, `solve()`, `submit()`, `evaluate()` and `resample()` read the key from the environment variable `QUICOPT_API_KEY`. Set it in your `.Renviron` file, and no script needs to carry the key.
+
 # quicopt 0.7.0
 
 * The help for `time_limit` no longer says that a search runs for all of it. The service may end a search sooner, once it stops finding better answers; `time_limit` is the most the search may take.

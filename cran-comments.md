@@ -52,10 +52,7 @@ checks self-contained:
   argument, and the test suite drives a recorded stand-in, so `R CMD check`
   performs no network access at all.
 
-**Nothing is written to the user's filespace.** The service mints an API key on
-a first keyless call; the package keeps it in memory for the session only and
-never writes it to disk, so no file, option or environment variable is left
-behind. A fresh session mints a fresh key.
+**Nothing is written to the user's filespace.** The package reads the user's API key from the `api_key` argument or from the environment variable `QUICOPT_API_KEY`, which the user sets, for example in `~/.Renviron`. It never writes the key, or anything else, to disk, and leaves no file, option or environment variable behind.
 
 No solver is bundled or required on the user's machine; the package only
 encodes a model and posts it.

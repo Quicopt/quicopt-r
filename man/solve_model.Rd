@@ -25,8 +25,8 @@ work.}
 
 \item{base_url}{The address of the service.}
 
-\item{api_key}{Your API key, or \code{NULL} to use the session's free key (see
-the API keys section).}
+\item{api_key}{Your API key, or \code{NULL} to use the one in the environment
+variable \code{QUICOPT_API_KEY} (see the API keys section).}
 
 \item{project}{A project name, for billing by project, or \code{NULL}.}
 
@@ -99,11 +99,12 @@ when \code{timeout} is shorter.
 
 \section{API keys}{
 
-The service needs an API key. The first time a model is solved in an R
-session without one, the service issues a free key, and quicopt keeps it
-in memory until the session ends; it is never written to disk. To use a
-key of your own, pass it as \code{api_key}. It is then used for that call only,
-and not kept.
+The service needs an API key. Register at \url{https://quicopt.com/signup/} and
+the key arrives by email. Add it to the file \code{.Renviron} in your home
+directory as a line \verb{QUICOPT_API_KEY=<your key>} and restart R; quicopt
+reads the key from there. You can also pass a key to a single call as
+\code{api_key}. Without a key, the call fails with a message that links to the
+sign-up page.
 }
 
 \section{Status}{

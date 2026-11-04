@@ -17,6 +17,10 @@ internal <- function(name) {
 }
 forget_session_key <- function() rm(list = ls(internal(".the")), envir = internal(".the"))
 
+# A developer's own QUICOPT_API_KEY would make every call below carry that key,
+# so the suite runs as a caller without one.
+Sys.unsetenv("QUICOPT_API_KEY")
+
 # A transport double: records every request, replays scripted responses.
 recorder <- function(responses) {
   e <- new.env()
@@ -129,6 +133,27 @@ try(solve_model(m, transport = rec$fn), silent = TRUE)
 . <- solve_model(m, transport = rec$fn)
 check("a key minted on an error response is kept",
       identical(rec$requests[[2]]$headers[["Authorization"]], "Bearer minted-3"))
+
+# a key set in QUICOPT_API_KEY is the caller's own, like an explicit one: sent
+# as-is and never remembered; a passed key still wins, and a blank variable
+# counts as unset
+forget_session_key()
+rec <- recorder(list(
+  ok_response('{"status":"optimal"}', headers = list("x-quicopt-api-key" = "should-not-stick"))))
+Sys.setenv(QUICOPT_API_KEY = " from-env\n")
+. <- solve_model(m, transport = rec$fn)
+. <- solve_model(m, api_key = "my-own", transport = rec$fn)
+Sys.setenv(QUICOPT_API_KEY = "   ")
+. <- solve_model(m, transport = rec$fn)
+Sys.unsetenv("QUICOPT_API_KEY")
+check("a key in the environment is sent, stripped",
+      identical(rec$requests[[1]]$headers[["Authorization"]], "Bearer from-env"))
+check("a passed key beats the environment",
+      identical(rec$requests[[2]]$headers[["Authorization"]], "Bearer my-own"))
+check("a blank variable counts as unset",
+      is.null(rec$requests[[3]]$headers[["Authorization"]]))
+check("a key from the environment is never remembered",
+      identical(internal(".the")$key, "should-not-stick"))
 
 # a held key is never overwritten by a later mint
 forget_session_key()
