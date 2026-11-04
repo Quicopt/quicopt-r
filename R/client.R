@@ -27,6 +27,9 @@ DEFAULT_BASE_URL <- "https://quicoptapi.pgi.fz-juelich.de"
 # filespace.
 .the <- new.env(parent = emptyenv())
 
+# The environment variable a call reads the API key from when none is passed.
+.API_KEY_ENV <- "QUICOPT_API_KEY"
+
 #' Solve a model
 #'
 #' `solve()` sends a model to the Quicopt service, waits for the answer, and
@@ -50,11 +53,12 @@ DEFAULT_BASE_URL <- "https://quicoptapi.pgi.fz-juelich.de"
 #' when `timeout` is shorter.
 #'
 #' @section API keys:
-#' The service needs an API key. The first time a model is solved in an R
-#' session without one, the service issues a free key, and quicopt keeps it
-#' in memory until the session ends; it is never written to disk. To use a
-#' key of your own, pass it as `api_key`. It is then used for that call only,
-#' and not kept.
+#' The service needs an API key. Register at <https://quicopt.com/signup/> and
+#' the key arrives by email. Add it to the file `.Renviron` in your home
+#' directory as a line `QUICOPT_API_KEY=<your key>` and restart R; quicopt
+#' reads the key from there. You can also pass a key to a single call as
+#' `api_key`. Without a key, the call fails with a message that links to the
+#' sign-up page.
 #'
 #' @section Status:
 #' `status` says what kind of answer the result holds:
@@ -72,8 +76,8 @@ DEFAULT_BASE_URL <- "https://quicoptapi.pgi.fz-juelich.de"
 #' @param m A [model()]. A [program()], or the bytes from [encode()], also
 #'   work.
 #' @param base_url The address of the service.
-#' @param api_key Your API key, or `NULL` to use the session's free key (see
-#'   the API keys section).
+#' @param api_key Your API key, or `NULL` to use the one in the environment
+#'   variable `QUICOPT_API_KEY` (see the API keys section).
 #' @param project A project name, for billing by project, or `NULL`.
 #' @param config A named list of further settings, sent to the service as
 #'   query parameters.
@@ -212,7 +216,7 @@ submit <- function(m, base_url = DEFAULT_BASE_URL, api_key = NULL,
   parsed <- jsonlite::fromJSON(rawToChar(resp$body), simplifyVector = FALSE)
   # /v1/jobs echoes a minted key in the accepted-response body as well as the
   # header; adopt it under the same rules (never over an explicit or held key).
-  .adopt_key(parsed$api_key, explicit = !is.null(api_key))
+  .adopt_key(parsed$api_key, explicit = !is.null(.caller_key(api_key)))
   if (is.null(parsed$job_id)) stop("the service accepted the job but returned no job_id")
   structure(list(job_id = parsed$job_id, base_url = base_url,
                  api_key = api_key, timeout = timeout, transport = transport,
@@ -308,6 +312,7 @@ print.quicopt_job <- function(x, ...) {
 .request <- function(base_url, method, path, body = NULL, meta = list(),
                      gzip = FALSE, api_key = NULL, timeout = 60,
                      transport = NULL) {
+  api_key <- .caller_key(api_key)
   req <- .shape_request(paste0(base_url, path), method, meta, body, gzip,
                         api_key, timeout)
   resp <- (if (is.null(transport)) .curl_transport else transport)(req)
@@ -358,6 +363,15 @@ print.quicopt_job <- function(x, ...) {
   if (!is.null(key)) headers[["Authorization"]] <- paste("Bearer", key)
   list(method = method, url = paste0(url, .query(meta)),
        headers = headers, body = body, timeout = timeout)
+}
+
+# The key the caller holds: `api_key` when given, else the environment
+# variable .API_KEY_ENV with surrounding whitespace stripped, else NULL. Such a
+# key counts as explicit: sent as-is and never remembered in the session.
+.caller_key <- function(api_key) {
+  if (!is.null(api_key)) return(api_key)
+  key <- trimws(Sys.getenv(.API_KEY_ENV))
+  if (nzchar(key)) key else NULL
 }
 
 # Adopt a key the service minted (the response header carries it — on error

@@ -22,8 +22,8 @@ work.}
 
 \item{base_url}{The address of the service.}
 
-\item{api_key}{Your API key, or \code{NULL} to use the session's free key (see
-the API keys section).}
+\item{api_key}{Your API key, or \code{NULL} to use the one in the environment
+variable \code{QUICOPT_API_KEY} (see the API keys section).}
 
 \item{project}{A project name, for billing by project, or \code{NULL}.}
 
