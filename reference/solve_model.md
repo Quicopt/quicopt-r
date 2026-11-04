@@ -43,8 +43,8 @@ solve(a, b, ...)
 
 - api_key:
 
-  Your API key, or `NULL` to use the session's free key (see the API
-  keys section).
+  Your API key, or `NULL` to use the one in the environment variable
+  `QUICOPT_API_KEY` (see the API keys section).
 
 - project:
 
@@ -142,11 +142,12 @@ least `time_limit` plus a minute, even when `timeout` is shorter.
 
 ## API keys
 
-The service needs an API key. The first time a model is solved in an R
-session without one, the service issues a free key, and quicopt keeps it
-in memory until the session ends; it is never written to disk. To use a
-key of your own, pass it as `api_key`. It is then used for that call
-only, and not kept.
+The service needs an API key. Register at <https://quicopt.com/signup/>
+and the key arrives by email. Add it to the file `.Renviron` in your
+home directory as a line `QUICOPT_API_KEY=<your key>` and restart R;
+quicopt reads the key from there. You can also pass a key to a single
+call as `api_key`. Without a key, the call fails with a message that
+links to the sign-up page.
 
 ## Status
 

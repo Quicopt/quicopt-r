@@ -19,5 +19,5 @@ public service.
 
 ``` r
 DEFAULT_BASE_URL
-#> [1] "https://try.quicoptapi.pgi.fz-juelich.de"
+#> [1] "https://quicoptapi.pgi.fz-juelich.de"
 ```

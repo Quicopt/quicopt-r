@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -242,9 +242,11 @@ elementwise <code><a href="https://rdrr.io/r/base/Extremes.html" class="external
 <h2 id="where-the-solving-happens">Where the solving happens<a class="anchor" aria-label="anchor" href="#where-the-solving-happens"></a>
 </h2>
 <p><code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> sends the model over the internet to the Quicopt
-service. The first time you call it in an R session without an API key,
-the service issues a free key, and quicopt keeps it for the rest of the
-session. If you have a key of your own, pass it as
+service, which needs an API key. Register at <a href="https://quicopt.com/signup/" class="external-link uri">https://quicopt.com/signup/</a> and the key arrives by
+email. Add it to the file <code>.Renviron</code> in your home directory
+as a line <code>QUICOPT_API_KEY=&lt;your key&gt;</code> and restart R;
+quicopt reads the key from there, and the examples in these articles
+assume it is set. You can also pass a key to a single call, as in
 <code>solve(m, api_key = ...)</code>.</p>
 <p>A large model can take a while to solve. <code><a href="../reference/submit.html">submit()</a></code> sends
 it without waiting and returns a job, and <code><a href="../reference/job_status.html">job_result()</a></code>

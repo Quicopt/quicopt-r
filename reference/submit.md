@@ -42,8 +42,8 @@ submit(
 
 - api_key:
 
-  Your API key, or `NULL` to use the session's free key (see the API
-  keys section).
+  Your API key, or `NULL` to use the one in the environment variable
+  `QUICOPT_API_KEY` (see the API keys section).
 
 - project:
 

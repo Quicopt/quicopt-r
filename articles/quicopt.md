@@ -204,10 +204,12 @@ is no elementwise [`pmax()`](https://rdrr.io/r/base/Extremes.html).
 ## Where the solving happens
 
 [`solve()`](https://rdrr.io/r/base/solve.html) sends the model over the
-internet to the Quicopt service. The first time you call it in an R
-session without an API key, the service issues a free key, and quicopt
-keeps it for the rest of the session. If you have a key of your own,
-pass it as `solve(m, api_key = ...)`.
+internet to the Quicopt service, which needs an API key. Register at
+<https://quicopt.com/signup/> and the key arrives by email. Add it to
+the file `.Renviron` in your home directory as a line
+`QUICOPT_API_KEY=<your key>` and restart R; quicopt reads the key from
+there, and the examples in these articles assume it is set. You can also
+pass a key to a single call, as in `solve(m, api_key = ...)`.
 
 A large model can take a while to solve.
 [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)

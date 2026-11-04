@@ -1,5 +1,24 @@
 # Changelog
 
+## quicopt 0.8.0
+
+- `DEFAULT_BASE_URL`, where
+  [`solve()`](https://rdrr.io/r/base/solve.html) and
+  [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md)
+  send a model unless given another `base_url`, is now
+  `https://quicoptapi.pgi.fz-juelich.de`. The service there issues keys
+  to registered users only: register at <https://quicopt.com/signup/>
+  and the key arrives by email. A call without a key is refused with a
+  message that links to the sign-up page.
+- When no `api_key` is passed,
+  [`solve()`](https://rdrr.io/r/base/solve.html),
+  [`submit()`](https://quicopt.github.io/quicopt-r/reference/submit.md),
+  [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  read the key from the environment variable `QUICOPT_API_KEY`. Set it
+  in your `.Renviron` file, and no script needs to carry the key.
+
 ## quicopt 0.7.0
 
 - The help for `time_limit` no longer says that a search runs for all of

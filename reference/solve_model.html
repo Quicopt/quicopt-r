@@ -13,7 +13,7 @@ which can read better in a pipe."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,8 +77,8 @@ work.</p></dd>
 
 
 <dt id="arg-api-key">api_key<a class="anchor" aria-label="anchor" href="#arg-api-key"></a></dt>
-<dd><p>Your API key, or <code>NULL</code> to use the session's free key (see
-the API keys section).</p></dd>
+<dd><p>Your API key, or <code>NULL</code> to use the one in the environment
+variable <code>QUICOPT_API_KEY</code> (see the API keys section).</p></dd>
 
 
 <dt id="arg-project">project<a class="anchor" aria-label="anchor" href="#arg-project"></a></dt>
@@ -165,11 +165,12 @@ when <code>timeout</code> is shorter.</p>
     <h2 id="api-keys">API keys<a class="anchor" aria-label="anchor" href="#api-keys"></a></h2>
 
 
-<p>The service needs an API key. The first time a model is solved in an R
-session without one, the service issues a free key, and quicopt keeps it
-in memory until the session ends; it is never written to disk. To use a
-key of your own, pass it as <code>api_key</code>. It is then used for that call only,
-and not kept.</p>
+<p>The service needs an API key. Register at <a href="https://quicopt.com/signup/" class="external-link">https://quicopt.com/signup/</a> and
+the key arrives by email. Add it to the file <code>.Renviron</code> in your home
+directory as a line <code>QUICOPT_API_KEY=&lt;your key&gt;</code> and restart R; quicopt
+reads the key from there. You can also pass a key to a single call as
+<code>api_key</code>. Without a key, the call fails with a message that links to the
+sign-up page.</p>
     </div>
     <div class="section level2">
     <h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a></h2>

@@ -39,6 +39,15 @@ package is written in plain R:
 pak::pak("Quicopt/quicopt-r")
 ```
 
+## API key
+
+The service needs an API key. Register at <https://quicopt.com/signup/>
+and the key arrives by email. Add it to the file `.Renviron` in your
+home directory as a line `QUICOPT_API_KEY=<your key>` and restart R;
+quicopt reads the key from there, and the examples below assume it is
+set. You can also pass a key to a single call, as in
+`solve(m, api_key = ...)`.
+
 ## A first model
 
 A workshop makes tables and chairs. A table earns 50 and takes 3 hours

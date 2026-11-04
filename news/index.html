@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,12 @@
       <small>Source: <a href="https://github.com/Quicopt/quicopt-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.0" id="quicopt-080">quicopt 0.8.0<a class="anchor" aria-label="anchor" href="#quicopt-080"></a></h2>
+<ul><li>
+<code>DEFAULT_BASE_URL</code>, where <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> and <code><a href="../reference/submit.html">submit()</a></code> send a model unless given another <code>base_url</code>, is now <code>https://quicoptapi.pgi.fz-juelich.de</code>. The service there issues keys to registered users only: register at <a href="https://quicopt.com/signup/" class="external-link uri">https://quicopt.com/signup/</a> and the key arrives by email. A call without a key is refused with a message that links to the sign-up page.</li>
+<li>When no <code>api_key</code> is passed, <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code>, <code><a href="../reference/submit.html">submit()</a></code>, <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> read the key from the environment variable <code>QUICOPT_API_KEY</code>. Set it in your <code>.Renviron</code> file, and no script needs to carry the key.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="quicopt-070">quicopt 0.7.0<a class="anchor" aria-label="anchor" href="#quicopt-070"></a></h2>
 <ul><li>The help for <code>time_limit</code> no longer says that a search runs for all of it. The service may end a search sooner, once it stops finding better answers; <code>time_limit</code> is the most the search may take.</li>
