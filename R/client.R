@@ -11,7 +11,7 @@
 #' @examples
 #' DEFAULT_BASE_URL
 #' @export
-DEFAULT_BASE_URL <- "https://try.quicoptapi.pgi.fz-juelich.de"
+DEFAULT_BASE_URL <- "https://quicoptapi.pgi.fz-juelich.de"
 
 # The source_language tag names the front-end a model was written in, and this
 # package's interface is one. A caller-supplied value in `config` wins.
