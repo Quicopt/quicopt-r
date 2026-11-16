@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">quicopt</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,11 @@
       <small>Source: <a href="https://github.com/Quicopt/quicopt-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.1" id="quicopt-081">quicopt 0.8.1<a class="anchor" aria-label="anchor" href="#quicopt-081"></a></h2>
+<ul><li>
+<code><a href="../reference/block.html">block()</a></code>, <code><a href="../reference/set_start.html">set_start()</a></code>, <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> take much less time on a model with many variables. Each of them looks variables up by name, and that lookup took time growing with the square of the number of variables. On a model of 20,000 variables, each <code><a href="../reference/block.html">block()</a></code> call took about 2 s, however few variables the block had, so 500 blocks of 40 variables took 15 minutes; they now take 0.3 s. Setting the start values from a result of 20,000 values took 6 s and now takes a few milliseconds, and <code><a href="../reference/evaluate.html">evaluate()</a></code> and <code><a href="../reference/resample.html">resample()</a></code> prepare their request in 0.2 s instead of 3 s. Results and error messages are unchanged.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="quicopt-080">quicopt 0.8.0<a class="anchor" aria-label="anchor" href="#quicopt-080"></a></h2>
 <ul><li>

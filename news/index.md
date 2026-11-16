@@ -1,5 +1,27 @@
 # Changelog
 
+## quicopt 0.8.1
+
+- [`block()`](https://quicopt.github.io/quicopt-r/reference/block.md),
+  [`set_start()`](https://quicopt.github.io/quicopt-r/reference/set_start.md),
+  [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  take much less time on a model with many variables. Each of them looks
+  variables up by name, and that lookup took time growing with the
+  square of the number of variables. On a model of 20,000 variables,
+  each
+  [`block()`](https://quicopt.github.io/quicopt-r/reference/block.md)
+  call took about 2 s, however few variables the block had, so 500
+  blocks of 40 variables took 15 minutes; they now take 0.3 s. Setting
+  the start values from a result of 20,000 values took 6 s and now takes
+  a few milliseconds, and
+  [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  prepare their request in 0.2 s instead of 3 s. Results and error
+  messages are unchanged.
+
 ## quicopt 0.8.0
 
 - `DEFAULT_BASE_URL`, where
