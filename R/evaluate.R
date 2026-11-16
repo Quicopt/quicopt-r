@@ -18,8 +18,12 @@
   starts <- .result_starts(m, solution, caller)
   values <- .solution_values(m, solution, complete = TRUE, caller = caller)
   prog <- as_program(m)
-  prog$fix <- lapply(prog$vars, function(vd) {
-    v <- as.numeric(values[[vd$name]])
+  # the values in the program's order, all found in one subscript, which
+  # hashes; values[[name]] once per variable would scan the names each time
+  values <- values[vapply(prog$vars, function(vd) vd$name, "")]
+  prog$fix <- lapply(seq_along(prog$vars), function(k) {
+    vd <- prog$vars[[k]]
+    v <- as.numeric(values[[k]])
     if (vd$domain != CONTINUOUS && vd$domain != SEMICONTINUOUS) v <- round(v)
     semi <- vd$domain %in% c(SEMICONTINUOUS, SEMIINTEGER)
     if ((v < vd$lower || v > vd$upper) && !(semi && v == 0))
