@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
+#
+# Build and check the CRAN tarball of a release, and attach it to the Release.
+#
+# Release flow: bump `Version` in DESCRIPTION and head NEWS.md with it, land it
+# on main, then publish a GitHub Release whose tag is `v<version>` on that commit:
+#
+#   gh release create v0.8.1 --target main --title "quicopt 0.8.1" --notes-file notes.md
+#
+# The job refuses a tag that does not name the version in DESCRIPTION, builds
+# the tarball with `R CMD build`, runs `R CMD check --as-cran` on it (a WARNING
+# or an ERROR fails the job; NOTEs do not), and uploads it to the Release. The
+# PDF manual is skipped, as in check.yml, since the runner has no LaTeX. The
+# CRAN submission stays manual: CRAN confirms each one by email to the
+# maintainer. r-universe builds the latest GitHub Release.
+name: release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  tarball:
+    name: Build, check and attach the CRAN tarball
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write    # `gh release upload` attaches the tarball to the Release
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The release tag names the version in DESCRIPTION
+        run: |
+          version=$(sed -n 's/^Version:[[:space:]]*//p' DESCRIPTION)
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::Release tag $TAG does not match version $version in DESCRIPTION (expected v$version)"
+            exit 1
+          fi
+          echo "TARBALL=quicopt_$version.tar.gz" >> "$GITHUB_ENV"
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+      - name: Build the tarball
+        run: R CMD build .
+      - name: Check it as CRAN would
+        run: |
+          Rscript -e 'rcmdcheck::rcmdcheck(Sys.getenv("TARBALL"), args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")'
+      - name: Attach it to the Release
+        run: gh release upload "$TAG" "$TARBALL"
