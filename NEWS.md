@@ -1,3 +1,7 @@
+# quicopt 0.8.1
+
+* `block()`, `set_start()`, `evaluate()` and `resample()` take much less time on a model with many variables. Each of them looks variables up by name, and that lookup took time growing with the square of the number of variables. On a model of 20,000 variables, each `block()` call took about 2 s, however few variables the block had, so 500 blocks of 40 variables took 15 minutes; they now take 0.3 s. Setting the start values from a result of 20,000 values took 6 s and now takes a few milliseconds, and `evaluate()` and `resample()` prepare their request in 0.2 s instead of 3 s. Results and error messages are unchanged.
+
 # quicopt 0.8.0
 
 * `DEFAULT_BASE_URL`, where `solve()` and `submit()` send a model unless given another `base_url`, is now `https://quicoptapi.pgi.fz-juelich.de`. The service there issues keys to registered users only: register at https://quicopt.com/signup/ and the key arrives by email. A call without a key is refused with a message that links to the sign-up page.

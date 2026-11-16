@@ -97,25 +97,34 @@ block <- function(m, name, vars) {
     stop("block() takes decision variables, or elements of them, such as x or x[1:3]")
   flat <- vapply(nodes, function(node) node$name, "")
   lookup <- .flat_lookup(m)
-  unknown <- setdiff(flat, names(lookup))
+  at <- match(flat, lookup$flat)
+  unknown <- unique(flat[is.na(at)])
   if (length(unknown))
     stop("no decision variable named ", paste0("'", unknown, "'", collapse = ", "),
          " in this model")
   if (anyDuplicated(flat))
     stop("block '", name, "' lists '", flat[anyDuplicated(flat)], "' twice")
-  owner <- rep(names(blocks), vapply(blocks, length, 0L))   # the block of each member so far
-  names(owner) <- unlist(blocks, use.names = FALSE)
-  taken <- intersect(flat, names(owner))
-  if (length(taken))
-    stop("'", taken[[1L]], "' is already in the block '", owner[[taken[[1L]]]],
+  members <- unlist(blocks, use.names = FALSE)              # every member so far
+  taken <- match(flat, members)
+  if (!all(is.na(taken))) {
+    j <- which(!is.na(taken))[[1L]]                         # the first member taken
+    owner <- rep(names(blocks), lengths(blocks))            # the block of each member
+    stop("'", flat[[j]], "' is already in the block '", owner[[taken[[j]]]],
          "'; a variable can be in one block only")
-  vars_reg <- .m_get(m, "vars")
-  for (key in flat) {
-    at <- lookup[[key]]
-    v <- vars_reg[[at$var]]
-    if (!is.finite(v$lower[[at$i]]) || !is.finite(v$upper[[at$i]]))
-      stop("'", key, "' has an infinite bound; a variable in a block needs finite bounds")
   }
+  var <- lookup$var[at]
+  i <- lookup$i[at]
+  vars_reg <- .m_get(m, "vars")
+  # The members of one variable are checked in one step; the error names the
+  # first member, in the block's order, with an infinite bound.
+  finite <- logical(length(flat))
+  for (keys in split(seq_along(flat), var)) {
+    v <- vars_reg[[var[[keys[[1L]]]]]]
+    finite[keys] <- is.finite(v$lower[i[keys]]) & is.finite(v$upper[i[keys]])
+  }
+  if (!all(finite))
+    stop("'", flat[[which(!finite)[[1L]]]], "' has an infinite bound; a variable in a ",
+         "block needs finite bounds")
   blocks[[name]] <- flat
   .m_set(m, "blocks", blocks)
   invisible(m)

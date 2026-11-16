@@ -234,14 +234,20 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0,
 # ── solutions as named vectors ──────────────────────────────────────────────
 
 # Every decision variable's flat names, each mapped to (variable, element): the
-# key under which a solution comes back, and under which a start is set.
+# key under which a solution comes back, and under which a start is set. The
+# lookup is three parallel vectors in declaration order: `flat` the names,
+# `var` the variable's position in the registry, `i` the element.
+# match(keys, lookup$flat) finds keys by hashing, so building the lookup and
+# finding k keys in it take time linear in the number of variables and in k.
+# A list keyed by name is quadratic to build, one name at a time, and each
+# lookup in it scans the names.
 .flat_lookup <- function(m) {
-  out <- list()
-  for (v in .m_get(m, "vars")) {
-    if (!.is_decision(v)) next
-    for (i in seq_len(v$n_elements)) out[[v$flat[[i]]]] <- list(var = v$name, i = i)
-  }
-  out
+  vars <- .m_get(m, "vars")
+  at <- which(vapply(vars, .is_decision, NA, USE.NAMES = FALSE))
+  n_elements <- vapply(vars[at], function(v) v$n_elements, 0L, USE.NAMES = FALSE)
+  list(flat = as.character(unlist(lapply(vars[at], function(v) v$flat), use.names = FALSE)),
+       var = rep(at, n_elements),
+       i = sequence(n_elements))
 }
 
 # A solution as a named numeric vector keyed by flat names: either a result
@@ -256,13 +262,13 @@ add_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0,
   if (!is.numeric(solution) || is.null(names(solution)) || any(!nzchar(names(solution))))
     stop(caller, " takes a solve() result or a named numeric vector of variable values")
   if (anyNA(solution)) stop(caller, ": a variable value cannot be NA")
-  lookup <- .flat_lookup(m)
-  unknown <- setdiff(names(solution), names(lookup))
+  flat <- .flat_lookup(m)$flat
+  unknown <- setdiff(names(solution), flat)
   if (length(unknown))
     stop(caller, ": no decision variable named ",
          paste0("'", unknown, "'", collapse = ", "), " in this model")
   if (complete) {
-    missing <- setdiff(names(lookup), names(solution))
+    missing <- setdiff(flat, names(solution))
     if (length(missing))
       stop(caller, ": the solution gives no value for ",
            paste0("'", missing, "'", collapse = ", "))
@@ -312,12 +318,15 @@ set_start <- function(m, values) {
   starts <- if (inherits(values, "quicopt_result") && !is.null(values$structures))
     .result_starts(m, values, "set_start") else list()
   values <- .solution_values(m, values, complete = FALSE, caller = "set_start")
+  values <- values[!duplicated(names(values))]   # a name given twice keeps its first value
   lookup <- .flat_lookup(m)
+  at <- match(names(values), lookup$flat)        # every name is known, checked above
+  var <- lookup$var[at]
+  i <- lookup$i[at]
   vars <- .m_get(m, "vars")
-  for (key in names(values)) {
-    at <- lookup[[key]]
-    vars[[at$var]]$start[[at$i]] <- as.numeric(values[[key]])
-  }
+  # one assignment per variable, of all its elements given
+  for (keys in split(seq_along(at), var))
+    vars[[var[[keys[[1L]]]]]]$start[i[keys]] <- as.numeric(values[keys])
   .m_set(m, "vars", vars)
   structs <- .m_get(m, "structures")
   for (name in names(starts)) structs[[name]]$start <- starts[[name]]

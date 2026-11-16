@@ -104,4 +104,46 @@ minimize(m4, expectation(m4$d * x4 + r4))
 expect_error_like("the count is fixed by an empirical column",
                   resample(m4, c(x = 1), seed = 2, n_scenarios = 10), "empirical")
 
+# ── a solution of a few thousand values ─────────────────────────────────────
+
+m <- model()
+x <- num_var(m, "x", 0, 100, length = 2000)
+k <- int_var(m, "k", 0, 10, length = 1000)
+s <- num_var(m, "s", -5, 5)
+minimize(m, sum(x) + sum(k) + s)
+flat <- c(sprintf("x[%d]", 1:2000), sprintf("k[%d]", 1:1000), "s")
+values <- c((1:2000) / 20, (1:1000) %% 11 + 0.4, -2.5)
+arrival <- rev(seq_along(flat))                                    # the service's order is its own
+json <- paste0('{"status":"optimal","objective":1,"feasible":true,"solution":{',
+               paste0('"', flat[arrival], '":', values[arrival], collapse = ","), "}}")
+res <- internal(".parse_result")(charToRaw(json), internal(".declared")(m))
+check("3001 values come back in declaration order",
+      identical(names(res$solution), flat) && identical(unname(res$solution), values))
+starts <- function(m) vapply(as_program(m)$vars, function(vd) vd$start, 0)
+set_start(m, res)
+check("set_start takes every value of the result as a start", identical(starts(m), values))
+some <- c("k[999]" = 3, "x[7]" = 70, s = 1, "x[1999]" = 19.5, "k[1]" = 0)
+set_start(m, some)
+want <- setNames(values, flat); want[names(some)] <- some
+check("a few values in any order set those starts and keep the rest",
+      identical(starts(m), unname(want)))
+set_start(m, c("x[5]" = 1, "k[2]" = 4, "x[5]" = 2))
+check("a name given twice keeps its first value",
+      starts(m)[[5]] == 1 && starts(m)[[2002]] == 4)
+expect_error_like("an unknown name among thousands is named",
+                  set_start(m, c(res$solution, "x[2001]" = 1)), "named 'x\\[2001\\]' in")
+fixed <- function(p) vapply(p$fix, function(f) f$value, 0)
+p <- pinned(m, res, "evaluate")
+check("every variable is pinned at its value, in declaration order, integers rounded",
+      identical(vapply(p$fix, function(f) f$var, ""), flat) &&
+      identical(fixed(p), c(values[1:2000], round(values[2001:3000]), -2.5)))
+check("a vector in any order is pinned the same way",
+      identical(fixed(pinned(m, rev(res$solution), "evaluate")), fixed(p)))
+expect_error_like("the values missing are named, in declaration order",
+                  pinned(m, res$solution[-c(2500, 17)], "evaluate"),
+                  "no value for 'x\\[17\\]', 'k\\[500\\]'$")
+expect_error_like("the first value outside its bounds is named",
+                  pinned(m, replace(res$solution, c("k[3]", "x[9]"), c(12, -1)), "evaluate"),
+                  "value -1 for 'x\\[9\\]'")
+
 cat("solution: all green\n")

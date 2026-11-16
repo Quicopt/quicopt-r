@@ -91,6 +91,37 @@ expect_error_like("a member is from this model", block(m, "east", stranger), "di
 expect_error_like("a block holds variables", block(m, "east", ship[1] + 1), "decision variables")
 check("printing counts the blocks", any(grepl("2 blocks", capture.output(print(m)))))
 
+# ── many blocks on a model of a few thousand variables ──────────────────────
+
+m <- model()
+ship <- num_var(m, "ship", lower = 0, upper = 10, length = 2400)   # 8 deliveries to each of 300 customers
+open <- bin_var(m, "open", length = 300)
+extra <- num_var(m, "extra", lower = 0, upper = 1, length = 500)
+loose <- num_var(m, "loose", upper = 1, length = 3)                 # no lower bound
+spare <- num_var(m, "spare", lower = 0)                             # no upper bound
+customer <- function(j) c(ship[8 * j - 0:7], open[j])               # deliveries last to first, then the switch
+for (j in 1:300) block(m, paste0("customer_", j), customer(j))
+blocks <- as_program(m)$blocks
+check("300 blocks, each with its members in the order given",
+      length(blocks) == 300L &&
+      identical(names(blocks)[c(1, 300)], c("customer_1", "customer_300")) &&
+      identical(blocks$customer_217,
+                lapply(c(sprintf("ship[%d]", 8 * 217 - 0:7), "open[217]"), ir_var)))
+expect_error_like("a member taken long before names the block it is in",
+                  block(m, "late", c(extra[1:10], spare, ship[1735])),
+                  "^'ship\\[1735\\]' is already in the block 'customer_217'")
+expect_error_like("the first member with an infinite bound, in the block's order, is named",
+                  block(m, "mixed", c(extra[400:1], spare, loose[3], extra[401:500])),
+                  "^'spare' has an infinite bound")
+elsewhere <- model(); ghost <- num_var(elsewhere, "ghost", 0, 1, length = 2)
+expect_error_like("members of another model are named, in the block's order",
+                  block(m, "ghosts", c(ghost[2], extra[1], ghost[1], ghost[2])),
+                  "^no decision variable named 'ghost\\[2\\]', 'ghost\\[1\\]' in this model$")
+block(m, "extra", rev(extra))
+blocks <- as_program(m)$blocks
+check("a refused block leaves the others as they were",
+      length(blocks) == 301L && identical(blocks$extra, lapply(sprintf("extra[%d]", 500:1), ir_var)))
+
 # ── partitions ──────────────────────────────────────────────────────────────
 
 m <- model()
