@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: (c) 2026 Tim Bode, PGI-12, Forschungszentrum Jülich
 
 # Permutations and lookup tables: declarations, guardrails, the expressions
-# they build, what the program and the bytes carry, and how a result's order
-# comes back and is pinned again.
+# they build, what the program and the bytes carry, how a result's order
+# comes back and is pinned again, and the structured goldens through a model.
 #
 #     Rscript tests/test-structured.R
 
@@ -175,5 +175,48 @@ want$objective <- mt$dist[item_at(1, mt$tour), item_at(2, mt$tour)]$nodes[[1L]]
 want$sense <- "min"; want$constraints <- list()
 check("it sends the fixed permutation with the lookup as objective",
       identical(rec2$requests[[1L]]$body, encode(want)))
+
+# ── the structured goldens through the model ────────────────────────────────
+
+# The models of the structured goldens (see test-wire-goldens.R), written with
+# perm_var(), lookup_table() and the rest, must encode to the same bytes.
+# struct_assignment is left out: it reads its flow table through parameter
+# leaves, which a model() does not write.
+check_golden <- function(name, bytes)
+  check(sprintf("a model reproduces the %s golden", name), identical(bytes, read_golden(name)),
+        sprintf("   got  %s\n   want %s\n", as_hex(bytes), as_hex(read_golden(name))))
+
+# Four points on a line: a tour with a start, visiting point 2 before point 1.
+m <- model()
+x <- num_var(m, "x", 0, 1)
+where <- c(0, 3, 1, 4)
+dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
+tour <- perm_var(m, "tour", 4, start = c(2, 1, 4, 3))
+precede(tour, 2, 1)
+minimize(m, sum(dist[item_at(1:3, tour), item_at(2:4, tour)], x))
+check_golden("struct_tour", encode(m))
+
+# The first leg of a tour over three points, scaled by a random factor.
+m <- model()
+x <- num_var(m, "x", 0, 1)
+where <- c(0, 2, 5)
+dist <- lookup_table(m, "dist", abs(outer(where, where, "-")))
+tour <- perm_var(m, "tour", 3)
+f <- rand_var(m, "f", normal(1, 0.1))
+set_scenarios(m, 8, seed = 3)
+minimize(m, expectation(dist[item_at(1, tour), item_at(2, tour)] * f) + x)
+check_golden("struct_stoch", encode(m))
+
+# A model evaluated at a solution: what evaluate() and resample() start from.
+m <- model()
+z <- num_var(m, "z", 0, 2, start = 1)
+cost <- lookup_table(m, "cost", c(1.5, 0.5, 2.0))
+ord <- perm_var(m, "order", 3)
+minimize(m, cost[slot_of(1, ord)] + z)
+add(m, z >= item_at(2, ord))
+res <- solve(m, transport = recorder(
+  '{"status":"heuristic","objective":3.0,"solution":{"z":1.0},
+    "structures":{"order":{"item_at":[2,3,1],"slot_of":[3,1,2]}}}')$fn)
+check_golden("struct_fixed", encode(pinned(m, res, "evaluate")))
 
 cat("all structured checks passed\n")

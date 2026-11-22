@@ -15,6 +15,14 @@
 
 source(if (file.exists("tests/helper.R")) "tests/helper.R" else "helper.R")
 
+# The distances between points on a line as a dense parameter table keyed
+# from 1: entry (i, j) is |coords[i] - coords[j]|, the diagonal included.
+distances <- function(coords) {
+  cells <- expand.grid(i = seq_along(coords), j = seq_along(coords))
+  Map(function(i, j) list(key = list(i, j), value = abs(coords[[i]] - coords[[j]])),
+      cells$i, cells$j)
+}
+
 # Fixtures — the same programs the service's codec encodes for the goldens.
 
 fixtures <- list(
@@ -106,6 +114,71 @@ fixtures <- list(
       scenarios = 4,
       sources = list(shock = empirical(c(0.9, 1.0, 1.1, 1.3)),
                      price = parametric("normal", list(ir_param("μ"), ir_const(2.0)))))
+  },
+
+  struct_tour = function() {                   # every permutation field, a two-index lookup
+    # A start and a precedence, and the legs of a tour read from a table at
+    # the items in consecutive slots.
+    tour <- ir_struct_ref("tour")
+    leg <- function(k) ir_table_ref("dist", list(ir_apply("item_at", list(ir_const(k), tour)),
+                                                ir_apply("item_at", list(ir_const(k + 1), tour))))
+    program(
+      params = list(dist = distances(c(0, 3, 1, 4))),
+      vars = list(var_decl("x", character(), CONTINUOUS, 0.0, 1.0, 0.0)),
+      objective = ir_apply("+", list(leg(1), leg(2), leg(3), ir_var("x"))),
+      sense = "min",
+      structures = list(tour = permutation_decl(4, start = c(2, 1, 4, 3), precede = list(c(2, 1)))))
+  },
+
+  struct_assignment = function() {             # slot_of, no optional fields
+    # Two tables read two ways in one program: flow through parameter leaves
+    # at fixed positions, dist through a lookup at decided positions.
+    place <- ir_struct_ref("place")
+    at <- function(f) ir_apply("slot_of", list(ir_const(f), place))
+    term <- function(f, g) ir_apply("*", list(ir_param("flow", list(f, g)),
+                                             ir_table_ref("dist", list(at(f), at(g)))))
+    program(
+      params = list(dist = distances(c(0, 1, 3)),
+                    flow = list(list(key = list(1L, 2L), value = 2.0),
+                                list(key = list(1L, 3L), value = 5.0),
+                                list(key = list(2L, 3L), value = 1.0))),
+      vars = list(var_decl("y", character(), CONTINUOUS, 0.0, 1.0, 0.0)),
+      objective = ir_apply("+", list(term(1L, 2L), term(1L, 3L), term(2L, 3L), ir_var("y"))),
+      sense = "min",
+      structures = list(place = permutation_decl(3)))
+  },
+
+  struct_fixed = function() {                  # a fixed permutation, a one-index lookup
+    # The shape of an evaluation at a solution: the variable pinned at a
+    # value, the permutation declared fixed at its start.
+    ord <- ir_struct_ref("order")
+    program(
+      params = list(cost = list(list(key = list(1L), value = 1.5),
+                                list(key = list(2L), value = 0.5),
+                                list(key = list(3L), value = 2.0))),
+      vars = list(var_decl("z", character(), CONTINUOUS, 0.0, 2.0, 1.0)),
+      objective = ir_apply("+", list(
+        ir_table_ref("cost", list(ir_apply("slot_of", list(ir_const(1.0), ord)))), ir_var("z"))),
+      sense = "min",
+      constraints = list(constraint(
+        ir_apply("-", list(ir_var("z"), ir_apply("item_at", list(ir_const(2.0), ord)))), nonneg())),
+      fix = list(list(var = "z", index = list(), value = 1.0)),
+      structures = list(order = permutation_decl(3, start = c(3, 1, 2), fixed = TRUE)))
+  },
+
+  struct_stoch = function() {                  # a permutation in a model under uncertainty
+    tour <- ir_struct_ref("tour")
+    leg <- ir_table_ref("dist", list(ir_apply("item_at", list(ir_const(1.0), tour)),
+                                     ir_apply("item_at", list(ir_const(2.0), tour))))
+    program(
+      params = list(dist = distances(c(0, 2, 5))),
+      vars = list(var_decl("x", character(), CONTINUOUS, 0.0, 1.0, 0.0)),
+      objective = ir_apply("+", list(
+        ir_apply("smean", list(ir_apply("*", list(leg, ir_source_ref("f"))))), ir_var("x"))),
+      sense = "min",
+      scenarios = 8, scenario_seed = 3,
+      sources = list(f = parametric("normal", list(ir_const(1.0), ir_const(0.1)))),
+      structures = list(tour = permutation_decl(3)))
   },
 
   holes_blocks = function() {                  # both hole domains, indicator, step, min, blocks
