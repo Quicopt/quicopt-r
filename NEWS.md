@@ -1,4 +1,4 @@
-# quicopt (development version)
+# quicopt 0.9.0
 
 * Breaking: `n =` and `scenarios =`, the argument names that 0.7.0 replaced, are no longer accepted. Write `length =` instead of `n =` in `num_var()`, `int_var()`, `bin_var()`, `add_var()`, `rand_var()` and `add_rand_var()`, and `n_scenarios =` instead of `scenarios =` in `evaluate()` and `resample()`. From 0.7.0 to 0.8.1 the former names worked with a warning, so a script that runs under 0.8.x without that warning runs unchanged. A script that still uses one now stops with an error: `evaluate()` and `resample()` say that the number of new scenarios is `n_scenarios`, before anything is sent, and a declaration such as `num_var(m, "x", n = 3)` says that a length is given as `length = 3`.
 
