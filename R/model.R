@@ -85,15 +85,29 @@ model <- function() {
   m
 }
 
-.check_name <- function(m, name) {
+# A declaration's name: one non-empty string, free of square brackets and not
+# yet declared in m. Returns it, or stops; `hint` is added to the message
+# when the name is not a string.
+.check_name <- function(m, name, hint = "") {
   if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name))
-    stop("a variable needs a name: one non-empty string")
+    stop("a variable needs a name: one non-empty string", hint)
   if (grepl("[][]", name))
     stop("'", name, "': square brackets are reserved for the elements of a ",
          "vector variable")
   if (!is.null(.m_get(m, "vars")[[name]]))
     stop("the name '", name, "' is already declared in this model")
   name
+}
+
+# For .check_name() in the declarations that take a `length`: a number where
+# the name belongs most likely came from `n = 3`, the former name of `length`
+# (until 0.8.1). R matches an argument name that is the start of exactly one
+# parameter's name to that parameter, so `n` lands in `name`, and the call as
+# written does give a name. The hint says what happened.
+.length_hint <- function(name) {
+  if (!is.numeric(name) || length(name) != 1L) return("")
+  sprintf(", not %s. `n = %s` in a call is taken as the name; a length is given as `length = %s`",
+          format(name), format(name), format(name))
 }
 
 # Recycle a per-element setting (bounds, start) to a family's length, refusing
@@ -106,18 +120,9 @@ model <- function() {
        ", but the variable has length ", n_elements)
 }
 
-# An argument under its former name: still accepted, with a warning, unless
-# the new name is given too.
-.renamed_arg <- function(value, new_given, old, new, caller) {
-  if (new_given) stop(caller, "(): give `", new, "` only; `", old, "` is its former name")
-  warning(caller, "(): `", old, "` is now called `", new, "`; the old name will stop ",
-          "working in a later release", call. = FALSE)
-  value
-}
-
 .new_var <- function(m, name, domain, lower, upper, n_elements, start, caller, semi = FALSE) {
   .check_model(m, caller)
-  .check_name(m, name)
+  .check_name(m, name, .length_hint(name))
   if (!is.numeric(n_elements) || length(n_elements) != 1L || is.na(n_elements) ||
       n_elements < 1 || n_elements != trunc(n_elements))
     stop("length must be a whole number of at least 1")
@@ -185,8 +190,6 @@ model <- function() {
 #'   [set_start()]).
 #' @param semi Whether the variable may also be 0 when 0 lies outside its
 #'   bounds (see above).
-#' @param n The former name of `length`, still accepted for now, with a
-#'   warning.
 #' @return The variable, an expression with `length` elements.
 #' @examples
 #' m <- model()
@@ -197,22 +200,19 @@ model <- function() {
 #' take[2]
 #' delivery <- int_var(m, "delivery", lower = 10, upper = 25, semi = TRUE)   # none, or 10 to 25
 #' @export
-num_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0, semi = FALSE, n) {
-  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "num_var")
+num_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0, semi = FALSE) {
   .new_var(m, name, CONTINUOUS, lower, upper, length, start, "num_var", semi)
 }
 
 #' @rdname num_var
 #' @export
-int_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0, semi = FALSE, n) {
-  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "int_var")
+int_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0, semi = FALSE) {
   .new_var(m, name, INTEGER, lower, upper, length, start, "int_var", semi)
 }
 
 #' @rdname num_var
 #' @export
-bin_var <- function(m, name, length = 1, start = 0, n) {
-  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "bin_var")
+bin_var <- function(m, name, length = 1, start = 0) {
   .new_var(m, name, BINARY, 0, 1, length, start, "bin_var")
 }
 
@@ -222,8 +222,7 @@ bin_var <- function(m, name, length = 1, start = 0, n) {
 #' @return `add_var()` returns the model, invisibly.
 #' @export
 add_var <- function(m, name, lower = -Inf, upper = Inf, length = 1, start = 0,
-                    domain = c("num", "int", "bin"), semi = FALSE, n) {
-  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "add_var")
+                    domain = c("num", "int", "bin"), semi = FALSE) {
   switch(match.arg(domain),
          num = num_var(m, name, lower, upper, length, start, semi),
          int = int_var(m, name, lower, upper, length, start, semi),

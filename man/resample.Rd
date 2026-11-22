@@ -4,7 +4,7 @@
 \alias{resample}
 \title{Check a solution on new scenarios}
 \usage{
-resample(m, solution, seed, n_scenarios = NULL, ..., scenarios)
+resample(m, solution, seed, n_scenarios = NULL, ...)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -19,9 +19,6 @@ own.}
 the model has. More scenarios give a more precise check.}
 
 \item{...}{Settings for the request, as for \code{\link[=solve_model]{solve_model()}}.}
-
-\item{scenarios}{The former name of \code{n_scenarios}, still accepted for now,
-with a warning.}
 }
 \value{
 A result in the same form as from \code{\link[=solve]{solve()}}, for the fixed solution

@@ -4,7 +4,7 @@
 \alias{evaluate}
 \title{Compute a quantity at a given solution}
 \usage{
-evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios)
+evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ...)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -25,9 +25,6 @@ value.}
 
 \item{...}{Settings for the request, as for \code{\link[=solve_model]{solve_model()}}: \code{base_url},
 \code{api_key}, \code{project}, \code{config}, \code{gzip}, \code{timeout} and \code{transport}.}
-
-\item{scenarios}{The former name of \code{n_scenarios}, still accepted for now,
-with a warning.}
 }
 \value{
 The value of \code{expr}, a number.

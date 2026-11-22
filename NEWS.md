@@ -1,3 +1,7 @@
+# quicopt 0.9.0
+
+* Breaking: `n =` and `scenarios =`, the argument names that 0.7.0 replaced, are no longer accepted. Write `length =` instead of `n =` in `num_var()`, `int_var()`, `bin_var()`, `add_var()`, `rand_var()` and `add_rand_var()`, and `n_scenarios =` instead of `scenarios =` in `evaluate()` and `resample()`. From 0.7.0 to 0.8.1 the former names worked with a warning, so a script that runs under 0.8.x without that warning runs unchanged. A script that still uses one now stops with an error: `evaluate()` and `resample()` say that the number of new scenarios is `n_scenarios`, before anything is sent, and a declaration such as `num_var(m, "x", n = 3)` says that a length is given as `length = 3`.
+
 # quicopt 0.8.1
 
 * `block()`, `set_start()`, `evaluate()` and `resample()` take much less time on a model with many variables. Each of them looks variables up by name, and that lookup took time growing with the square of the number of variables. On a model of 20,000 variables, each `block()` call took about 2 s, however few variables the block had, so 500 blocks of 40 variables took 15 minutes; they now take 0.3 s. Setting the start values from a result of 20,000 values took 6 s and now takes a few milliseconds, and `evaluate()` and `resample()` prepare their request in 0.2 s instead of 3 s. Results and error messages are unchanged.

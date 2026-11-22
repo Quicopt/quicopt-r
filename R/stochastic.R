@@ -301,8 +301,6 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 #' @param length How many random variables to declare under this name. Left
 #'   `NULL`, the number follows from the length of the distribution's
 #'   parameters.
-#' @param n The former name of `length`, still accepted for now, with a
-#'   warning.
 #' @return The random variable, an expression with one element per random
 #'   variable declared.
 #' @examples
@@ -311,10 +309,9 @@ is_random <- function(x) vapply(.nodes_of(x), .is_random_node, NA)
 #' hours  <- rand_var(m, "hours", normal(c(6, 5, 4), 1))    # three, one per job
 #' delay  <- rand_var(m, "delay", uniform(1, 1.5), length = 4)   # four with the same distribution
 #' @export
-rand_var <- function(m, name, dist = NULL, length = NULL, n) {
-  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "rand_var")
+rand_var <- function(m, name, dist = NULL, length = NULL) {
   .check_model(m, "rand_var")
-  .check_name(m, name)
+  .check_name(m, name, .length_hint(name))
   if (!is.null(dist)) .check_dist(dist)
   n_elements <- .rv_length(dist, length, name)
   flat <- if (n_elements == 1L) name else sprintf("%s[%d]", name, seq_len(n_elements))
@@ -395,8 +392,7 @@ set_distribution <- function(m, v, dist) {
 #' @rdname rand_var
 #' @return `add_rand_var()` returns the model, invisibly.
 #' @export
-add_rand_var <- function(m, name, dist = NULL, length = NULL, n) {
-  if (!missing(n)) length <- .renamed_arg(n, !missing(length), "n", "length", "add_rand_var")
+add_rand_var <- function(m, name, dist = NULL, length = NULL) {
   rand_var(m, name, dist, length)
   invisible(m)
 }

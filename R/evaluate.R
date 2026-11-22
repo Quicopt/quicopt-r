@@ -76,8 +76,6 @@
 #'   value.
 #' @param ... Settings for the request, as for [solve_model()]: `base_url`,
 #'   `api_key`, `project`, `config`, `gzip`, `timeout` and `transport`.
-#' @param scenarios The former name of `n_scenarios`, still accepted for now,
-#'   with a warning.
 #' @return The value of `expr`, a number.
 #' @examples
 #' \dontrun{
@@ -95,10 +93,8 @@
 #' evaluate(m, c(stock = 110), met)                       # for a stock of 110
 #' }
 #' @export
-evaluate <- function(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios) {
-  if (!missing(scenarios))
-    n_scenarios <- .renamed_arg(scenarios, !missing(n_scenarios), "scenarios", "n_scenarios",
-                                "evaluate")
+evaluate <- function(m, solution, expr, seed = NULL, n_scenarios = NULL, ...) {
+  .refuse_scenarios("evaluate", ...)
   .check_model(m, "evaluate")
   node <- .need_closed(.scalar_node(expr, "expression"), "expression")
   prog <- .pinned_program(m, solution, "evaluate")
@@ -134,8 +130,6 @@ evaluate <- function(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., sc
 #' @param n_scenarios How many new scenarios to draw. Left `NULL`, as many as
 #'   the model has. More scenarios give a more precise check.
 #' @param ... Settings for the request, as for [solve_model()].
-#' @param scenarios The former name of `n_scenarios`, still accepted for now,
-#'   with a warning.
 #' @return A result in the same form as from [solve()], for the fixed solution
 #'   on the new scenarios. `objective` is the objective on them, `feasible`
 #'   says whether every constraint still holds, and
@@ -150,13 +144,23 @@ evaluate <- function(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., sc
 #' chk$objective                                          # the objective on the new scenarios
 #' }
 #' @export
-resample <- function(m, solution, seed, n_scenarios = NULL, ..., scenarios) {
-  if (!missing(scenarios))
-    n_scenarios <- .renamed_arg(scenarios, !missing(n_scenarios), "scenarios", "n_scenarios",
-                                "resample")
+resample <- function(m, solution, seed, n_scenarios = NULL, ...) {
+  .refuse_scenarios("resample", ...)
   .check_model(m, "resample")
   prog <- .fresh_scenarios(m, .pinned_program(m, solution, "resample"), seed, n_scenarios)
   .solve_tagged(prog, ...)
+}
+
+# Stop when the request settings `...` of evaluate() or resample() hold
+# `scenarios`, the former name of n_scenarios (until 0.8.1). Without this it
+# would travel on to solve_model(), which does not take it, and R would stop
+# there: late, naming a function the caller never called, and after
+# .fresh_scenarios() had judged the seed without the count, so a call with the
+# model's own seed would be told to change the seed.
+.refuse_scenarios <- function(caller, ...) {
+  if ("scenarios" %in% ...names())
+    stop(caller, "(): the number of new scenarios is `n_scenarios`; `scenarios` is no ",
+         "longer accepted", call. = FALSE)
 }
 
 # A pinned program on fresh scenarios: a new seed, and optionally a new count.
