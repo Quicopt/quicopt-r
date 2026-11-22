@@ -11,9 +11,9 @@ independently.
 ## Usage
 
 ``` r
-rand_var(m, name, dist = NULL, length = NULL, n)
+rand_var(m, name, dist = NULL, length = NULL)
 
-add_rand_var(m, name, dist = NULL, length = NULL, n)
+add_rand_var(m, name, dist = NULL, length = NULL)
 ```
 
 ## Arguments
@@ -40,10 +40,6 @@ add_rand_var(m, name, dist = NULL, length = NULL, n)
 
   How many random variables to declare under this name. Left `NULL`, the
   number follows from the length of the distribution's parameters.
-
-- n:
-
-  The former name of `length`, still accepted for now, with a warning.
 
 ## Value
 

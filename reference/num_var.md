@@ -15,8 +15,7 @@ num_var(
   upper = Inf,
   length = 1,
   start = 0,
-  semi = FALSE,
-  n
+  semi = FALSE
 )
 
 int_var(
@@ -26,11 +25,10 @@ int_var(
   upper = Inf,
   length = 1,
   start = 0,
-  semi = FALSE,
-  n
+  semi = FALSE
 )
 
-bin_var(m, name, length = 1, start = 0, n)
+bin_var(m, name, length = 1, start = 0)
 
 add_var(
   m,
@@ -40,8 +38,7 @@ add_var(
   length = 1,
   start = 0,
   domain = c("num", "int", "bin"),
-  semi = FALSE,
-  n
+  semi = FALSE
 )
 ```
 
@@ -74,10 +71,6 @@ add_var(
 
   Whether the variable may also be 0 when 0 lies outside its bounds (see
   above).
-
-- n:
-
-  The former name of `length`, still accepted for now, with a warning.
 
 - domain:
 

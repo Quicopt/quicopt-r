@@ -1,5 +1,30 @@
 # Changelog
 
+## quicopt 0.9.0
+
+- Breaking: `n =` and `scenarios =`, the argument names that 0.7.0
+  replaced, are no longer accepted. Write `length =` instead of `n =` in
+  [`num_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
+  [`int_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
+  [`bin_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
+  [`add_var()`](https://quicopt.github.io/quicopt-r/reference/num_var.md),
+  [`rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md)
+  and
+  [`add_rand_var()`](https://quicopt.github.io/quicopt-r/reference/rand_var.md),
+  and `n_scenarios =` instead of `scenarios =` in
+  [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md).
+  From 0.7.0 to 0.8.1 the former names worked with a warning, so a
+  script that runs under 0.8.x without that warning runs unchanged. A
+  script that still uses one now stops with an error:
+  [`evaluate()`](https://quicopt.github.io/quicopt-r/reference/evaluate.md)
+  and
+  [`resample()`](https://quicopt.github.io/quicopt-r/reference/resample.md)
+  say that the number of new scenarios is `n_scenarios`, before anything
+  is sent, and a declaration such as `num_var(m, "x", n = 3)` says that
+  a length is given as `length = 3`.
+
 ## quicopt 0.8.1
 
 - [`block()`](https://quicopt.github.io/quicopt-r/reference/block.md),

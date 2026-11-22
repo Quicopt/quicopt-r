@@ -10,7 +10,7 @@ solution's value, so each call is one request.
 ## Usage
 
 ``` r
-evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios)
+evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ...)
 ```
 
 ## Arguments
@@ -47,11 +47,6 @@ evaluate(m, solution, expr, seed = NULL, n_scenarios = NULL, ..., scenarios)
   [`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md):
   `base_url`, `api_key`, `project`, `config`, `gzip`, `timeout` and
   `transport`.
-
-- scenarios:
-
-  The former name of `n_scenarios`, still accepted for now, with a
-  warning.
 
 ## Value
 

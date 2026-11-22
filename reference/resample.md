@@ -11,7 +11,7 @@ them.
 ## Usage
 
 ``` r
-resample(m, solution, seed, n_scenarios = NULL, ..., scenarios)
+resample(m, solution, seed, n_scenarios = NULL, ...)
 ```
 
 ## Arguments
@@ -39,11 +39,6 @@ resample(m, solution, seed, n_scenarios = NULL, ..., scenarios)
 
   Settings for the request, as for
   [`solve_model()`](https://quicopt.github.io/quicopt-r/reference/solve_model.md).
-
-- scenarios:
-
-  The former name of `n_scenarios`, still accepted for now, with a
-  warning.
 
 ## Value
 
