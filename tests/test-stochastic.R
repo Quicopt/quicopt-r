@@ -297,6 +297,10 @@ expect_error_like("length must agree with the parameters",
 expect_error_like("parameters must agree among themselves", normal(c(1, 2), c(1, 2, 3)), "disagree")
 expect_error_like("an empirical column is one random variable",
                   rand_var(m, "e", empirical(c(1, 2, 3)), length = 2), "one random variable")
+expect_error_like("the former name n of the length is refused",
+                  rand_var(m, "e", normal(0, 1), n = 2), "`length = 2`")
+expect_error_like("by add_rand_var too",
+                  add_rand_var(m, "e", normal(0, 1), n = 2), "`length = 2`")
 price <- num_var(m, "price", 1, 10)
 dm <- rand_var(m, "dm", normal(100 - c(5, 6) * price, 10))
 check("a vector expression parameter lowers elementwise",

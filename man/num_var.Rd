@@ -14,8 +14,7 @@ num_var(
   upper = Inf,
   length = 1,
   start = 0,
-  semi = FALSE,
-  n
+  semi = FALSE
 )
 
 int_var(
@@ -25,11 +24,10 @@ int_var(
   upper = Inf,
   length = 1,
   start = 0,
-  semi = FALSE,
-  n
+  semi = FALSE
 )
 
-bin_var(m, name, length = 1, start = 0, n)
+bin_var(m, name, length = 1, start = 0)
 
 add_var(
   m,
@@ -39,8 +37,7 @@ add_var(
   length = 1,
   start = 0,
   domain = c("num", "int", "bin"),
-  semi = FALSE,
-  n
+  semi = FALSE
 )
 }
 \arguments{
@@ -59,9 +56,6 @@ unique within the model.}
 
 \item{semi}{Whether the variable may also be 0 when 0 lies outside its
 bounds (see above).}
-
-\item{n}{The former name of \code{length}, still accepted for now, with a
-warning.}
 
 \item{domain}{For \code{add_var()}: \code{"num"}, \code{"int"} or \code{"bin"}, to declare the
 variable as \code{num_var()}, \code{int_var()} or \code{bin_var()} would.}

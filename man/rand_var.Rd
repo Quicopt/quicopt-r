@@ -5,9 +5,9 @@
 \alias{add_rand_var}
 \title{Declare a random variable}
 \usage{
-rand_var(m, name, dist = NULL, length = NULL, n)
+rand_var(m, name, dist = NULL, length = NULL)
 
-add_rand_var(m, name, dist = NULL, length = NULL, n)
+add_rand_var(m, name, dist = NULL, length = NULL)
 }
 \arguments{
 \item{m}{A \code{\link[=model]{model()}}.}
@@ -21,9 +21,6 @@ and given later with \code{\link[=set_distribution]{set_distribution()}}.}
 \item{length}{How many random variables to declare under this name. Left
 \code{NULL}, the number follows from the length of the distribution's
 parameters.}
-
-\item{n}{The former name of \code{length}, still accepted for now, with a
-warning.}
 }
 \value{
 The random variable, an expression with one element per random

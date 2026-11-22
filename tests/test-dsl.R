@@ -93,13 +93,17 @@ xs <- num_var(m, "xs", 0, 10, length = 3)
 cost <- c(2, 3, 5)
 
 check("a vector variable has the length given", length(xs) == 3)
-mo <- model(); warned <- NULL
-xo <- withCallingHandlers(num_var(mo, "xo", 0, 10, n = 2),
-                          warning = function(w) { warned <<- conditionMessage(w); invokeRestart("muffleWarning") })
-check("the former name n still declares the length, with a warning",
-      length(xo) == 2 && grepl("`n` is now called `length`", warned))
-expect_error_like("length and its former name n together are refused",
-                  num_var(mo, "xb", 0, 10, length = 2, n = 2), "give `length` only")
+# R takes `n`, the former name of `length`, as short for `name`
+expect_error_like("the former name n is refused, with the new one",
+                  num_var(model(), "xo", 0, 10, n = 2), "a length is given as `length = 2`")
+expect_error_like("the former name n is refused by bin_var too",
+                  bin_var(model(), "take", n = 6), "`length = 6`")
+expect_error_like("and by add_var in a pipe",
+                  model() |> add_var("xo", n = 2), "`length = 2`")
+expect_error_like("the former name n beside a given name is an unused argument",
+                  num_var(model(), name = "xo", n = 2), "n = 2")
+expect_error_like("a number as a name gets no hint where there is no length",
+                  perm_var(model(), 3, 4), "one non-empty string$")
 check("indexing picks the flat element", xs[2]$nodes[[1]]$name == "xs[2]")
 e <- sum(cost * xs)
 check("sum(cost * x) is one n-ary + node",

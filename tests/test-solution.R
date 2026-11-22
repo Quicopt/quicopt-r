@@ -63,13 +63,14 @@ v <- evaluate(m, c(x = 118.7, k = 2), prob(m$demand - m$x <= 0), seed = 2, n_sce
 want$scenario_seed <- 2; want$scenarios <- 1000
 check("with a seed it evaluates on fresh scenarios", identical(rec$requests[[2]]$body, encode(want)))
 expect_error_like("n_scenarios needs a seed", evaluate(m, c(x = 1, k = 1), m$x, n_scenarios = 10), "seed")
-warned <- NULL
-v <- withCallingHandlers(
-  evaluate(m, c(x = 118.7, k = 2), prob(m$demand - m$x <= 0), seed = 2, scenarios = 1000, transport = rec$fn),
-  warning = function(w) { warned <<- conditionMessage(w); invokeRestart("muffleWarning") })
-check("the former name scenarios still sets the count, with a warning",
-      identical(rec$requests[[3]]$body, encode(want)) &&
-        grepl("`scenarios` is now called `n_scenarios`", warned))
+# `scenarios`, the former name of n_scenarios, would otherwise travel in `...`
+# to solve_model() and be refused there
+sent <- length(rec$requests)
+expect_error_like("the former name scenarios is refused, with the new one",
+                  evaluate(m, c(x = 118.7, k = 2), prob(m$demand - m$x <= 0), seed = 2,
+                           scenarios = 1000, transport = rec$fn),
+                  "^evaluate\\(\\): the number of new scenarios is `n_scenarios`")
+check("and nothing is sent", length(rec$requests) == sent)
 expect_error_like("a random expression cannot be evaluated",
                   evaluate(m, c(x = 1, k = 1), m$demand - m$x, transport = rec$fn), "still random")
 expect_error_like("a vector expression cannot be evaluated",
@@ -89,6 +90,9 @@ want$scenarios <- 1000
 check("a larger sample can be asked for", identical(rec$requests[[2]]$body, encode(want)))
 
 expect_error_like("the model's own seed is refused", resample(m, c(x = 1, k = 1), seed = 42), "model's own")
+expect_error_like("the former name scenarios is refused before the seed is judged",
+                  resample(m, c(x = 1, k = 1), seed = 42, scenarios = 1000, transport = rec$fn),
+                  "^resample\\(\\): the number of new scenarios is `n_scenarios`")
 m2 <- model(); x2 <- num_var(m2, "x", 0, 10); minimize(m2, x2)
 expect_error_like("a deterministic model has nothing to resample",
                   resample(m2, c(x = 1), seed = 2), "no random variable")
